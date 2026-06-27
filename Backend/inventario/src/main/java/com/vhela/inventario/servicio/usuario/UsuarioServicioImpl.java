@@ -1,177 +1,97 @@
-package com.example.vhelasoft.servicio.fabrica.usuario;
+package com.vhela.inventario.servicio.usuario;
 
-import com.example.vhelasoft.dto.usuario.UsuarioCrearDTO;
-import com.example.vhelasoft.dto.usuario.UsuarioEditarDTO;
-import com.example.vhelasoft.dto.usuario.UsuarioResponseDTO;
-import com.example.vhelasoft.modelo.sucursal.Sucursal;
-import com.example.vhelasoft.modelo.usuario.RolEnum;
-import com.example.vhelasoft.modelo.usuario.Usuario;
-import com.example.vhelasoft.repositorio.SucursalRepositorio;
-import com.example.vhelasoft.repositorio.UsuarioRepositorio;
+import com.vhela.inventario.dto.usuario.UsuarioCrearDTO;
+import com.vhela.inventario.dto.usuario.UsuarioEditarDTO;
+import com.vhela.inventario.dto.usuario.UsuarioResponseDTO;
+import com.vhela.inventario.modelo.usuario.RolEnum;
+import com.vhela.inventario.modelo.usuario.Usuario;
+import com.vhela.inventario.repositorio.UsuarioRepositorio;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-
 @Service
 @RequiredArgsConstructor
 @Transactional
-
 public class UsuarioServicioImpl implements UsuarioServicio {
 
 
     private final UsuarioRepositorio usuarioRepositorio;
 
-    private final SucursalRepositorio sucursalRepositorio;
-
-    // =========================
-    // CREAR USUARIO
-    // =========================
 
     @Override
     public UsuarioResponseDTO crear(UsuarioCrearDTO dto) {
-
-        Sucursal sucursal = sucursalRepositorio.findById(dto.getSucursalId())
-                .orElseThrow(() ->
-                        new RuntimeException("No existe la sucursal")
-                );
-
-        RolEnum rol;
-        
-        try {
-            rol = RolEnum.valueOf(dto.getRol());
-        } catch (IllegalArgumentException e) {
-            throw new RuntimeException("Rol inválido");
+        if (usuarioRepositorio.findByUsername(dto.getUsername()).isPresent()) {
+            throw new RuntimeException("Ya existe un usuario con ese username");
         }
 
         Usuario usuario = new Usuario();
         usuario.setNombre(dto.getNombre());
         usuario.setUsername(dto.getUsername());
         usuario.setPassword(dto.getPassword());
-        usuario.setRol(rol);
-        usuario.setSucursal(sucursal);
+        usuario.setRol(convertirRol(dto.getRol()));
 
-        usuarioRepositorio.save(usuario);
 
-        return mapToResponse(usuario);
+        return mapToResponse(usuarioRepositorio.save(usuario));
     }
 
-
-    // =========================
-    // LISTAR POR FABRICA
-    // =========================
     @Override
     @Transactional(readOnly = true)
-    public List<UsuarioResponseDTO> listarPorFabrica(Long fabricaId) {
-
-        return usuarioRepositorio.findBySucursalFabricaId(fabricaId)
+    public List<UsuarioResponseDTO> listar() {
+        return usuarioRepositorio.findAll()
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
     }
 
-    // =========================
-    // LISTAR POR SUCURSAL
-    // =========================
     @Override
     @Transactional(readOnly = true)
-    public List<UsuarioResponseDTO> listarPorSucursal(Long sucursalId) {
-
-        return usuarioRepositorio.findBySucursalId(sucursalId)
-                .stream()
+    public UsuarioResponseDTO obtenerPorId(Long usuarioId) {
+        return usuarioRepositorio.findById(usuarioId)
                 .map(this::mapToResponse)
-                .toList();
+                .orElseThrow(() -> new RuntimeException("No existe el usuario"));
     }
 
-    // =========================
-    // OBTENER POR ID + FABRICA (BLINDADO)
-    // =========================
     @Override
-    @Transactional(readOnly = true)
-    public UsuarioResponseDTO obtenerPorId(Long usuarioId, Long fabricaId) {
-
+    public UsuarioResponseDTO editar(Long usuarioId, UsuarioEditarDTO dto) {
         Usuario usuario = usuarioRepositorio.findById(usuarioId)
-                .filter(u ->
-                        u.getSucursal()
-                                .getFabrica()
-                                .getId()
-                                .equals(fabricaId)
-                )
-                .orElseThrow(() ->
-                        new RuntimeException("El usuario no pertenece a esta fábrica")
-                );
+                .orElseThrow(() -> new RuntimeException("No existe el usuario"));
 
-        return mapToResponse(usuario);
-    }
-
-
-    @Override
-    public UsuarioResponseDTO editar(
-            Long usuarioId,
-            Long fabricaId,
-            UsuarioEditarDTO dto) {
-
-        Usuario usuario = usuarioRepositorio.findById(usuarioId)
-                .filter(u ->
-                        u.getSucursal()
-                                .getFabrica()
-                                .getId()
-                                .equals(fabricaId)
-                )
-                .orElseThrow(() ->
-                        new RuntimeException("No puedes modificar este usuario")
-                );
-
-        // Actualizar solo los campos permitidos
         usuario.setNombre(dto.getNombre());
-        usuario.setPassword(dto.getPassword()); // 🔐 luego se encripta
+        usuario.setPassword(dto.getPassword());
+        usuario.setRol(convertirRol(dto.getRol()));
 
         return mapToResponse(usuario);
     }
 
-
     @Override
-    public void eliminar(Long usuarioId, Long fabricaId) {
-
+    public void eliminar(Long usuarioId) {
         Usuario usuario = usuarioRepositorio.findById(usuarioId)
-                .filter(u ->
-                        u.getSucursal()
-                                .getFabrica()
-                                .getId()
-                                .equals(fabricaId)
-                )
-                .orElseThrow(() ->
-                        new RuntimeException("No puedes eliminar este usuario")
-                );
+                .orElseThrow(() -> new RuntimeException("No existe el usuario"));
 
         usuarioRepositorio.delete(usuario);
     }
 
 
-    // =========================
-    // MAPPER A RESPONSE DTO
-    // =========================
-    private UsuarioResponseDTO mapToResponse(Usuario usuario) {
+    private RolEnum convertirRol(String rol) {
+        try {
+            return RolEnum.valueOf(rol);
+        } catch (IllegalArgumentException | NullPointerException e) {
+            throw new RuntimeException("Rol invalido");
+        }
+    }
 
+
+    private UsuarioResponseDTO mapToResponse(Usuario usuario) {
         UsuarioResponseDTO dto = new UsuarioResponseDTO();
 
         dto.setId(usuario.getId());
         dto.setNombre(usuario.getNombre());
         dto.setUsername(usuario.getUsername());
-
-        // Rol desde enum
         dto.setRol(usuario.getRol().name());
-
-        dto.setSucursalId(usuario.getSucursal().getId());
-        dto.setNombreSucursal(usuario.getSucursal().getNombre());
-
-        dto.setFabricaId(usuario.getSucursal().getFabrica().getId());
-        dto.setNombreFabrica(usuario.getSucursal().getFabrica().getNombre());
 
         return dto;
     }
-
-
 }

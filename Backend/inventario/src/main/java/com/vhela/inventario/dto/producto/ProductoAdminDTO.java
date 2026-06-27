@@ -1,4 +1,4 @@
-package com.example.vhelasoft.dto.producto;
+package com.vhela.inventario.dto.producto;
 
 import lombok.Data;
 
@@ -13,7 +13,9 @@ public class ProductoAdminDTO {
     private String talla;
     private String color;
     private String genero;
+
     private Long costoProduccionUnitario;
+
     private Long precioVenta;
     private Integer stockTotal;
 

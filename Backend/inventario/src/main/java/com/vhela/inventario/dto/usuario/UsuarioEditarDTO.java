@@ -1,4 +1,4 @@
-package com.example.vhelasoft.dto.usuario;
+package com.vhela.inventario.dto.usuario;
 
 import lombok.Data;
 
@@ -7,5 +7,7 @@ public class UsuarioEditarDTO {
     
     private String nombre;
     private String password;
+    private String rol;
+
 
 }

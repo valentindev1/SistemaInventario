@@ -1,12 +1,11 @@
-package com.example.vhelasoft.modelo.usuario;
+package com.vhela.inventario.modelo.usuario;
 
-import com.example.vhelasoft.modelo.sucursal.Sucursal;
+
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
-
 
 @Entity
 @Getter
@@ -33,18 +32,9 @@ public class Usuario {
     private RolEnum rol;
 
 
-    /**
-     * Cada usuario pertenece a UNA sucursal
-     */
-
-
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "sucursal_id", nullable = false)
-    private Sucursal sucursal;
-
-
     @Column(name = "fecha_creacion", nullable = false, updatable = false)
     private LocalDateTime fechaCreacion;
+
 
     @PrePersist
     protected void onCreate() {

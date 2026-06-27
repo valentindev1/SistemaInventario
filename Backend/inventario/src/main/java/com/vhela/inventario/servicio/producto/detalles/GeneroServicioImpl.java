@@ -1,4 +1,4 @@
-package com.vhela.inventario.servicio.producto;
+package com.vhela.inventario.servicio.producto.detalles;
 
 public class GeneroServicioImpl {
 }

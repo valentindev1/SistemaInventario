@@ -1,4 +1,4 @@
-package com.example.vhelasoft.dto.producto;
+package com.vhela.inventario.dto.producto;
 
 import lombok.Data;
 

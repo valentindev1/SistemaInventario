@@ -1,4 +1,4 @@
-package com.example.vhelasoft.dto.usuario;
+package com.vhela.inventario.dto.usuario;
 
 import lombok.Data;
 
@@ -9,14 +9,5 @@ public class UsuarioCrearDTO {
     private String username;
     private String password;
     private String rol;
-
-
-    /**
-     * El frontend SOLO envía la sucursal,
-     * la fábrica se hereda automáticamente
-     */
-
-
-    private Long sucursalId;
 
 }

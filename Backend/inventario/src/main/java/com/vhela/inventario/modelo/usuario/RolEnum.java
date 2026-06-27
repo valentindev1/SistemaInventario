@@ -1,4 +1,4 @@
-package com.example.vhelasoft.modelo.usuario;
+package com.vhela.inventario.modelo.usuario;
 
 public enum RolEnum {
 

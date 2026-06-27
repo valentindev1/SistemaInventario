@@ -1,4 +1,4 @@
-package com.vhela.inventario.repositorio;
+package com.vhela.inventario.repositorio.producto;
 
 public interface ProductoRepositorio {
 }

@@ -1,4 +1,4 @@
 package com.vhela.inventario.servicio.producto.detalles;
 
-public class ColorServicio {
+public interface ColorServicio {
 }
