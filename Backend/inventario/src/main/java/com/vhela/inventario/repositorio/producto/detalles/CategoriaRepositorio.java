@@ -1,4 +1,12 @@
 package com.vhela.inventario.repositorio.producto.detalles;
 
-public interface CategoriaRepositorio {
+import java.util.Optional;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.vhela.inventario.modelo.producto.detalles.Categoria;
+
+public interface CategoriaRepositorio extends JpaRepository<Categoria, Long> {
+
+    Optional<Categoria> findByNombre(String nombre);
 }

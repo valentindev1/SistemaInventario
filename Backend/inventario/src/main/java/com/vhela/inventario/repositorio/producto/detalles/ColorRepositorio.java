@@ -1,15 +1,12 @@
 package com.vhela.inventario.repositorio.producto.detalles;
 
-import com.vhela.inventario.modelo.producto.detalles.Color;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
-
 import java.util.Optional;
 
+import org.springframework.data.jpa.repository.JpaRepository;
 
-@Repository
-public interface ColorRepositorio extends JpaRepository<Color, Integer> {
+import com.vhela.inventario.modelo.producto.detalles.Color;
 
-    Optional<Color> findByColor(String color);
+public interface ColorRepositorio extends JpaRepository<Color, Long> {
 
+    Optional<Color> findByNombre(String nombre);
 }
