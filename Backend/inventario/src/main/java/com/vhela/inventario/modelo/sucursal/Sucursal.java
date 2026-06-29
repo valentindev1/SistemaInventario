@@ -29,6 +29,8 @@ import lombok.Setter;
 @Table(name = "sucursales")
 public class Sucursal {
 
+    // atributos basicos
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -36,15 +38,18 @@ public class Sucursal {
     @Column(nullable = false, length = 150)
     private String nombre;
 
-    @Column(length = 200)
+    @Column(nullable = false, length = 200)
+    private String ciudad;
+
+    @Column(nullable = false, length = 200)
     private String direccion;
 
     @Column(length = 30)
     private String telefono;
 
 
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime fechaCreacion;
+
+    // relaciones de la entidad
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "empresa_id", nullable = false)
@@ -52,6 +57,13 @@ public class Sucursal {
 
     @OneToMany(mappedBy = "sucursal")
     private List<Usuario> usuarios = new ArrayList<>();
+
+
+
+    // fecha
+
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime fechaCreacion;
 
     @PrePersist
     public void prePersist() {

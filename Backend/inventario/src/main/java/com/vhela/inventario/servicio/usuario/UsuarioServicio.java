@@ -1,28 +1,28 @@
 package com.vhela.inventario.servicio.usuario;
 
 
-
 import com.vhela.inventario.dto.usuario.UsuarioCrearDTO;
 import com.vhela.inventario.dto.usuario.UsuarioEditarDTO;
-import com.vhela.inventario.dto.usuario.UsuarioResponseDTO;
+import com.vhela.inventario.dto.usuario.UsuarioObtenerDTO;
 
 import java.util.List;
 
-
 public interface UsuarioServicio {
 
+    UsuarioObtenerDTO crear(Long usuarioId, UsuarioCrearDTO dto);
 
-    UsuarioResponseDTO crear(UsuarioCrearDTO dto);
+    List<UsuarioObtenerDTO> listar(Long usuarioId);
 
-    List<UsuarioResponseDTO> listar();
+    UsuarioObtenerDTO obtenerPorId(Long usuarioId, Long id);
 
+    UsuarioObtenerDTO editar(Long usuarioId, Long id, UsuarioEditarDTO dto);
 
-    UsuarioResponseDTO obtenerPorId(Long usuarioId);
+    void eliminar(Long usuarioId, Long id);
 
-    UsuarioResponseDTO editar(Long usuarioId, UsuarioEditarDTO dto);
+    // ✅ NUEVOS
+    List<UsuarioObtenerDTO> listarPorSucursal(Long usuarioId, Long sucursalId);
 
+    List<UsuarioObtenerDTO> listarPorEmpresa(Long usuarioId);
 
-    void eliminar(Long usuarioId);
-
-
+    List<UsuarioObtenerDTO> listarTodos(Long usuarioId);
 }

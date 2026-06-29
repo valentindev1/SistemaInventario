@@ -27,6 +27,8 @@ import lombok.Setter;
 @Table(name = "usuarios")
 public class Usuario {
 
+
+    // atributos basicos
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -44,8 +46,10 @@ public class Usuario {
     @Column(nullable = false)
     private RolEnum rol;
 
-    @Column(name = "fecha_creacion", nullable = false, updatable = false)
-    private LocalDateTime fechaCreacion;
+
+
+    // relaciones de la entidad
+
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "empresa_id")
@@ -54,6 +58,13 @@ public class Usuario {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sucursal_id")
     private Sucursal sucursal;
+
+
+
+
+    // fecha
+    @Column(name = "fecha_creacion", nullable = false, updatable = false)
+    private LocalDateTime fechaCreacion;
 
     @PrePersist
     protected void onCreate() {

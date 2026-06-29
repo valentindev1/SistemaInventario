@@ -24,27 +24,30 @@ import lombok.Setter;
 @Table(name = "empresas")
 public class Empresa {
 
+
+    //informacion basica
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 150)
+    @Column(nullable = false, length = 150, unique = true)
     private String nombre;
 
     @Column(unique = true, length = 50)
     private String nit;
 
-    @Column(length = 120)
+    @Column(unique = true, length = 120)
     private String correo;
 
-    @Column(length = 30)
+    @Column(unique = true, length = 30)
     private String telefono;
 
-    @Column(length = 200)
+    @Column(unique = true, length = 200)
     private String direccion;
 
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime fechaCreacion;
+
+    //relaciones
 
     @OneToMany(mappedBy = "empresa")
     private List<Sucursal> sucursales = new ArrayList<>();
@@ -52,8 +55,17 @@ public class Empresa {
     @OneToMany(mappedBy = "empresa")
     private List<Usuario> usuarios = new ArrayList<>();
 
+
+
+    //fecha
+
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime fechaCreacion;
+
     @PrePersist
     public void prePersist() {
         this.fechaCreacion = LocalDateTime.now();
     }
+
+
 }
