@@ -18,6 +18,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import jakarta.validation.constraints.DecimalMin;
@@ -27,11 +28,15 @@ import lombok.Setter;
 @Entity
 @Getter
 @Setter
-@Table(name = "productos", uniqueConstraints = @UniqueConstraint(name = "uk_producto_empresa_codigo", columnNames = {
-        "empresa_id", "codigo" }))
+@Table(
+        name = "productos",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_producto_empresa_codigo",
+                columnNames = {"empresa_id", "codigo"}
+        )
+)
 public class Producto {
 
-    // atributos base
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -49,8 +54,6 @@ public class Producto {
     @JoinColumn(name = "empresa_id", nullable = false)
     private Empresa empresa;
 
-
-    // atributos de detalle
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "color_id", nullable = false)
     private Color color;
@@ -67,7 +70,7 @@ public class Producto {
     @JoinColumn(name = "genero_id", nullable = false)
     private Genero genero;
 
-    // atributos de venta
+
 
     @DecimalMin(value = "0.00")
     @Column(nullable = false, precision = 12, scale = 2)
@@ -79,11 +82,32 @@ public class Producto {
 
 
 
+    @Column(nullable = false)
+    private Boolean activo = true;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime fechaCreacion;
 
+    @Column(nullable = false)
+    private LocalDateTime fechaActualizacion;
+
     @PrePersist
     protected void onCreate() {
-        this.fechaCreacion = LocalDateTime.now();
+        LocalDateTime ahora = LocalDateTime.now();
+        this.fechaCreacion = ahora;
+        this.fechaActualizacion = ahora;
+
+        if (this.activo == null) {
+            this.activo = true;
+        }
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.fechaActualizacion = LocalDateTime.now();
+
+        if (this.activo == null) {
+            this.activo = true;
+        }
     }
 }

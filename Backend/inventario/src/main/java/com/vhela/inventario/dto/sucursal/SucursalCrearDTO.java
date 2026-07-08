@@ -24,8 +24,6 @@ public class SucursalCrearDTO {
     @Size(max = 30)
     private String telefono;
 
-    // CLAVE: referencia a empresa
-    @NotBlank(message = "El nit de la empresa es obligatorio")
     private String empresaNit;
 
 

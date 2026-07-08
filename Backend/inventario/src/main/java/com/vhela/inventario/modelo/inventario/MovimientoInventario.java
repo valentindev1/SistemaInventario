@@ -4,26 +4,28 @@ package com.vhela.inventario.modelo.inventario;
 import com.vhela.inventario.modelo.inventario.enums.TipoMovimiento;
 import com.vhela.inventario.modelo.producto.Producto;
 import com.vhela.inventario.modelo.sucursal.Sucursal;
+import com.vhela.inventario.modelo.usuario.Usuario;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+
 @Entity
-@Table(name = "movimientos_inventario")
 @Getter
 @Setter
-
+@Table(name = "movimientos_inventario")
 public class MovimientoInventario {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-
-    // atributos basicos
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private TipoMovimiento tipo; // ENTRADA o SALIDA
-
+    @Column(nullable = false, length = 40)
+    private TipoMovimiento tipo;
 
     @Column(nullable = false)
     private Integer cantidad;
@@ -34,22 +36,17 @@ public class MovimientoInventario {
     @Column(nullable = false)
     private Integer stockDespues;
 
-    @Column(nullable = false)
-    private String motivo; // "VENTA", "COMPRA", "AJUSTE", etc.
+    @Column(nullable = false, precision = 12, scale = 2)
+    private BigDecimal costoUnitarioMomento;
+
+    @Column(nullable = false, precision = 12, scale = 2)
+    private BigDecimal precioVentaMomento;
+
+    @Column(length = 300)
+    private String motivo;
 
     private Long referenciaId;
-    // ID de la venta, compra, etc (para trazabilidad cruzada)
 
-
-
-    // atributos basicos
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-
-
-    // relaciones de la entidad
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "producto_id", nullable = false)
     private Producto producto;
@@ -58,14 +55,9 @@ public class MovimientoInventario {
     @JoinColumn(name = "sucursal_id", nullable = false)
     private Sucursal sucursal;
 
-
-
-
-
-
-
-
-    // fecha
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "usuario_id", nullable = false)
+    private Usuario usuario;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime fecha;
@@ -74,5 +66,5 @@ public class MovimientoInventario {
     public void prePersist() {
         this.fecha = LocalDateTime.now();
     }
-
 }
+

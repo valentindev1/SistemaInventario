@@ -16,4 +16,8 @@ public interface UsuarioRepositorio extends JpaRepository<Usuario, Long> {
 
     // Usuarios por empresa (a través de sucursal)
     List<Usuario> findBySucursalEmpresaId(Long empresaId);
+
+    List<Usuario> findByEmpresaId(Long empresaId);
+
+    boolean existsById(Long usuarioId);
 }

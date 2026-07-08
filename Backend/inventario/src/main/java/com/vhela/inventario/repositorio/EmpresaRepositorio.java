@@ -1,25 +1,17 @@
 package com.vhela.inventario.repositorio;
 
-import java.util.Optional;
-
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
+import com.vhela.inventario.modelo.empresa.Empresa;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.vhela.inventario.modelo.empresa.Empresa;
+import java.util.Optional;
 
+public interface EmpresaRepositorio extends JpaRepository<Empresa, Long> {
 
-public interface EmpresaRepositorio extends JpaRepository<Empresa, Long>{
-
-    
     Optional<Empresa> findByNit(String nit);
-
 
     Optional<Empresa> findByNombre(String nombre);
 
-
-    boolean existsByNit(Long nit);
-
+    boolean existsByNit(String nit);
 
     void deleteByNit(String nit);
 }

@@ -1,7 +1,11 @@
 package com.vhela.inventario.controlador;
 
+import java.time.LocalDate;
 import java.util.List;
+
+import com.vhela.inventario.dto.empresa.DashboardEmpresaDTO;
 import com.vhela.inventario.servicio.empresa.EmpresaServicio;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -67,5 +71,28 @@ public class EmpresaControlador {
         empresaServicio.eliminarPorId(usuarioId, id);
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/{empresaId}/dashboard")
+    public ResponseEntity<DashboardEmpresaDTO> obtenerDashboardEmpresa(
+            @RequestParam Long usuarioId,
+            @PathVariable Long empresaId,
+            @RequestParam
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate fechaInicio,
+            @RequestParam
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate fechaFin
+    ) {
+        return ResponseEntity.ok(
+                empresaServicio.obtenerDashboardEmpresa(
+                        usuarioId,
+                        empresaId,
+                        fechaInicio,
+                        fechaFin
+                )
+        );
+    }
+
+
 
 }

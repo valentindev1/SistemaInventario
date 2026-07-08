@@ -1,9 +1,11 @@
 package com.vhela.inventario.servicio.empresa;
 
+import com.vhela.inventario.dto.empresa.DashboardEmpresaDTO;
 import com.vhela.inventario.dto.empresa.EmpresaCrearDTO;
 import com.vhela.inventario.dto.empresa.EmpresaEditarDTO;
 import com.vhela.inventario.dto.empresa.EmpresaObtenerDTO;
 
+import java.time.LocalDate;
 import java.util.List;
 
 
@@ -20,6 +22,11 @@ public interface EmpresaServicio {
     EmpresaObtenerDTO editar(Long usuarioId, Long idEmpresa, EmpresaEditarDTO dto);
 
     void eliminarPorId(Long usuarioId, Long idEmpresa);
-
+    DashboardEmpresaDTO obtenerDashboardEmpresa(
+            Long usuarioId,
+            Long empresaId,
+            LocalDate fechaInicio,
+            LocalDate fechaFin
+    );
     void eliminarPorNit(Long usuarioId, String nitEmpresa);
 }

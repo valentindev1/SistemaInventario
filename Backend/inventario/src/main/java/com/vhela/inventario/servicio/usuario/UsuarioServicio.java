@@ -25,4 +25,10 @@ public interface UsuarioServicio {
     List<UsuarioObtenerDTO> listarPorEmpresa(Long usuarioId);
 
     List<UsuarioObtenerDTO> listarTodos(Long usuarioId);
+
+
+    List<UsuarioObtenerDTO> listarPorEmpresaSeleccionada(Long usuarioId, Long empresaId);
+
+    boolean empresaTieneUsuarios(Long usuarioId, Long empresaId);
+
 }

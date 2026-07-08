@@ -9,9 +9,18 @@ import com.vhela.inventario.modelo.inventario.InventarioSucursal;
 
 public interface InventarioSucursalRepositorio extends JpaRepository<InventarioSucursal, Long> {
 
+
+    Optional<InventarioSucursal> findBySucursalIdAndProductoId(
+            Long sucursalId,
+            Long productoId
+    );
+
     List<InventarioSucursal> findBySucursalId(Long sucursalId);
 
     List<InventarioSucursal> findByProductoId(Long productoId);
 
-    Optional<InventarioSucursal> findBySucursalIdAndProductoId(Long sucursalId, Long productoId);
+    List<InventarioSucursal> findBySucursal_Empresa_Id(Long empresaId);
+
+    boolean existsByProductoId(Long productoId);
+
 }

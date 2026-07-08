@@ -2,7 +2,19 @@ package com.vhela.inventario.modelo.inventario.enums;
 
 public enum TipoMovimiento {
 
-    ENTRADA,
-    SALIDA
+
+
+    INGRESO_MERCANCIA,
+
+    AJUSTE_POSITIVO,
+
+    AJUSTE_NEGATIVO,
+
+    VENTA,
+
+    DEVOLUCION,
+
+    CANCELACION_FACTURA
+
 
 }

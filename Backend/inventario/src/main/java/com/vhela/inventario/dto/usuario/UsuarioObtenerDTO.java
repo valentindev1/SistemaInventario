@@ -17,4 +17,8 @@ public class UsuarioObtenerDTO {
 
     private Long sucursalId;
     private String sucursalNombre;
+
+    private Boolean puedeModificar;
+
+    private String motivoBloqueo;
 }

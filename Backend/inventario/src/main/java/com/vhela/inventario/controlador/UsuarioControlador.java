@@ -1,6 +1,5 @@
 package com.vhela.inventario.controlador;
 
-
 import com.vhela.inventario.dto.usuario.UsuarioCrearDTO;
 import com.vhela.inventario.dto.usuario.UsuarioEditarDTO;
 import com.vhela.inventario.dto.usuario.UsuarioObtenerDTO;
@@ -22,17 +21,22 @@ public class UsuarioControlador {
 
     private final UsuarioServicio usuarioServicio;
 
-    // ✅ CREAR
+    // ======================================================
+    // CRUD USUARIOS
+    // ======================================================
+
+    // CREAR USUARIO
     @PostMapping
     public ResponseEntity<UsuarioObtenerDTO> crear(
             @RequestParam Long usuarioId,
             @Valid @RequestBody UsuarioCrearDTO dto) {
 
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(usuarioServicio.crear(usuarioId, dto));
+        UsuarioObtenerDTO response = usuarioServicio.crear(usuarioId, dto);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    // ✅ LISTAR GENERAL (según rol)
+    // LISTAR GENERAL SEGÚN ROL
     @GetMapping
     public ResponseEntity<List<UsuarioObtenerDTO>> listar(
             @RequestParam Long usuarioId) {
@@ -42,7 +46,17 @@ public class UsuarioControlador {
         );
     }
 
-    // ✅ OBTENER POR ID
+    // LISTAR TODOS CONTROLADO POR ROL
+    @GetMapping("/todos")
+    public ResponseEntity<List<UsuarioObtenerDTO>> listarTodos(
+            @RequestParam Long usuarioId) {
+
+        return ResponseEntity.ok(
+                usuarioServicio.listarTodos(usuarioId)
+        );
+    }
+
+    // OBTENER USUARIO POR ID
     @GetMapping("/{id}")
     public ResponseEntity<UsuarioObtenerDTO> obtenerPorId(
             @RequestParam Long usuarioId,
@@ -53,7 +67,7 @@ public class UsuarioControlador {
         );
     }
 
-    // ✅ EDITAR
+    // EDITAR USUARIO
     @PutMapping("/{id}")
     public ResponseEntity<UsuarioObtenerDTO> editar(
             @RequestParam Long usuarioId,
@@ -65,19 +79,24 @@ public class UsuarioControlador {
         );
     }
 
-    // ✅ ELIMINAR
+    // ELIMINAR USUARIO
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminar(
             @RequestParam Long usuarioId,
             @PathVariable Long id) {
 
         usuarioServicio.eliminar(usuarioId, id);
+
         return ResponseEntity.noContent().build();
     }
 
-    // ✅ LISTAR USUARIOS DE LA EMPRESA
+    // ======================================================
+    // CONSULTAS POR EMPRESA
+    // ======================================================
+
+    // LISTAR USUARIOS DE LA EMPRESA DEL USUARIO SOLICITANTE
     @GetMapping("/empresa")
-    public ResponseEntity<List<UsuarioObtenerDTO>> listarPorEmpresa(
+    public ResponseEntity<List<UsuarioObtenerDTO>> listarPorEmpresaDelSolicitante(
             @RequestParam Long usuarioId) {
 
         return ResponseEntity.ok(
@@ -85,7 +104,33 @@ public class UsuarioControlador {
         );
     }
 
-    // ✅ LISTAR USUARIOS DE UNA SUCURSAL
+    // LISTAR USUARIOS DE UNA EMPRESA ESPECÍFICA
+    @GetMapping("/empresa/{empresaId}")
+    public ResponseEntity<List<UsuarioObtenerDTO>> listarPorEmpresaSeleccionada(
+            @RequestParam Long usuarioId,
+            @PathVariable Long empresaId) {
+
+        return ResponseEntity.ok(
+                usuarioServicio.listarPorEmpresaSeleccionada(usuarioId, empresaId)
+        );
+    }
+
+    // VALIDAR SI UNA EMPRESA YA TIENE USUARIOS
+    @GetMapping("/empresa/{empresaId}/tiene-usuarios")
+    public ResponseEntity<Boolean> empresaTieneUsuarios(
+            @RequestParam Long usuarioId,
+            @PathVariable Long empresaId) {
+
+        return ResponseEntity.ok(
+                usuarioServicio.empresaTieneUsuarios(usuarioId, empresaId)
+        );
+    }
+
+    // ======================================================
+    // CONSULTAS POR SUCURSAL
+    // ======================================================
+
+    // LISTAR USUARIOS DE UNA SUCURSAL
     @GetMapping("/sucursal/{sucursalId}")
     public ResponseEntity<List<UsuarioObtenerDTO>> listarPorSucursal(
             @RequestParam Long usuarioId,
@@ -93,16 +138,6 @@ public class UsuarioControlador {
 
         return ResponseEntity.ok(
                 usuarioServicio.listarPorSucursal(usuarioId, sucursalId)
-        );
-    }
-
-    // ✅ LISTAR TODOS (CONTROLADO POR ROL)
-    @GetMapping("/todos")
-    public ResponseEntity<List<UsuarioObtenerDTO>> listarTodos(
-            @RequestParam Long usuarioId) {
-
-        return ResponseEntity.ok(
-                usuarioServicio.listarTodos(usuarioId)
         );
     }
 }
