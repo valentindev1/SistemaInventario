@@ -1,0 +1,111 @@
+<div class="dashboard-layout">
+
+  <!-- Sidebar -->
+  <aside
+    class="sidebar bg-dark text-white"
+    [class.sidebar-collapsed]="sidebarCollapsed"
+    [class.sidebar-mobile-open]="sidebarMobileOpen"
+    (mouseenter)="abrirSidebarTemporal()"
+    (mouseleave)="cerrarSidebarTemporal()">
+
+    <div class="d-flex align-items-center gap-2 mb-4 sidebar-brand">
+
+      <div class="brand-icon bg-primary text-white rounded d-flex align-items-center justify-content-center">
+        <i class="bi bi-shield-lock"></i>
+      </div>
+
+      <div class="brand-text">
+        <h5 class="mb-0 fw-bold">SUPER ADMIN</h5>
+        <small class="text-secondary">Panel principal</small>
+      </div>
+
+      <button
+        type="button"
+        class="btn btn-sm btn-outline-light ms-auto sidebar-toggle d-none d-lg-inline-flex"
+        (click)="toggleSidebar()">
+        <i
+          class="bi"
+          [class.bi-chevron-left]="!sidebarCollapsed"
+          [class.bi-chevron-right]="sidebarCollapsed">
+        </i>
+      </button>
+
+    </div>
+
+    <ul class="nav flex-column gap-2">
+
+      <li class="nav-item">
+        <a
+          routerLink="/super-admin/dashboard"
+          routerLinkActive="active"
+          class="nav-link sidebar-link text-white"
+          title="Dashboard"
+          (click)="cerrarSidebarMobile()">
+
+          <i class="bi bi-speedometer2 sidebar-icon"></i>
+
+          <span class="sidebar-text">
+            Dashboard
+          </span>
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a
+          routerLink="/super-admin/empresas"
+          routerLinkActive="active"
+          class="nav-link sidebar-link text-white"
+          title="Empresas"
+          (click)="cerrarSidebarMobile()">
+
+          <i class="bi bi-building sidebar-icon"></i>
+
+          <span class="sidebar-text">
+            Empresas
+          </span>
+        </a>
+      </li>
+
+    </ul>
+
+  </aside>
+
+  @if (sidebarMobileOpen) {
+    <div
+      class="sidebar-backdrop d-lg-none"
+      (click)="cerrarSidebarMobile()">
+    </div>
+  }
+
+  <!-- Contenido -->
+  <main
+    class="main-content bg-light"
+    [class.main-collapsed]="sidebarCollapsed"
+    [class.main-expanded]="!sidebarCollapsed">
+
+    <nav class="navbar navbar-light bg-white border-bottom px-3 px-md-4">
+
+      <div class="d-flex align-items-center gap-2">
+
+        <button
+          type="button"
+          class="btn btn-outline-secondary d-lg-none"
+          (click)="toggleSidebar()">
+          <i class="bi bi-list"></i>
+        </button>
+
+        <span class="navbar-brand mb-0 h5">
+          Panel de administración
+        </span>
+
+      </div>
+
+    </nav>
+
+    <section class="p-3 p-md-4">
+      <router-outlet></router-outlet>
+    </section>
+
+  </main>
+
+</div>

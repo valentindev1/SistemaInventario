@@ -1,0 +1,143 @@
+<div class="container-fluid">
+
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="fw-bold mb-1">Crear empresa</h2>
+      <p class="text-muted mb-0">
+        Registra una nueva empresa dentro del sistema.
+      </p>
+    </div>
+
+    <a routerLink="/super-admin/empresas" class="btn btn-outline-secondary">
+      <i class="bi bi-arrow-left me-1"></i>
+      Volver
+    </a>
+  </div>
+
+  <div class="card border-0 shadow-sm">
+    <div class="card-body p-4">
+
+      <form [formGroup]="formularioEmpresa" (ngSubmit)="crearEmpresa()">
+
+        <div class="row g-3">
+
+          <!-- Nombre -->
+          <div class="col-md-6">
+            <label class="form-label">Nombre de la empresa</label>
+            <input
+              type="text"
+              class="form-control"
+              formControlName="nombre"
+              placeholder="Ej: Vhela S.A.S"
+              [class.is-invalid]="campoInvalido('nombre')"
+            >
+
+            <div class="invalid-feedback">
+              El nombre es obligatorio y no puede superar 150 caracteres.
+            </div>
+          </div>
+
+          <!-- NIT -->
+          <div class="col-md-6">
+            <label class="form-label">NIT</label>
+            <input
+              type="text"
+              class="form-control"
+              formControlName="nit"
+              placeholder="Ej: 901234567"
+              [class.is-invalid]="campoInvalido('nit')"
+            >
+
+            <div class="invalid-feedback">
+              El NIT es obligatorio y no puede superar 50 caracteres.
+            </div>
+          </div>
+
+          <!-- Correo -->
+          <div class="col-md-6">
+            <label class="form-label">Correo</label>
+            <input
+              type="email"
+              class="form-control"
+              formControlName="correo"
+              placeholder="Ej: empresa@correo.com"
+              [class.is-invalid]="campoInvalido('correo')"
+            >
+
+            <div class="invalid-feedback">
+              Ingresa un correo válido.
+            </div>
+          </div>
+
+          <!-- Teléfono -->
+          <div class="col-md-6">
+            <label class="form-label">Teléfono</label>
+            <input
+              type="text"
+              class="form-control"
+              formControlName="telefono"
+              placeholder="Ej: 3001234567"
+              [class.is-invalid]="campoInvalido('telefono')"
+            >
+
+            <div class="invalid-feedback">
+              El teléfono es obligatorio y no puede superar 30 caracteres.
+            </div>
+          </div>
+
+          <!-- Dirección -->
+          <div class="col-12">
+            <label class="form-label">Dirección</label>
+            <input
+              type="text"
+              class="form-control"
+              formControlName="direccion"
+              placeholder="Ej: Calle 10 # 20 - 30"
+              [class.is-invalid]="campoInvalido('direccion')"
+            >
+
+            <div class="invalid-feedback">
+              La dirección es obligatoria y no puede superar 200 caracteres.
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Mensajes -->
+        <div *ngIf="mensajeExito" class="alert alert-success mt-4 mb-0">
+          <i class="bi bi-check-circle me-1"></i>
+          {{ mensajeExito }}
+        </div>
+
+        <div *ngIf="mensajeError" class="alert alert-danger mt-4 mb-0">
+          <i class="bi bi-exclamation-triangle me-1"></i>
+          {{ mensajeError }}
+        </div>
+
+        <!-- Acciones -->
+        <div class="d-flex justify-content-end gap-2 mt-4">
+          <a routerLink="/super-admin/empresas" class="btn btn-light">
+            Cancelar
+          </a>
+
+          <button
+            type="submit"
+            class="btn btn-primary"
+            [disabled]="cargando"
+          >
+            <span
+              *ngIf="cargando"
+              class="spinner-border spinner-border-sm me-2"
+            ></span>
+
+            <i *ngIf="!cargando" class="bi bi-save me-1"></i>
+            Crear empresa
+          </button>
+        </div>
+
+      </form>
+
+    </div>
+  </div>
+
+</div>

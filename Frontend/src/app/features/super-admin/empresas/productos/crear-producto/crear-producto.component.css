@@ -1,0 +1,21 @@
+.card {
+  border-radius: 16px;
+}
+
+.form-control,
+.form-select {
+  min-height: 44px;
+}
+
+.btn {
+  min-height: 42px;
+}
+.info-box {
+  margin-top: 16px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 14px;
+  border: 1px solid #bfdbfe;
+}

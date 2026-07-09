@@ -6,12 +6,10 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
+import com.vhela.inventario.dto.producto.producto.ProductoRankingVentasDTO;
+import com.vhela.inventario.dto.producto.producto.RankingProductosVentasDTO;
 import com.vhela.inventario.dto.venta.*;
 
 import com.vhela.inventario.modelo.cliente.Cliente;
@@ -1371,6 +1369,189 @@ public class VentaServicioImpl implements VentaServicio {
 
         return dto;
     }
+
+
+    @Override
+    @Transactional(readOnly = true)
+    public RankingProductosVentasDTO obtenerRankingProductosVentas(
+            Long usuarioId,
+            Long sucursalId,
+            LocalDate fechaInicio,
+            LocalDate fechaFin
+    ) {
+
+        Usuario usuario = obtenerUsuario(usuarioId);
+
+        Sucursal sucursal = obtenerSucursal(sucursalId);
+
+        validarAccesoConsultaVenta(usuario, sucursal);
+
+        if (fechaInicio == null || fechaFin == null) {
+            throw new RuntimeException("Debe seleccionar fecha inicial y fecha final");
+        }
+
+        if (fechaFin.isBefore(fechaInicio)) {
+            throw new RuntimeException("La fecha final no puede ser menor que la fecha inicial");
+        }
+
+        LocalDateTime inicio = fechaInicio.atStartOfDay();
+        LocalDateTime fin = fechaFin.plusDays(1).atStartOfDay().minusNanos(1);
+
+        List<Venta> ventas = facturaVentaRepositorio
+                .findBySucursalAndFechaVentaBetweenOrderByFechaVentaDesc(
+                        sucursal,
+                        inicio,
+                        fin
+                );
+
+        List<InventarioSucursal> inventarioSucursal =
+                inventarioSucursalRepositorio.findBySucursalId(sucursalId);
+
+        Map<Long, ProductoRankingVentasDTO> rankingPorProducto = new LinkedHashMap<>();
+
+        for (InventarioSucursal inventario : inventarioSucursal) {
+
+            if (inventario.getProducto() == null) {
+                continue;
+            }
+
+            Producto producto = inventario.getProducto();
+
+            ProductoRankingVentasDTO dto = new ProductoRankingVentasDTO();
+
+            dto.setProductoId(producto.getId());
+            dto.setCodigo(producto.getCodigo());
+            dto.setNombre(producto.getNombre());
+            dto.setStockActual(
+                    inventario.getStockActual() == null
+                            ? 0
+                            : inventario.getStockActual()
+            );
+            dto.setCantidadVendida(0);
+            dto.setCantidadDevuelta(0);
+            dto.setValorVendido(BigDecimal.ZERO);
+            dto.setUtilidadEstimada(BigDecimal.ZERO);
+
+            rankingPorProducto.put(producto.getId(), dto);
+        }
+
+        for (Venta venta : ventas) {
+
+            if (venta.getEstado() == EstadoFactura.CANCELADA) {
+                continue;
+            }
+
+            for (DetalleVenta detalle : venta.getDetalles()) {
+
+                Producto producto = detalle.getProducto();
+
+                if (producto == null) {
+                    continue;
+                }
+
+                ProductoRankingVentasDTO dto = rankingPorProducto.get(producto.getId());
+
+                if (dto == null) {
+                    dto = new ProductoRankingVentasDTO();
+
+                    dto.setProductoId(producto.getId());
+                    dto.setCodigo(producto.getCodigo());
+                    dto.setNombre(producto.getNombre());
+                    dto.setStockActual(0);
+                    dto.setCantidadVendida(0);
+                    dto.setCantidadDevuelta(0);
+                    dto.setValorVendido(BigDecimal.ZERO);
+                    dto.setUtilidadEstimada(BigDecimal.ZERO);
+
+                    rankingPorProducto.put(producto.getId(), dto);
+                }
+
+                int cantidadVendida = detalle.getCantidad() == null
+                        ? 0
+                        : detalle.getCantidad();
+
+                int cantidadDevuelta = detalle.getCantidadDevuelta() == null
+                        ? 0
+                        : detalle.getCantidadDevuelta();
+
+                int cantidadRealVendida = cantidadVendida - cantidadDevuelta;
+
+                if (cantidadRealVendida < 0) {
+                    cantidadRealVendida = 0;
+                }
+
+                BigDecimal precioUnitario = detalle.getPrecioUnitarioMomento() == null
+                        ? BigDecimal.ZERO
+                        : detalle.getPrecioUnitarioMomento();
+
+                BigDecimal costoUnitario = detalle.getCostoUnitarioMomento() == null
+                        ? BigDecimal.ZERO
+                        : detalle.getCostoUnitarioMomento();
+
+                BigDecimal valorVendido = precioUnitario.multiply(
+                        BigDecimal.valueOf(cantidadRealVendida)
+                );
+
+                BigDecimal utilidad = precioUnitario
+                        .subtract(costoUnitario)
+                        .multiply(BigDecimal.valueOf(cantidadRealVendida));
+
+                dto.setCantidadVendida(
+                        dto.getCantidadVendida() + cantidadRealVendida
+                );
+
+                dto.setCantidadDevuelta(
+                        dto.getCantidadDevuelta() + cantidadDevuelta
+                );
+
+                dto.setValorVendido(
+                        dto.getValorVendido().add(valorVendido)
+                );
+
+                dto.setUtilidadEstimada(
+                        dto.getUtilidadEstimada().add(utilidad)
+                );
+            }
+        }
+
+        List<ProductoRankingVentasDTO> productos = rankingPorProducto.values()
+                .stream()
+                .toList();
+
+        List<ProductoRankingVentasDTO> productosMasVendidos = productos.stream()
+                .sorted(
+                        Comparator.comparing(
+                                ProductoRankingVentasDTO::getCantidadVendida
+                        ).reversed()
+                )
+                .limit(3)
+                .toList();
+
+        List<ProductoRankingVentasDTO> productosMenosVendidos = productos.stream()
+                .sorted(
+                        Comparator.comparing(
+                                ProductoRankingVentasDTO::getCantidadVendida
+                        )
+                )
+                .limit(3)
+                .toList();
+
+        RankingProductosVentasDTO respuesta = new RankingProductosVentasDTO();
+
+        respuesta.setSucursalId(sucursal.getId());
+        respuesta.setSucursalNombre(sucursal.getNombre());
+        respuesta.setFechaInicio(fechaInicio);
+        respuesta.setFechaFin(fechaFin);
+        respuesta.setProductosMasVendidos(productosMasVendidos);
+        respuesta.setProductosMenosVendidos(productosMenosVendidos);
+
+        return respuesta;
+    }
+
+
+
+
+
 
 
 

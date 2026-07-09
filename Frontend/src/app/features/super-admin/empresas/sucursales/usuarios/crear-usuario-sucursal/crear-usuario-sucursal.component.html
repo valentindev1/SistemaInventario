@@ -1,0 +1,304 @@
+<div class="container-fluid">
+
+  <!-- Encabezado -->
+  <div class="d-flex flex-column flex-md-row justify-content-md-between align-items-md-center gap-3 mb-4">
+
+    <div>
+      <a
+        [routerLink]="['/super-admin/empresas', empresaId, 'sucursales', 'detalle', sucursalId]"
+        class="btn btn-link px-0 mb-2"
+      >
+        <i class="bi bi-arrow-left me-1"></i>
+        Volver a la sucursal
+      </a>
+
+      <h2 class="fw-bold mb-1">Gestión de empleados</h2>
+
+      <p class="text-muted mb-0">
+        Crea empleados para esta sucursal y visualiza los usuarios asociados.
+      </p>
+    </div>
+
+  </div>
+
+  <!-- Error local -->
+  <div *ngIf="mensajeError" class="alert alert-danger">
+    <i class="bi bi-exclamation-triangle me-1"></i>
+    {{ mensajeError }}
+  </div>
+
+  <!-- Cargando -->
+  <div *ngIf="cargandoEmpresa || cargandoSucursal" class="text-center p-4">
+    <div class="spinner-border text-primary"></div>
+    <p class="text-muted mt-2 mb-0">Cargando información...</p>
+  </div>
+
+  <!-- Contexto -->
+  <div
+    *ngIf="empresa && sucursal && !cargandoEmpresa && !cargandoSucursal"
+    class="card border-0 shadow-sm mb-4"
+  >
+    <div class="card-body p-4">
+
+      <h5 class="fw-bold mb-3">Contexto</h5>
+
+      <div class="row g-3">
+
+        <div class="col-12 col-md-6 col-xl-3">
+          <div class="text-muted small">Empresa</div>
+          <div class="fw-semibold">{{ empresa.nombre }}</div>
+        </div>
+
+        <div class="col-12 col-md-6 col-xl-3">
+          <div class="text-muted small">NIT</div>
+          <div class="fw-semibold">{{ empresa.nit }}</div>
+        </div>
+
+        <div class="col-12 col-md-6 col-xl-3">
+          <div class="text-muted small">Sucursal</div>
+          <div class="fw-semibold">{{ sucursal.nombre }}</div>
+        </div>
+
+        <div class="col-12 col-md-6 col-xl-3">
+          <div class="text-muted small">Ciudad</div>
+          <div class="fw-semibold">{{ sucursal.ciudad }}</div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Dos cajas -->
+  <div
+    *ngIf="empresa && sucursal && !cargandoEmpresa && !cargandoSucursal"
+    class="row g-4"
+  >
+
+    <!-- Caja izquierda: Formulario -->
+    <div class="col-12 col-xl-5">
+
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-header bg-white border-0 p-4">
+
+          <h5 class="fw-bold mb-1">
+            <i class="bi bi-person-plus me-1"></i>
+            Crear empleado
+          </h5>
+
+          <p class="text-muted mb-0 small">
+            Este formulario crea únicamente usuarios con rol EMPLEADO.
+          </p>
+
+        </div>
+
+        <div class="card-body p-4">
+
+          <form [formGroup]="formularioEmpleado" (ngSubmit)="crearEmpleado()">
+
+            <div class="mb-3">
+              <label class="form-label">Nombre del empleado</label>
+              <input
+                type="text"
+                class="form-control"
+                formControlName="nombre"
+                placeholder="Ej: Juan Pérez"
+                [class.is-invalid]="campoInvalido('nombre')"
+              >
+
+              <div class="invalid-feedback">
+                El nombre es obligatorio y no puede superar 150 caracteres.
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Username</label>
+              <input
+                type="text"
+                class="form-control"
+                formControlName="username"
+                placeholder="Ej: empleado_sucursal"
+                [class.is-invalid]="campoInvalido('username')"
+              >
+
+              <div class="invalid-feedback">
+                El username es obligatorio y no puede superar 100 caracteres.
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Contraseña</label>
+              <input
+                type="password"
+                class="form-control"
+                formControlName="password"
+                placeholder="Mínimo 6 caracteres"
+                [class.is-invalid]="campoInvalido('password')"
+              >
+
+              <div class="invalid-feedback">
+                La contraseña es obligatoria y debe tener mínimo 6 caracteres.
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Rol</label>
+              <input
+                type="text"
+                class="form-control"
+                value="EMPLEADO"
+                disabled
+              >
+            </div>
+
+            <div class="alert alert-info">
+              <i class="bi bi-info-circle me-1"></i>
+              El empleado quedará asociado directamente a la sucursal
+              <strong>{{ sucursal.nombre }}</strong>.
+            </div>
+
+            <div class="d-flex flex-column flex-md-row justify-content-md-end gap-2 mt-4">
+
+              <a
+                [routerLink]="['/super-admin/empresas', empresaId, 'sucursales', 'detalle', sucursalId]"
+                class="btn btn-light"
+              >
+                Cancelar
+              </a>
+
+              <button
+                type="submit"
+                class="btn btn-primary"
+                [disabled]="guardando"
+              >
+                <span
+                  *ngIf="guardando"
+                  class="spinner-border spinner-border-sm me-2"
+                ></span>
+
+                <i *ngIf="!guardando" class="bi bi-person-plus me-1"></i>
+                Crear empleado
+              </button>
+
+            </div>
+
+          </form>
+
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Caja derecha: Lista de usuarios -->
+    <div class="col-12 col-xl-7">
+
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-header bg-white border-0 p-4">
+
+          <h5 class="fw-bold mb-1">
+            <i class="bi bi-people me-1"></i>
+            Usuarios existentes
+          </h5>
+
+          <p class="text-muted mb-0 small">
+            Primero aparecen administradores y luego empleados de esta sucursal.
+          </p>
+
+        </div>
+
+        <div class="card-body p-0">
+
+          <div *ngIf="cargandoUsuarios" class="text-center p-4">
+            <div class="spinner-border text-primary"></div>
+            <p class="text-muted mt-2 mb-0">Cargando usuarios...</p>
+          </div>
+
+          <div *ngIf="!cargandoUsuarios && usuariosContexto.length === 0" class="p-4 text-center">
+
+            <i class="bi bi-person-badge fs-1 text-muted"></i>
+
+            <h5 class="mt-3">No hay usuarios para mostrar</h5>
+
+            <p class="text-muted mb-0">
+              Crea el primer empleado para esta sucursal.
+            </p>
+
+          </div>
+
+          <div *ngIf="!cargandoUsuarios && usuariosContexto.length > 0" class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+
+              <thead class="table-light">
+              <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Username</th>
+                <th>Rol</th>
+                <th>Sucursal</th>
+                <th class="text-end">Acciones</th>
+              </tr>
+              </thead>
+
+              <tbody>
+              <tr *ngFor="let usuario of usuariosContexto">
+
+                <td>{{ usuario.id }}</td>
+
+                <td class="fw-semibold">
+                  {{ usuario.nombre }}
+                </td>
+
+                <td>
+                  {{ usuario.username }}
+                </td>
+
+                <td>
+                    <span
+                      class="badge"
+                      [ngClass]="{
+                        'bg-dark': usuario.rol === 'ADMIN',
+                        'bg-primary': usuario.rol === 'EMPLEADO'
+                      }"
+                    >
+                      {{ usuario.rol }}
+                    </span>
+                </td>
+
+                <td>
+                  {{ usuario.sucursalNombre || 'Sin sucursal' }}
+                </td>
+
+                <td class="text-end">
+
+                  <a
+                    [routerLink]="['/super-admin/usuarios/editar', usuario.id]"
+                    class="btn btn-sm btn-outline-primary me-2"
+                  >
+                    <i class="bi bi-pencil"></i>
+                  </a>
+
+                  <button
+                    *ngIf="puedeEliminarUsuario(usuario)"
+                    type="button"
+                    class="btn btn-sm btn-outline-danger"
+                    (click)="eliminarUsuario(usuario)"
+                  >
+                    <i class="bi bi-trash"></i>
+                  </button>
+
+                </td>
+
+              </tr>
+              </tbody>
+
+            </table>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+</div>

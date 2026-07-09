@@ -1,0 +1,11 @@
+.card {
+  border-radius: 14px;
+}
+
+.form-control {
+  min-height: 44px;
+}
+
+.btn {
+  min-height: 42px;
+}

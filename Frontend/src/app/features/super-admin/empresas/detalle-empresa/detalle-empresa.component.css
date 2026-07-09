@@ -1,0 +1,46 @@
+.card {
+  border-radius: 16px;
+}
+
+.table th {
+  font-size: 0.85rem;
+  color: #6c757d;
+  font-weight: 600;
+}
+
+.table td {
+  font-size: 0.92rem;
+}
+
+.sucursal-card {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.sucursal-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0.75rem 1.5rem rgba(0, 0, 0, 0.08) !important;
+}
+
+.producto-card {
+  border-radius: 16px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.producto-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0.75rem 1.5rem rgba(0, 0, 0, 0.08) !important;
+}
+
+.producto-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.producto-icon i {
+  font-size: 1.35rem;
+}
+

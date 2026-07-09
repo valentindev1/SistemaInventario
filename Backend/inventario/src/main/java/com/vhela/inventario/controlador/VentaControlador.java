@@ -3,6 +3,7 @@ package com.vhela.inventario.controlador;
 import java.util.List;
 import java.time.LocalDate;
 
+import com.vhela.inventario.dto.producto.producto.RankingProductosVentasDTO;
 import com.vhela.inventario.dto.venta.*;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -78,6 +79,29 @@ public class VentaControlador {
                 )
         );
     }
+
+    @GetMapping("/ranking-productos/sucursal/{sucursalId}")
+    public ResponseEntity<RankingProductosVentasDTO> obtenerRankingProductosVentas(
+            @RequestParam Long usuarioId,
+            @PathVariable Long sucursalId,
+            @RequestParam
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate fechaInicio,
+            @RequestParam
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate fechaFin
+    ) {
+        return ResponseEntity.ok(
+                ventaServicio.obtenerRankingProductosVentas(
+                        usuarioId,
+                        sucursalId,
+                        fechaInicio,
+                        fechaFin
+                )
+        );
+    }
+
+
 
     @GetMapping("/informe-consolidado/sucursal/{sucursalId}")
     public ResponseEntity<InformeConsolidadoVentasDTO> generarInformeConsolidado(

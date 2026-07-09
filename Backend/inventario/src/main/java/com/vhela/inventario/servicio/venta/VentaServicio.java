@@ -3,6 +3,7 @@ package com.vhela.inventario.servicio.venta;
 import java.time.LocalDate;
 import java.util.List;
 
+import com.vhela.inventario.dto.producto.producto.RankingProductosVentasDTO;
 import com.vhela.inventario.dto.venta.*;
 
 public interface VentaServicio {
@@ -43,5 +44,14 @@ public interface VentaServicio {
             LocalDate fechaInicio,
             LocalDate fechaFin
     );
+
+
+    RankingProductosVentasDTO obtenerRankingProductosVentas(
+            Long usuarioId,
+            Long sucursalId,
+            LocalDate fechaInicio,
+            LocalDate fechaFin
+    );
+
 
 }

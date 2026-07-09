@@ -1,0 +1,47 @@
+.card {
+  border-radius: 16px;
+}
+
+.empty-state {
+  padding: 24px;
+  border-radius: 12px;
+  background: #f8f9fa;
+  color: #6c757d;
+  text-align: center;
+  border: 1px dashed #ced4da;
+}
+
+.table thead {
+  background: #f8f9fa;
+}
+
+.table th {
+  font-size: 13px;
+  color: #374151;
+  white-space: nowrap;
+}
+
+.table td {
+  vertical-align: middle;
+}
+
+.badge {
+  font-size: 13px;
+  padding: 7px 10px;
+  border-radius: 999px;
+}
+
+textarea {
+  resize: vertical;
+}
+
+/* PAGINACIÓN */
+
+.btn[disabled] {
+  opacity: 0.6;
+}
+
+.pagination-info {
+  font-size: 13px;
+  color: #6c757d;
+}

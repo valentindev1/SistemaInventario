@@ -1,0 +1,391 @@
+<div class="container-fluid">
+
+  <!-- Encabezado -->
+  <div class="d-flex flex-column flex-md-row justify-content-md-between align-items-md-center gap-3 mb-4">
+
+    <div>
+      <a
+        [routerLink]="[
+          '/super-admin/empresas',
+          empresaId,
+          'sucursales',
+          'detalle',
+          sucursalId
+        ]"
+        class="btn btn-link px-0 mb-2">
+
+        <i class="bi bi-arrow-left me-1"></i>
+        Volver al detalle de sucursal
+
+      </a>
+
+      <h2 class="fw-bold mb-1">
+        Gestión de clientes
+      </h2>
+
+      <p class="text-muted mb-0">
+        Administra los clientes registrados para la empresa.
+      </p>
+    </div>
+
+    <div>
+      <a
+        [routerLink]="[
+          '/super-admin/empresas',
+          empresaId,
+          'sucursales',
+          sucursalId,
+          'clientes',
+          'crear'
+        ]"
+        class="btn btn-primary">
+
+        <i class="bi bi-person-plus me-1"></i>
+        Crear cliente
+
+      </a>
+    </div>
+
+  </div>
+
+  <!-- Alertas -->
+  <div *ngIf="mensajeError" class="alert alert-danger">
+    <i class="bi bi-exclamation-triangle me-1"></i>
+    {{ mensajeError }}
+  </div>
+
+  <div *ngIf="mensajeExito" class="alert alert-success">
+    <i class="bi bi-check-circle me-1"></i>
+    {{ mensajeExito }}
+  </div>
+
+  <!-- Tarjetas de gestión -->
+  <div class="row g-3 mb-4">
+
+    <!-- Crear cliente -->
+    <div class="col-12 col-md-6 col-xl-3">
+      <div class="card border-0 shadow-sm h-100 option-card">
+        <div class="card-body p-4 d-flex flex-column">
+
+          <div class="option-icon bg-primary-subtle text-primary mb-3">
+            <i class="bi bi-person-plus"></i>
+          </div>
+
+          <h5 class="fw-bold mb-2">
+            Crear cliente
+          </h5>
+
+          <p class="text-muted small flex-grow-1">
+            Registra un nuevo cliente para asociarlo a futuras ventas.
+          </p>
+
+          <a
+            class="btn btn-primary w-100"
+            [routerLink]="[
+              '/super-admin/empresas',
+              empresaId,
+              'sucursales',
+              sucursalId,
+              'clientes',
+              'crear'
+            ]">
+
+            Crear
+
+          </a>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Listar clientes -->
+    <div class="col-12 col-md-6 col-xl-3">
+      <div class="card border-0 shadow-sm h-100 option-card">
+        <div class="card-body p-4 d-flex flex-column">
+
+          <div class="option-icon bg-success-subtle text-success mb-3">
+            <i class="bi bi-list-ul"></i>
+          </div>
+
+          <h5 class="fw-bold mb-2">
+            Listar clientes
+          </h5>
+
+          <p class="text-muted small flex-grow-1">
+            Consulta todos los clientes registrados disponibles para la empresa.
+          </p>
+
+          <button
+            class="btn btn-success w-100"
+            type="button"
+            (click)="cargarClientes()">
+
+            Actualizar listado
+
+          </button>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Buscar cliente -->
+
+
+    <!-- Editar / eliminar -->
+    
+
+  </div>
+
+  <!-- Buscador -->
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-4">
+
+      <div class="d-flex flex-column flex-md-row justify-content-md-between align-items-md-center gap-3 mb-3">
+
+        <div>
+          <h5 class="fw-bold mb-1">
+            Búsqueda de clientes
+          </h5>
+
+          <p class="text-muted mb-0">
+            Ingresa el número de documento para encontrar un cliente específico.
+          </p>
+        </div>
+
+      </div>
+
+      <div class="row g-3">
+
+        <div class="col-12 col-md-8">
+          <label class="form-label">
+            Número de documento
+          </label>
+
+          <input
+            type="text"
+            class="form-control"
+            placeholder="Ej: 1075289632"
+            [(ngModel)]="numeroDocumentoBusqueda"
+            (keyup.enter)="buscarPorDocumento()">
+        </div>
+
+        <div class="col-12 col-md-4 d-flex align-items-end gap-2">
+
+          <button
+            class="btn btn-primary w-100"
+            type="button"
+            (click)="buscarPorDocumento()"
+            [disabled]="buscando">
+
+            <span *ngIf="!buscando">
+              <i class="bi bi-search me-1"></i>
+              Buscar
+            </span>
+
+            <span *ngIf="buscando">
+              Buscando...
+            </span>
+
+          </button>
+
+          <button
+            class="btn btn-outline-secondary w-100"
+            type="button"
+            (click)="limpiarBusqueda()">
+
+            Limpiar
+
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Cargando -->
+  <div *ngIf="cargando" class="text-center p-4">
+
+    <div class="spinner-border text-primary"></div>
+
+    <p class="text-muted mt-2 mb-0">
+      Cargando clientes...
+    </p>
+
+  </div>
+
+  <!-- Listado -->
+  <div *ngIf="!cargando" class="card border-0 shadow-sm">
+    <div class="card-body p-4">
+
+      <div class="d-flex flex-column flex-md-row justify-content-md-between align-items-md-center gap-3 mb-4">
+
+        <div>
+          <h5 class="fw-bold mb-1">
+            Listado de clientes
+          </h5>
+
+          <p class="text-muted mb-0">
+            Total encontrados: {{ clientesFiltrados.length }}
+          </p>
+        </div>
+
+      </div>
+
+      <div
+        *ngIf="clientesFiltrados.length === 0"
+        class="alert alert-info mb-0">
+
+        <i class="bi bi-info-circle me-1"></i>
+        No hay clientes para mostrar.
+
+      </div>
+
+      <div
+        *ngIf="clientesFiltrados.length > 0"
+        class="table-responsive">
+
+        <table class="table table-hover align-middle mb-0">
+
+          <thead class="table-light">
+          <tr>
+            <th>Documento</th>
+            <th>Nombre</th>
+            <th>Correo</th>
+            <th>Teléfono</th>
+            <th>Fecha creación</th>
+            <th class="text-end">Acciones</th>
+          </tr>
+          </thead>
+
+          <tbody>
+
+          <tr *ngFor="let cliente of clientesPaginados">
+
+            <td>
+              {{ cliente.numeroDocumento }}
+            </td>
+
+            <td>
+              {{ cliente.nombre }}
+            </td>
+
+            <td>
+              {{ cliente.correo || 'No registrado' }}
+            </td>
+
+            <td>
+              {{ cliente.telefono || 'No registrado' }}
+            </td>
+
+            <td>
+              {{ cliente.fechaCreacion | date:'yyyy-MM-dd HH:mm' }}
+            </td>
+
+            <td class="text-end">
+
+              <div class="btn-group">
+
+                <button
+                  type="button"
+                  class="btn btn-sm"
+                  [class.btn-outline-primary]="cliente.puedeModificar !== false"
+                  [class.btn-outline-secondary]="cliente.puedeModificar === false"
+                  (click)="editarCliente(cliente)"
+                  [title]="cliente.puedeModificar === false ? cliente.motivoBloqueo : 'Editar cliente'">
+
+                  <i
+                    class="bi me-1"
+                    [class.bi-pencil]="cliente.puedeModificar !== false"
+                    [class.bi-lock]="cliente.puedeModificar === false">
+                  </i>
+
+                  Editar
+
+                </button>
+
+                <button
+                  type="button"
+                  class="btn btn-sm"
+                  [class.btn-outline-danger]="cliente.puedeModificar !== false"
+                  [class.btn-outline-secondary]="cliente.puedeModificar === false"
+                  (click)="eliminarCliente(cliente)"
+                  [title]="cliente.puedeModificar === false ? cliente.motivoBloqueo : 'Eliminar cliente'">
+
+                  <i
+                    class="bi me-1"
+                    [class.bi-trash]="cliente.puedeModificar !== false"
+                    [class.bi-lock]="cliente.puedeModificar === false">
+                  </i>
+
+                  Eliminar
+
+                </button>
+
+              </div>
+
+            </td>
+
+          </tr>
+
+          </tbody>
+
+        </table>
+
+        <!-- Paginación -->
+        <div
+          *ngIf="totalPaginas > 1"
+          class="d-flex justify-content-center align-items-center gap-2 mt-3 flex-wrap">
+
+          <button
+            type="button"
+            class="btn btn-outline-secondary btn-sm"
+            [disabled]="paginaActual === 1"
+            (click)="cambiarPagina(paginaActual - 1)">
+
+            <i class="bi bi-chevron-left"></i>
+            Anterior
+
+          </button>
+
+          <span class="fw-semibold pagination-info">
+            Página {{ paginaActual }} de {{ totalPaginas }}
+          </span>
+
+          <button
+            type="button"
+            class="btn btn-outline-secondary btn-sm"
+            [disabled]="paginaActual === totalPaginas"
+            (click)="cambiarPagina(paginaActual + 1)">
+
+            Siguiente
+            <i class="bi bi-chevron-right"></i>
+
+          </button>
+
+        </div>
+
+        <!-- Información de registros -->
+        <div class="text-center text-muted small mt-2">
+
+          Mostrando
+          {{ ((paginaActual - 1) * registrosPorPagina) + 1 }}
+          -
+          {{
+            paginaActual * registrosPorPagina > clientesFiltrados.length
+              ? clientesFiltrados.length
+              : paginaActual * registrosPorPagina
+          }}
+          de
+          {{ clientesFiltrados.length }}
+          clientes
+
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+</div>

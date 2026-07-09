@@ -35,7 +35,7 @@ public interface FacturaVentaRepositorio extends JpaRepository<Venta, Long> {
     );
 
 
-
+    
     List<Venta> findByEmpresa_IdAndFechaVentaBetweenOrderByFechaVentaDesc(
             Long empresaId,
             LocalDateTime inicio,

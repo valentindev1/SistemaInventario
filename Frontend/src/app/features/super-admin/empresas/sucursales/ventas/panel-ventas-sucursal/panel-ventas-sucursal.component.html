@@ -1,0 +1,169 @@
+<div class="container-fluid">
+
+  <!-- Encabezado -->
+  <div class="d-flex flex-column flex-md-row justify-content-md-between align-items-md-center gap-3 mb-4">
+
+    <div>
+      <a
+        [routerLink]="[
+          '/super-admin/empresas',
+          empresaId,
+          'sucursales',
+          'detalle',
+          sucursalId
+        ]"
+        class="btn btn-link px-0 mb-2">
+        <i class="bi bi-arrow-left me-1"></i>
+        Volver a la sucursal
+      </a>
+
+      <h2 class="fw-bold mb-1">Panel de ventas</h2>
+
+      <p class="text-muted mb-0">
+        Desde aquí puedes generar ventas, consultar históricos, revisar informes y gestionar operaciones comerciales de
+        esta sucursal.
+      </p>
+    </div>
+
+  </div>
+
+  <!-- Error -->
+  <div *ngIf="mensajeError" class="alert alert-danger">
+    <i class="bi bi-exclamation-triangle me-1"></i>
+    {{ mensajeError }}
+  </div>
+
+  <!-- Opciones -->
+  <div *ngIf="!mensajeError" class="row g-4">
+
+    <!-- Generar venta -->
+    <div class="col-12 col-md-6 col-xl-4">
+      <div class="sales-card h-100">
+
+        <div class="sales-icon icon-primary">
+          <i class="bi bi-cart-plus"></i>
+        </div>
+
+        <h5 class="fw-bold mt-3">Generar venta</h5>
+
+        <p class="text-muted small">
+          Registra una venta utilizando los productos disponibles en el inventario de esta sucursal.
+        </p>
+
+        <a
+          class="btn btn-primary w-100 mt-auto"
+          [routerLink]="[
+            '/super-admin/empresas',
+            empresaId,
+            'sucursales',
+            sucursalId,
+            'ventas',
+            'generar'
+          ]">
+          Crear venta
+        </a>
+
+      </div>
+    </div>
+
+    <!-- Generar devolución -->
+    <div class="col-12 col-md-6 col-xl-4">
+      <div class="sales-card h-100">
+
+        <div class="sales-icon icon-warning">
+          <i class="bi bi-arrow-counterclockwise"></i>
+        </div>
+
+        <h5 class="fw-bold mt-3">Generar devolución</h5>
+
+        <p class="text-muted small">
+          Registra devoluciones de productos vendidos y repone el inventario correspondiente.
+        </p>
+
+        <a
+          class="btn btn-warning w-100 mt-auto"
+          [routerLink]="[
+    '/super-admin/empresas',
+    empresaId,
+    'sucursales',
+    sucursalId,
+    'ventas',
+    'devolucion'
+  ]">
+          Generar devolución
+        </a>
+
+      </div>
+    </div>
+
+    <!-- Histórico de ventas -->
+
+
+    <!-- Informe de ventas -->
+    <div class="col-12 col-md-6 col-xl-4">
+      <div class="sales-card h-100">
+
+        <div class="sales-icon icon-info">
+          <i class="bi bi-bar-chart-line"></i>
+        </div>
+
+        <h5 class="fw-bold mt-3">Informe de ventas</h5>
+
+        <p class="text-muted small">
+          Consulta ventas por día, semana o mes, compara días y analiza totales vendidos.
+        </p>
+
+        <a
+          class="btn btn-info text-white w-100 mt-auto"
+          [routerLink]="[
+            '/super-admin/empresas',
+            empresaId,
+            'sucursales',
+            sucursalId,
+            'ventas',
+            'informe'
+          ]">
+          Ver informe
+        </a>
+
+      </div>
+    </div>
+
+    <!-- Consultar factura -->
+    <div class="col-12 col-md-6 col-xl-4">
+      <div class="sales-card h-100">
+
+        <div class="sales-icon icon-secondary">
+          <i class="bi bi-receipt"></i>
+        </div>
+
+        <h5 class="fw-bold mt-3">Consultar factura</h5>
+
+        <p class="text-muted small">
+          Busca una factura específica por número de venta o identificador interno.
+        </p>
+
+
+        <a
+          class="btn btn-secondary w-100 mt-auto"
+          [routerLink]="[
+              '/super-admin/empresas',
+              empresaId,
+              'sucursales',
+              sucursalId,
+              'ventas',
+              'consultar'
+            ]">
+          Consultar
+        </a>
+
+
+      </div>
+    </div>
+
+    <!-- Cancelar factura -->
+
+
+  </div>
+
+</div>
