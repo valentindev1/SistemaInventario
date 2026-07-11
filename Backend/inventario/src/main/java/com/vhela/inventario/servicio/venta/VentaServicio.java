@@ -5,6 +5,8 @@ import java.util.List;
 
 import com.vhela.inventario.dto.producto.producto.RankingProductosVentasDTO;
 import com.vhela.inventario.dto.venta.*;
+import com.vhela.inventario.dto.venta.empleado.venta.FacturaVentaEmpleadoDTO;
+import com.vhela.inventario.dto.venta.empleado.venta.VentaHistorialEmpleadoDTO;
 
 public interface VentaServicio {
 
@@ -51,6 +53,33 @@ public interface VentaServicio {
             Long sucursalId,
             LocalDate fechaInicio,
             LocalDate fechaFin
+    );
+
+
+    FacturaVentaEmpleadoDTO crearVentaEmpleado(
+            Long usuarioId,
+            CrearVentaDTO dto
+    );
+
+    FacturaVentaEmpleadoDTO obtenerPorIdEmpleado(
+            Long usuarioId,
+            Long ventaId
+    );
+
+    List<VentaHistorialEmpleadoDTO> listarPorSucursalEmpleado(
+            Long usuarioId,
+            Long sucursalId
+    );
+
+    FacturaVentaEmpleadoDTO generarDevolucionEmpleado(
+            Long usuarioId,
+            Long ventaId,
+            DevolucionVentaDTO dto
+    );
+
+    FacturaVentaEmpleadoDTO obtenerPorNumeroEmpleado(
+            Long usuarioId,
+            String numeroVenta
     );
 
 

@@ -1,0 +1,264 @@
+<div class="container-fluid">
+
+  <div class="d-flex flex-column flex-md-row justify-content-md-between align-items-md-center gap-3 mb-4">
+
+    <div>
+      <button
+        type="button"
+        class="btn btn-link px-0 mb-2"
+        (click)="volverAlPanel()">
+        <i class="bi bi-arrow-left me-1"></i>
+        Volver al panel de ventas
+      </button>
+
+      <h2 class="fw-bold mb-1">Generar devolución</h2>
+
+      <p class="text-muted mb-0">
+        Consulta una factura, selecciona los productos a devolver y repón el inventario.
+      </p>
+    </div>
+
+  </div>
+
+  <div *ngIf="mensajeExito" class="alert alert-success">
+    <i class="bi bi-check-circle me-1"></i>
+    {{ mensajeExito }}
+  </div>
+
+  <div *ngIf="mensajeError" class="alert alert-danger">
+    <i class="bi bi-exclamation-triangle me-1"></i>
+    {{ mensajeError }}
+  </div>
+
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-4">
+
+      <h5 class="fw-bold mb-3">Buscar factura</h5>
+
+      <div class="row g-3 align-items-end">
+
+        <div class="col-12 col-md-4">
+          <label class="form-label">Buscar por</label>
+
+          <select
+            class="form-select"
+            [(ngModel)]="tipoBusqueda">
+            <option value="NUMERO">Número de venta</option>
+            <option value="ID">ID interno</option>
+          </select>
+        </div>
+
+        <div class="col-12 col-md-5">
+          <label class="form-label">
+            {{ tipoBusqueda === 'NUMERO' ? 'Número de venta' : 'ID de venta' }}
+          </label>
+
+          <input
+            type="text"
+            class="form-control"
+            [(ngModel)]="valorBusqueda"
+            [placeholder]="tipoBusqueda === 'NUMERO' ? 'Ej: VEN-1-1783029399393' : 'Ej: 15'">
+        </div>
+
+        <div class="col-12 col-md-3 d-flex gap-2">
+          <button
+            type="button"
+            class="btn btn-primary flex-fill"
+            [disabled]="cargandoFactura"
+            (click)="buscarFactura()">
+
+            <span
+              *ngIf="cargandoFactura"
+              class="spinner-border spinner-border-sm me-2">
+            </span>
+
+            Buscar
+          </button>
+
+          <button
+            type="button"
+            class="btn btn-light"
+            (click)="limpiarConsulta()">
+            Limpiar
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <div *ngIf="factura" class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-4">
+
+      <div class="d-flex flex-column flex-md-row justify-content-md-between gap-3 mb-4">
+
+        <div>
+          <h4 class="fw-bold mb-1">
+            Factura {{ factura.numeroVenta }}
+          </h4>
+
+          <p class="text-muted mb-0">
+            Fecha:
+            {{ factura.fechaVenta | date:'yyyy-MM-dd HH:mm' }}
+          </p>
+        </div>
+
+        <div class="text-md-end">
+          <span [class]="obtenerClaseEstado(factura.estado)">
+            {{ factura.estado }}
+          </span>
+
+          <div class="fw-bold fs-4 mt-2">
+            {{ factura.total | currency:'COP':'symbol-narrow':'1.0-0' }}
+          </div>
+        </div>
+
+      </div>
+
+      <div class="row g-3 mb-4">
+
+        <div class="col-12 col-md-4">
+          <div class="info-box">
+            <div class="text-muted small">Sucursal</div>
+            <div class="fw-semibold">{{ factura.sucursalNombre }}</div>
+          </div>
+        </div>
+
+        <div class="col-12 col-md-4">
+          <div class="info-box">
+            <div class="text-muted small">Usuario</div>
+            <div class="fw-semibold">{{ factura.usuarioNombre }}</div>
+          </div>
+        </div>
+
+        <div class="col-12 col-md-4">
+          <div class="info-box">
+            <div class="text-muted small">Observación</div>
+            <div class="fw-semibold">
+              {{ factura.observacion || 'Sin observación' }}
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Motivo de la devolución</label>
+
+        <textarea
+          class="form-control"
+          rows="2"
+          placeholder="Ej: cliente devolvió por talla incorrecta"
+          [(ngModel)]="motivo">
+        </textarea>
+      </div>
+
+      <h5 class="fw-bold mb-3">Productos disponibles para devolución</h5>
+
+      <div *ngIf="itemsDevolucion.length === 0" class="empty-state">
+        No hay productos disponibles para devolución en esta factura.
+      </div>
+
+      <div *ngIf="itemsDevolucion.length > 0" class="table-responsive">
+
+        <table class="table align-middle">
+          <thead>
+          <tr>
+            <th>Producto</th>
+            <th>Vendido</th>
+            <th>Ya devuelto</th>
+            <th>Disponible</th>
+            <th>Cantidad a devolver</th>
+            <th>Precio venta</th>
+            <th>Subtotal devolución</th>
+          </tr>
+          </thead>
+
+          <tbody>
+          <tr *ngFor="let item of itemsDevolucion; let i = index">
+
+            <td>
+              <div class="fw-semibold">
+                {{ item.productoNombre }}
+              </div>
+
+              <div class="text-muted small">
+                {{ item.productoCodigo }}
+              </div>
+            </td>
+
+            <td>{{ item.cantidadVendida }}</td>
+
+            <td>{{ item.cantidadDevuelta }}</td>
+
+            <td>{{ item.cantidadDisponibleDevolucion }}</td>
+
+            <td>
+              <input
+                type="number"
+                class="form-control form-control-sm quantity-input"
+                min="0"
+                [max]="item.cantidadDisponibleDevolucion"
+                [(ngModel)]="item.cantidadADevolver"
+                (change)="actualizarCantidad(i)">
+            </td>
+
+            <td>
+              {{ item.precioUnitarioMomento | currency:'COP':'symbol-narrow':'1.0-0' }}
+            </td>
+
+            <td class="fw-semibold">
+              {{ item.subtotalDevolucion | currency:'COP':'symbol-narrow':'1.0-0' }}
+            </td>
+
+          </tr>
+          </tbody>
+
+          <tfoot>
+          <tr>
+            <td colspan="6" class="text-end fw-bold">
+              Total devolución
+            </td>
+
+            <td class="fw-bold">
+              {{ calcularTotalDevolucion() | currency:'COP':'symbol-narrow':'1.0-0' }}
+            </td>
+          </tr>
+          </tfoot>
+        </table>
+
+      </div>
+
+      <div
+        *ngIf="itemsDevolucion.length > 0"
+        class="d-flex flex-column flex-md-row justify-content-md-end gap-2 mt-4">
+
+        <button
+          type="button"
+          class="btn btn-light"
+          (click)="volverAlPanel()">
+          Cancelar
+        </button>
+
+        <button
+          type="button"
+          class="btn btn-warning"
+          [disabled]="guardando"
+          (click)="generarDevolucion()">
+
+          <span
+            *ngIf="guardando"
+            class="spinner-border spinner-border-sm me-2">
+          </span>
+
+          <i *ngIf="!guardando" class="bi bi-arrow-counterclockwise me-1"></i>
+          Generar devolución
+        </button>
+
+      </div>
+
+    </div>
+  </div>
+
+</div>

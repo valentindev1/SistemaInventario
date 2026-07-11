@@ -1,0 +1,556 @@
+<div class="container-fluid informe-page">
+
+  <div class="d-flex flex-column flex-md-row justify-content-md-between align-items-md-center gap-3 mb-4">
+
+    <div>
+      <button
+        type="button"
+        class="btn btn-link px-0 mb-2"
+        (click)="volverAlPanel()">
+        <i class="bi bi-arrow-left me-1"></i>
+        Volver al panel de ventas
+      </button>
+
+      <h2 class="fw-bold mb-1">
+        Informe consolidado de ventas
+      </h2>
+
+      <p class="text-muted mb-0">
+        Analiza ventas netas, descuentos, cancelaciones, devoluciones, ajustes negativos e inventario actual.
+      </p>
+    </div>
+
+    <div class="d-flex flex-column flex-md-row gap-2">
+
+      <button
+        type="button"
+        class="btn btn-outline-primary"
+        (click)="generarInforme()"
+        [disabled]="cargando">
+        @if (cargando) {
+          <span class="spinner-border spinner-border-sm me-1"></span>
+          Generando...
+        } @else {
+          <i class="bi bi-arrow-clockwise me-1"></i>
+          Actualizar informe
+        }
+      </button>
+
+      <button
+        type="button"
+        class="btn btn-success"
+        (click)="descargarExcel()"
+        [disabled]="!informe || cargando">
+        <i class="bi bi-file-earmark-excel me-1"></i>
+        Excel
+      </button>
+
+      <button
+        type="button"
+        class="btn btn-danger"
+        (click)="descargarPdf()"
+        [disabled]="!informe || cargando">
+        <i class="bi bi-file-earmark-pdf me-1"></i>
+        PDF
+      </button>
+
+    </div>
+
+  </div>
+
+  @if (mensajeError) {
+    <div class="alert alert-danger">
+      <i class="bi bi-exclamation-triangle me-1"></i>
+      {{ mensajeError }}
+    </div>
+  }
+
+  @if (mensajeExito) {
+    <div class="alert alert-success">
+      <i class="bi bi-check-circle me-1"></i>
+      {{ mensajeExito }}
+    </div>
+  }
+
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-4">
+
+      <h5 class="fw-bold mb-3">
+        Filtros del informe
+      </h5>
+
+      <div class="row g-3 align-items-end">
+
+        <div class="col-12 col-md-4 col-xl-3">
+          <label class="form-label">
+            Tipo de informe
+          </label>
+
+          <select
+            class="form-select"
+            [(ngModel)]="tipoFiltro"
+            (change)="cambiarTipoFiltro()">
+            <option value="DIA">Día</option>
+            <option value="MES">Mes</option>
+            <option value="RANGO">Rango personalizado</option>
+          </select>
+        </div>
+
+        @if (tipoFiltro === 'DIA') {
+          <div class="col-12 col-md-4 col-xl-3">
+            <label class="form-label">
+              Día
+            </label>
+
+            <input
+              type="date"
+              class="form-control"
+              [(ngModel)]="fechaDia">
+          </div>
+        }
+
+        @if (tipoFiltro === 'MES') {
+          <div class="col-12 col-md-4 col-xl-3">
+            <label class="form-label">
+              Mes
+            </label>
+
+            <input
+              type="month"
+              class="form-control"
+              [(ngModel)]="fechaMes">
+          </div>
+        }
+
+        @if (tipoFiltro === 'RANGO') {
+          <div class="col-12 col-md-4 col-xl-3">
+            <label class="form-label">
+              Fecha inicial
+            </label>
+
+            <input
+              type="date"
+              class="form-control"
+              [(ngModel)]="fechaInicio">
+          </div>
+
+          <div class="col-12 col-md-4 col-xl-3">
+            <label class="form-label">
+              Fecha final
+            </label>
+
+            <input
+              type="date"
+              class="form-control"
+              [(ngModel)]="fechaFin">
+          </div>
+        }
+
+        <div class="col-12 col-md-4 col-xl-3">
+          <button
+            type="button"
+            class="btn btn-primary w-100"
+            (click)="generarInforme()"
+            [disabled]="cargando">
+            @if (cargando) {
+              <span class="spinner-border spinner-border-sm me-1"></span>
+              Generando...
+            } @else {
+              Generar informe
+            }
+          </button>
+        </div>
+
+      </div>
+
+      <div class="text-muted small mt-3">
+        El rango personalizado puede comprender máximo 12 meses.
+      </div>
+
+    </div>
+  </div>
+
+  @if (cargando) {
+    <div class="text-center p-5">
+      <div class="spinner-border text-primary"></div>
+      <p class="text-muted mt-2 mb-0">
+        Calculando informe consolidado...
+      </p>
+    </div>
+  }
+
+  @if (!cargando && informe) {
+
+    <div class="row g-4 mb-4">
+
+      <div class="col-12 col-md-6 col-xl-3">
+        <div class="metric-card metric-success">
+          <div class="metric-icon">
+            <i class="bi bi-cash-stack"></i>
+          </div>
+
+          <div>
+            <div class="metric-label">Ventas netas</div>
+
+            <div class="metric-value money">
+              {{ informe.ventasNetas | currency:'COP':'symbol-narrow':'1.0-0' }}
+            </div>
+
+            <div class="metric-help">
+              Bruto menos descuentos, cancelaciones y devoluciones.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12 col-md-6 col-xl-3">
+        <div class="metric-card metric-primary">
+          <div class="metric-icon">
+            <i class="bi bi-graph-up-arrow"></i>
+          </div>
+
+          <div>
+            <div class="metric-label">Utilidad bruta</div>
+
+            <div class="metric-value money">
+              {{ informe.utilidadBruta | currency:'COP':'symbol-narrow':'1.0-0' }}
+            </div>
+
+            <div class="metric-help">
+              Margen: {{ calcularMargenUtilidad() | number:'1.1-2' }}%
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12 col-md-6 col-xl-3">
+        <div class="metric-card metric-warning">
+          <div class="metric-icon">
+            <i class="bi bi-exclamation-triangle"></i>
+          </div>
+
+          <div>
+            <div class="metric-label">Ajustes negativos</div>
+
+            <div class="metric-value money">
+              {{ informe.costoAjustesNegativos | currency:'COP':'symbol-narrow':'1.0-0' }}
+            </div>
+
+            <div class="metric-help">
+              {{ informe.unidadesAjustadasNegativas }} unidad(es) ajustadas.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12 col-md-6 col-xl-3">
+        <div class="metric-card metric-dark">
+          <div class="metric-icon">
+            <i class="bi bi-calculator"></i>
+          </div>
+
+          <div>
+            <div class="metric-label">Resultado operativo</div>
+
+            <div class="metric-value money">
+              {{ informe.resultadoOperativoEstimado | currency:'COP':'symbol-narrow':'1.0-0' }}
+            </div>
+
+            <div class="metric-help">
+              Margen: {{ calcularMargenOperativo() | number:'1.1-2' }}%
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="row g-4 mb-4">
+
+      <div class="col-12 col-xl-8">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body p-4">
+
+            <h5 class="fw-bold mb-3">
+              Resumen financiero del periodo
+            </h5>
+
+            <div class="financial-grid">
+
+              <div class="financial-item">
+                <span>Ventas brutas</span>
+                <strong>
+                  {{ informe.ventasBrutas | currency:'COP':'symbol-narrow':'1.0-0' }}
+                </strong>
+              </div>
+
+              <div class="financial-item danger">
+                <span>Descuentos aplicados</span>
+                <strong>
+                  - {{ informe.descuentos | currency:'COP':'symbol-narrow':'1.0-0' }}
+                </strong>
+              </div>
+
+              <div class="financial-item success">
+                <span>Ventas netas</span>
+                <strong>
+                  {{ informe.ventasNetas | currency:'COP':'symbol-narrow':'1.0-0' }}
+                </strong>
+              </div>
+
+              <div class="financial-item">
+                <span>Costo vendido</span>
+                <strong>
+                  {{ informe.costoVendido | currency:'COP':'symbol-narrow':'1.0-0' }}
+                </strong>
+              </div>
+
+              <div class="financial-item primary">
+                <span>Utilidad bruta</span>
+                <strong>
+                  {{ informe.utilidadBruta | currency:'COP':'symbol-narrow':'1.0-0' }}
+                </strong>
+              </div>
+
+              <div class="financial-item warning">
+                <span>Ajustes negativos</span>
+                <strong>
+                  - {{ informe.costoAjustesNegativos | currency:'COP':'symbol-narrow':'1.0-0' }}
+                </strong>
+              </div>
+
+              <div class="financial-item dark">
+                <span>Resultado operativo</span>
+                <strong>
+                  {{ informe.resultadoOperativoEstimado | currency:'COP':'symbol-narrow':'1.0-0' }}
+                </strong>
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12 col-xl-4">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body p-4">
+
+            <h5 class="fw-bold mb-3">
+              Estado de facturación
+            </h5>
+
+            <div class="status-grid">
+
+              <div>
+                <span>Emitidas</span>
+                <strong>{{ informe.facturasEmitidas }}</strong>
+              </div>
+
+              <div>
+                <span>Activas</span>
+                <strong class="text-success">{{ informe.facturasActivas }}</strong>
+              </div>
+
+              <div>
+                <span>Canceladas</span>
+                <strong class="text-danger">{{ informe.facturasCanceladas }}</strong>
+              </div>
+
+              <div>
+                <span>Dev. parcial</span>
+                <strong class="text-warning">{{ informe.facturasDevueltasParcial }}</strong>
+              </div>
+
+              <div>
+                <span>Dev. total</span>
+                <strong class="text-secondary">{{ informe.facturasDevueltasTotal }}</strong>
+              </div>
+
+            </div>
+
+            <hr>
+
+            <div class="small text-muted">
+              Valor cancelado:
+              <strong class="text-danger">
+                {{ informe.valorCancelado | currency:'COP':'symbol-narrow':'1.0-0' }}
+              </strong>
+            </div>
+
+            <div class="small text-muted mt-2">
+              Valor devuelto:
+              <strong class="text-warning">
+                {{ informe.valorDevuelto | currency:'COP':'symbol-narrow':'1.0-0' }}
+              </strong>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="row g-4 mb-4">
+
+      <div class="col-12">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body p-4">
+
+            <div class="d-flex flex-column flex-md-row justify-content-md-between gap-3 mb-3">
+              <div>
+                <h5 class="fw-bold mb-1">
+                  Inventario disponible actual
+                </h5>
+
+                <p class="text-muted mb-0">
+                  Valor del inventario en la sucursal al momento de generar el informe.
+                </p>
+              </div>
+            </div>
+
+            <div class="row g-3">
+
+              <div class="col-12 col-md-6 col-xl-3">
+                <div class="inventory-card">
+                  <span>Unidades disponibles</span>
+                  <strong>{{ informe.unidadesInventarioActual }}</strong>
+                </div>
+              </div>
+
+              <div class="col-12 col-md-6 col-xl-3">
+                <div class="inventory-card">
+                  <span>Costo inventario</span>
+                  <strong>
+                    {{ informe.costoInventarioActual | currency:'COP':'symbol-narrow':'1.0-0' }}
+                  </strong>
+                </div>
+              </div>
+
+              <div class="col-12 col-md-6 col-xl-3">
+                <div class="inventory-card">
+                  <span>Valor comercial</span>
+                  <strong>
+                    {{ informe.valorComercialInventarioActual | currency:'COP':'symbol-narrow':'1.0-0' }}
+                  </strong>
+                </div>
+              </div>
+
+              <div class="col-12 col-md-6 col-xl-3">
+                <div class="inventory-card">
+                  <span>Utilidad proyectada</span>
+                  <strong>
+                    {{ informe.utilidadProyectadaInventario | currency:'COP':'symbol-narrow':'1.0-0' }}
+                  </strong>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="card border-0 shadow-sm">
+      <div class="card-body p-4">
+
+        <div class="d-flex flex-column flex-md-row justify-content-md-between align-items-md-center gap-3 mb-3">
+
+          <div>
+            <h5 class="fw-bold mb-1">
+              Consolidado por día
+            </h5>
+
+            <p class="text-muted mb-0">
+              Desglose diario de ventas netas, costos y utilidad del periodo seleccionado.
+            </p>
+          </div>
+
+          <div class="d-flex flex-column flex-md-row gap-2">
+            <button
+              type="button"
+              class="btn btn-sm btn-success"
+              (click)="descargarExcel()"
+              [disabled]="!informe || cargando">
+              <i class="bi bi-file-earmark-excel me-1"></i>
+              Descargar Excel
+            </button>
+
+            <button
+              type="button"
+              class="btn btn-sm btn-danger"
+              (click)="descargarPdf()"
+              [disabled]="!informe || cargando">
+              <i class="bi bi-file-earmark-pdf me-1"></i>
+              Descargar PDF
+            </button>
+          </div>
+
+        </div>
+
+        @if (!existenVentasPorDia()) {
+          <div class="alert alert-info mb-0">
+            No hay datos diarios para mostrar.
+          </div>
+        }
+
+        @if (existenVentasPorDia()) {
+          <div class="table-responsive">
+            <table class="table table-hover align-middle">
+              <thead class="table-light">
+              <tr>
+                <th>Fecha</th>
+                <th>Facturas</th>
+                <th>Productos</th>
+                <th>Ventas brutas</th>
+                <th>Descuentos</th>
+                <th>Ventas netas</th>
+                <th>Costo vendido</th>
+                <th>Utilidad</th>
+              </tr>
+              </thead>
+
+              <tbody>
+                @for (dia of obtenerVentasPorDia(); track dia.fecha) {
+                  <tr>
+                    <td class="fw-semibold">
+                      {{ dia.fecha | date:'yyyy-MM-dd' }}
+                    </td>
+
+                    <td>{{ dia.facturas }}</td>
+
+                    <td>{{ dia.productosVendidos }}</td>
+
+                    <td>
+                      {{ dia.ventasBrutas | currency:'COP':'symbol-narrow':'1.0-0' }}
+                    </td>
+
+                    <td class="text-danger fw-semibold">
+                      - {{ dia.descuentos | currency:'COP':'symbol-narrow':'1.0-0' }}
+                    </td>
+
+                    <td class="text-success fw-semibold">
+                      {{ dia.ventasNetas | currency:'COP':'symbol-narrow':'1.0-0' }}
+                    </td>
+
+                    <td>
+                      {{ dia.costoVendido | currency:'COP':'symbol-narrow':'1.0-0' }}
+                    </td>
+
+                    <td class="fw-bold">
+                      {{ dia.utilidad | currency:'COP':'symbol-narrow':'1.0-0' }}
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+
+      </div>
+    </div>
+  }
+
+</div>

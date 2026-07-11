@@ -12,6 +12,9 @@ import com.vhela.inventario.dto.producto.producto.ProductoRankingVentasDTO;
 import com.vhela.inventario.dto.producto.producto.RankingProductosVentasDTO;
 import com.vhela.inventario.dto.venta.*;
 
+import com.vhela.inventario.dto.venta.empleado.venta.DetalleFacturaVentaEmpleadoDTO;
+import com.vhela.inventario.dto.venta.empleado.venta.FacturaVentaEmpleadoDTO;
+import com.vhela.inventario.dto.venta.empleado.venta.VentaHistorialEmpleadoDTO;
 import com.vhela.inventario.modelo.cliente.Cliente;
 import com.vhela.inventario.modelo.inventario.InventarioSucursal;
 import com.vhela.inventario.modelo.inventario.MovimientoInventario;
@@ -50,6 +53,7 @@ public class VentaServicioImpl implements VentaServicio {
     private final SucursalRepositorio sucursalRepositorio;
     private final UsuarioRepositorio usuarioRepositorio;
     private final ClienteRepositorio clienteRepositorio;
+
     @Override
     public FacturaVentaDTO crearVenta(Long usuarioId, CrearVentaDTO dto) {
 
@@ -695,6 +699,7 @@ public class VentaServicioImpl implements VentaServicio {
                 ? BigDecimal.ZERO
                 : valor;
     }
+
     @Override
     @Transactional(readOnly = true)
     public FacturaVentaDTO obtenerPorNumero(Long usuarioId, String numeroVenta) {
@@ -976,8 +981,6 @@ public class VentaServicioImpl implements VentaServicio {
     }
 
 
-
-
     private void validarRangoMaximoDoceMeses(
             LocalDate fechaInicio,
             LocalDate fechaFin
@@ -996,10 +999,6 @@ public class VentaServicioImpl implements VentaServicio {
             throw new RuntimeException("El rango del informe no puede superar 12 meses");
         }
     }
-
-
-
-
 
 
     private void registrarMovimientoDevolucion(
@@ -1549,12 +1548,6 @@ public class VentaServicioImpl implements VentaServicio {
     }
 
 
-
-
-
-
-
-
     private DetalleFacturaVentaDTO mapToDetalleFacturaVentaDTO(
             DetalleVenta detalle
     ) {
@@ -1581,4 +1574,245 @@ public class VentaServicioImpl implements VentaServicio {
 
         return dto;
     }
+
+
+    //metodos para mapear las ventas para el empleado
+
+    private FacturaVentaEmpleadoDTO mapToFacturaVentaEmpleadoDTO(Venta venta) {
+
+        FacturaVentaEmpleadoDTO dto = new FacturaVentaEmpleadoDTO();
+
+        dto.setId(venta.getId());
+        dto.setNumeroVenta(venta.getNumeroVenta());
+
+        dto.setSucursalId(venta.getSucursal().getId());
+        dto.setSucursalNombre(venta.getSucursal().getNombre());
+
+        dto.setUsuarioId(venta.getUsuario().getId());
+        dto.setUsuarioNombre(venta.getUsuario().getNombre());
+
+        if (venta.getCliente() != null) {
+            dto.setClienteId(venta.getCliente().getId());
+            dto.setClienteNombre(venta.getCliente().getNombre());
+            dto.setClienteDocumento(venta.getCliente().getNumeroDocumento());
+        } else {
+            dto.setClienteId(null);
+            dto.setClienteNombre("Cliente no asignado");
+            dto.setClienteDocumento("Sin documento");
+        }
+
+        dto.setEstado(venta.getEstado());
+
+        dto.setDescuento(
+                venta.getDescuento() == null
+                        ? BigDecimal.ZERO
+                        : venta.getDescuento()
+        );
+
+        dto.setSubtotal(
+                venta.getSubtotal() == null
+                        ? BigDecimal.ZERO
+                        : venta.getSubtotal()
+        );
+
+        dto.setTotal(
+                venta.getTotal() == null
+                        ? BigDecimal.ZERO
+                        : venta.getTotal()
+        );
+
+        dto.setObservacion(venta.getObservacion());
+        dto.setFechaVenta(venta.getFechaVenta());
+
+        dto.setDetalles(
+                venta.getDetalles()
+                        .stream()
+                        .map(this::mapToDetalleFacturaVentaEmpleadoDTO)
+                        .toList()
+        );
+
+        return dto;
+    }
+
+    public FacturaVentaEmpleadoDTO obtenerPorIdEmpleado(Long usuarioId, Long ventaId) {
+
+        Usuario usuario = obtenerUsuario(usuarioId);
+
+        Venta venta = facturaVentaRepositorio.findById(ventaId)
+                .orElseThrow(() -> new RuntimeException("Venta no encontrada"));
+
+        validarAccesoConsultaVenta(usuario, venta.getSucursal());
+
+        if (usuario.getRol() != RolEnum.EMPLEADO) {
+            throw new RuntimeException("Este endpoint es solo para empleados");
+        }
+
+        return mapToFacturaVentaEmpleadoDTO(venta);
+    }
+
+    private DetalleFacturaVentaEmpleadoDTO mapToDetalleFacturaVentaEmpleadoDTO(
+            DetalleVenta detalle
+    ) {
+
+        DetalleFacturaVentaEmpleadoDTO dto = new DetalleFacturaVentaEmpleadoDTO();
+
+        Integer cantidadVendida = detalle.getCantidad() == null
+                ? 0
+                : detalle.getCantidad();
+
+        Integer cantidadDevuelta = detalle.getCantidadDevuelta() == null
+                ? 0
+                : detalle.getCantidadDevuelta();
+
+        dto.setProductoId(detalle.getProducto().getId());
+        dto.setProductoCodigo(detalle.getProducto().getCodigo());
+        dto.setProductoNombre(detalle.getProducto().getNombre());
+
+        dto.setCantidad(cantidadVendida);
+        dto.setCantidadDevuelta(cantidadDevuelta);
+
+        dto.setCantidadDisponibleDevolucion(
+                cantidadVendida - cantidadDevuelta
+        );
+
+        dto.setPrecioUnitarioMomento(detalle.getPrecioUnitarioMomento());
+        dto.setSubtotal(detalle.getSubtotal());
+
+        return dto;
+    }
+
+    private VentaHistorialEmpleadoDTO mapToVentaHistorialEmpleadoDTO(Venta venta) {
+
+        VentaHistorialEmpleadoDTO dto = new VentaHistorialEmpleadoDTO();
+
+        dto.setId(venta.getId());
+        dto.setNumeroVenta(venta.getNumeroVenta());
+
+        if (venta.getUsuario() != null) {
+            dto.setUsuarioId(venta.getUsuario().getId());
+            dto.setUsuarioNombre(venta.getUsuario().getNombre());
+        } else {
+            dto.setUsuarioId(null);
+            dto.setUsuarioNombre("Usuario no asignado");
+        }
+
+        if (venta.getCliente() != null) {
+            dto.setClienteNombre(venta.getCliente().getNombre());
+            dto.setClienteDocumento(venta.getCliente().getNumeroDocumento());
+        } else {
+            dto.setClienteNombre("Cliente no asignado");
+            dto.setClienteDocumento("Sin documento");
+        }
+
+        dto.setEstado(venta.getEstado());
+
+        dto.setSubtotal(
+                venta.getSubtotal() == null
+                        ? BigDecimal.ZERO
+                        : venta.getSubtotal()
+        );
+
+        dto.setDescuento(
+                venta.getDescuento() == null
+                        ? BigDecimal.ZERO
+                        : venta.getDescuento()
+        );
+
+        dto.setTotal(
+                venta.getTotal() == null
+                        ? BigDecimal.ZERO
+                        : venta.getTotal()
+        );
+
+        dto.setFechaVenta(venta.getFechaVenta());
+
+        return dto;
+    }
+
+
+    public List<VentaHistorialEmpleadoDTO> listarPorSucursalEmpleado(
+            Long usuarioId,
+            Long sucursalId
+    ) {
+
+        Usuario usuario = obtenerUsuario(usuarioId);
+
+        if (usuario.getRol() != RolEnum.EMPLEADO) {
+            throw new RuntimeException("Este endpoint es solo para empleados");
+        }
+
+        Sucursal sucursal = obtenerSucursal(sucursalId);
+
+        validarAccesoConsultaVenta(usuario, sucursal);
+
+        return facturaVentaRepositorio.findBySucursalOrderByFechaVentaDesc(sucursal)
+                .stream()
+                .map(this::mapToVentaHistorialEmpleadoDTO)
+                .toList();
+    }
+
+
+
+
+    @Override
+    public FacturaVentaEmpleadoDTO crearVentaEmpleado(Long usuarioId, CrearVentaDTO dto) {
+
+        Usuario usuario = obtenerUsuario(usuarioId);
+
+        if (usuario.getRol() != RolEnum.EMPLEADO) {
+            throw new RuntimeException("Este endpoint es solo para empleados");
+        }
+
+        FacturaVentaDTO ventaAdminDTO = crearVenta(usuarioId, dto);
+
+        Venta venta = facturaVentaRepositorio.findById(ventaAdminDTO.getId())
+                .orElseThrow(() -> new RuntimeException("Venta no encontrada después de crearla"));
+
+        return mapToFacturaVentaEmpleadoDTO(venta);
+    }
+
+    @Override
+    public FacturaVentaEmpleadoDTO generarDevolucionEmpleado(
+            Long usuarioId,
+            Long ventaId,
+            DevolucionVentaDTO dto
+    ) {
+
+        Usuario usuario = obtenerUsuario(usuarioId);
+
+        if (usuario.getRol() != RolEnum.EMPLEADO) {
+            throw new RuntimeException("Este endpoint es solo para empleados");
+        }
+
+        FacturaVentaDTO ventaAdminDTO = generarDevolucion(usuarioId, ventaId, dto);
+
+        Venta venta = facturaVentaRepositorio.findById(ventaAdminDTO.getId())
+                .orElseThrow(() -> new RuntimeException("Venta no encontrada después de generar devolución"));
+
+        return mapToFacturaVentaEmpleadoDTO(venta);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public FacturaVentaEmpleadoDTO obtenerPorNumeroEmpleado(
+            Long usuarioId,
+            String numeroVenta
+    ) {
+
+        Usuario usuario = obtenerUsuario(usuarioId);
+
+        if (usuario.getRol() != RolEnum.EMPLEADO) {
+            throw new RuntimeException("Este endpoint es solo para empleados");
+        }
+
+        Venta venta = facturaVentaRepositorio.findByNumeroVenta(numeroVenta)
+                .orElseThrow(() -> new RuntimeException("Venta no encontrada"));
+
+        validarAccesoConsultaVenta(usuario, venta.getSucursal());
+
+        return mapToFacturaVentaEmpleadoDTO(venta);
+    }
+
+
+
 }

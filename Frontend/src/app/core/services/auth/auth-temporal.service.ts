@@ -17,8 +17,18 @@ export class AuthTemporalService {
     sucursalId: null
   };
 
+  private usuarioEmpleadoMock: UsuarioAuthTemporal = {
+    id: 3,
+    nombre: 'Empleado Principal',
+    username: 'empleado_sucursal',
+    rol: 'EMPLEADO',
+    empresaId: 1,
+    sucursalId: 1
+  };
+
+  // Desde aquí seleccionamos el usuario que necesitamos de forma temporal
   private usuarioActualSubject = new BehaviorSubject<UsuarioAuthTemporal>(
-    this.usuarioSuperAdminMock
+    this.usuarioEmpleadoMock
   );
 
   usuarioActual$: Observable<UsuarioAuthTemporal> =
@@ -36,6 +46,14 @@ export class AuthTemporalService {
     return this.usuarioActualSubject.value.rol;
   }
 
+  obtenerEmpresaId(): number | null {
+    return this.usuarioActualSubject.value.empresaId ?? null;
+  }
+
+  obtenerSucursalId(): number | null {
+    return this.usuarioActualSubject.value.sucursalId ?? null;
+  }
+
   esSuperAdmin(): boolean {
     return this.usuarioActualSubject.value.rol === 'SUPER_ADMIN';
   }
@@ -46,5 +64,13 @@ export class AuthTemporalService {
 
   esEmpleado(): boolean {
     return this.usuarioActualSubject.value.rol === 'EMPLEADO';
+  }
+
+  usarSuperAdmin(): void {
+    this.usuarioActualSubject.next(this.usuarioSuperAdminMock);
+  }
+
+  usarEmpleado(): void {
+    this.usuarioActualSubject.next(this.usuarioEmpleadoMock);
   }
 }

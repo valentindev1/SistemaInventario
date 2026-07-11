@@ -1,0 +1,58 @@
+.card {
+  border-radius: 16px;
+}
+
+.btn {
+  min-height: 42px;
+}
+
+.option-card {
+  border-radius: 16px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.option-card-active:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 0.75rem 1.5rem rgba(0, 0, 0, 0.08) !important;
+}
+
+.option-card-disabled {
+  opacity: 0.78;
+}
+
+.option-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.option-icon i {
+  font-size: 1.35rem;
+}
+.btn-primary {
+  width: 100%;
+  border: none;
+  border-radius: 8px;
+  padding: 11px 16px;
+  background: #2563eb;
+  color: #ffffff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-primary:hover {
+  background: #1d4ed8;
+}
+
+.btn-secondary {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 11px 16px;
+  background: #ffffff;
+  color: #374151;
+  font-weight: 600;
+}

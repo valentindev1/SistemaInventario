@@ -1,0 +1,291 @@
+<div class="container-fluid">
+
+  <!-- Encabezado -->
+  <div class="d-flex flex-column flex-md-row justify-content-md-between align-items-md-center gap-3 mb-4">
+
+    <div>
+      <a
+        [routerLink]="['/super-admin/empresas/detalle', empresaId]"
+        class="btn btn-link px-0 mb-2"
+      >
+        <i class="bi bi-arrow-left me-1"></i>
+        Volver al detalle de empresa
+      </a>
+
+      <h2 class="fw-bold mb-1">
+        {{ sucursal?.nombre || 'Detalle de sucursal' }}
+      </h2>
+
+      <p class="text-muted mb-0">
+        Administra la información y operaciones asociadas a esta sucursal.
+      </p>
+    </div>
+
+    <div class="d-flex flex-column flex-md-row gap-2">
+
+      <a
+        [routerLink]="['/super-admin/empresas', empresaId, 'sucursales', 'editar', sucursalId]"
+        class="btn btn-outline-primary"
+      >
+        <i class="bi bi-pencil me-1"></i>
+        Editar sucursal
+      </a>
+
+      <a
+        [routerLink]="['/super-admin/empresas', empresaId, 'sucursales', sucursalId, 'usuarios', 'crear']"
+        class="btn btn-primary"
+      >
+        <i class="bi bi-person-plus me-1"></i>
+        Crear empleado
+      </a>
+
+    </div>
+
+  </div>
+
+  <!-- Error -->
+  <div *ngIf="mensajeError" class="alert alert-danger">
+    <i class="bi bi-exclamation-triangle me-1"></i>
+    {{ mensajeError }}
+  </div>
+
+  <!-- Cargando -->
+  <div *ngIf="cargandoEmpresa || cargandoSucursal" class="text-center p-4">
+    <div class="spinner-border text-primary"></div>
+    <p class="text-muted mt-2 mb-0">Cargando información...</p>
+  </div>
+
+  <!-- Información general -->
+  <div *ngIf="empresa && sucursal && !cargandoEmpresa && !cargandoSucursal" class="row g-4">
+
+    <!-- Empresa -->
+    <div class="col-12 col-xl-4">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body p-4">
+
+          <h5 class="fw-bold mb-3">
+            <i class="bi bi-building me-1"></i>
+            Empresa
+          </h5>
+
+          <div class="mb-3">
+            <div class="text-muted small">Nombre</div>
+            <div class="fw-semibold">{{ empresa.nombre }}</div>
+          </div>
+
+          <div class="mb-3">
+            <div class="text-muted small">NIT</div>
+            <div class="fw-semibold">{{ empresa.nit }}</div>
+          </div>
+
+          <div class="mb-3">
+            <div class="text-muted small">Correo</div>
+            <div class="fw-semibold">{{ empresa.correo }}</div>
+          </div>
+
+          <div>
+            <div class="text-muted small">Teléfono</div>
+            <div class="fw-semibold">{{ empresa.telefono }}</div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Sucursal -->
+    <div class="col-12 col-xl-8">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body p-4">
+
+          <h5 class="fw-bold mb-3">
+            <i class="bi bi-shop me-1"></i>
+            Información de la sucursal
+          </h5>
+
+          <div class="row g-3">
+
+            <div class="col-12 col-md-6">
+              <div class="text-muted small">Nombre</div>
+              <div class="fw-semibold">{{ sucursal.nombre }}</div>
+            </div>
+
+            <div class="col-12 col-md-6">
+              <div class="text-muted small">Ciudad</div>
+              <div class="fw-semibold">{{ sucursal.ciudad }}</div>
+            </div>
+
+            <div class="col-12 col-md-6">
+              <div class="text-muted small">Teléfono</div>
+              <div class="fw-semibold">{{ sucursal.telefono }}</div>
+            </div>
+
+            <div class="col-12 col-md-6">
+              <div class="text-muted small">Fecha creación</div>
+              <div class="fw-semibold">
+                {{ sucursal.fechaCreacion | date:'yyyy-MM-dd HH:mm' }}
+              </div>
+            </div>
+
+            <div class="col-12">
+              <div class="text-muted small">Dirección</div>
+              <div class="fw-semibold">{{ sucursal.direccion }}</div>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Opciones de sucursal -->
+  <div *ngIf="sucursal" class="card border-0 shadow-sm mt-4">
+    <div class="card-body p-4">
+
+      <div class="d-flex flex-column flex-md-row justify-content-md-between align-items-md-center gap-3 mb-4">
+        <div>
+          <h5 class="fw-bold mb-1">Opciones de sucursal</h5>
+          <p class="text-muted mb-0">
+            Desde aquí podrás acceder a las operaciones principales de esta sucursal.
+          </p>
+        </div>
+      </div>
+
+      <div class="row g-3">
+
+        <!-- Empleados - Activo -->
+        <div class="col-12 col-md-6 col-xl-4">
+          <div class="card border-0 shadow-sm h-100 option-card option-card-active">
+            <div class="card-body p-4 d-flex flex-column">
+
+              <div class="d-flex justify-content-between align-items-start mb-3">
+                <div class="option-icon bg-primary-subtle text-primary">
+                  <i class="bi bi-people"></i>
+                </div>
+
+                <span class="badge bg-primary">Activo</span>
+              </div>
+
+              <h5 class="fw-bold mb-2">Usuarios</h5>
+
+              <p class="text-muted small flex-grow-1">
+                Gestiona los empleados asociados directamente a esta sucursal.
+              </p>
+
+              <a
+                [routerLink]="['/super-admin/empresas', empresaId, 'sucursales', sucursalId, 'usuarios', 'crear']"
+                class="btn btn-primary w-100"
+              >
+                <i class="bi bi-person-plus me-1"></i>
+                Ingresar
+              </a>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- Inventario -->
+        <div class="col-12 col-md-6 col-xl-4">
+          <div class="card border-0 shadow-sm h-100 option-card option-card-disabled">
+            <div class="option-card h-100">
+              <div class="option-icon inventory-icon">
+                <i class="bi bi-box-seam"></i>
+              </div>
+
+              <h5 class="fw-bold mt-3">Inventario</h5>
+
+              <p class="text-muted small">
+                Consulta y administra los productos disponibles en esta sucursal.
+              </p>
+
+              <a
+                class="btn btn-primary w-100 mt-auto"
+                [routerLink]="[
+      '/super-admin/empresas',
+      empresaId,
+      'sucursales',
+      sucursalId,
+      'inventario',
+      'panel'
+    ]">
+                Ingresar
+              </a>
+            </div>
+          </div>
+        </div>
+
+
+        <!-- Ventas -->
+        <div class="col-12 col-md-6 col-xl-4">
+          <div class="card border-0 shadow-sm h-100 option-card">
+            <div class="card-body p-4 d-flex flex-column">
+
+              <div class="option-icon bg-warning-subtle text-warning mb-3">
+                <i class="bi bi-cart-check"></i>
+              </div>
+
+              <h5 class="fw-bold mb-2">Ventas</h5>
+
+              <p class="text-muted small flex-grow-1">
+                Registra ventas, consulta historial y genera operaciones comerciales.
+              </p>
+
+              <a
+                class="btn btn-primary w-100"
+                [routerLink]="[
+          '/super-admin/empresas',
+          empresaId,
+          'sucursales',
+          sucursalId,
+          'ventas',
+          'panel'
+        ]">
+                Ingresar
+              </a>
+
+            </div>
+          </div>
+        </div>
+
+
+        <!-- Clientes -->
+        <div class="col-12 col-md-6 col-xl-4">
+          <div class="card border-0 shadow-sm h-100 option-card">
+            <div class="card-body p-4 d-flex flex-column">
+
+              <div class="option-icon bg-info-subtle text-info mb-3">
+                <i class="bi bi-person-vcard"></i>
+              </div>
+
+              <h5 class="fw-bold mb-2">Clientes</h5>
+
+              <p class="text-muted small flex-grow-1">
+                Registra, consulta y administra los clientes asociados a la empresa.
+              </p>
+
+              <a
+                class="btn btn-primary w-100"
+                [routerLink]="[
+          '/super-admin/empresas',
+          empresaId,
+          'sucursales',
+          sucursalId,
+          'clientes',
+          'panel'
+        ]">
+                <i class="bi bi-people me-1"></i>
+                Ingresar
+              </a>
+
+            </div>
+          </div>
+        </div>
+
+
+      </div>
+
+    </div>
+  </div>
+
+</div>

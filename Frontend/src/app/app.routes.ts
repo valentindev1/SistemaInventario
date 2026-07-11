@@ -1,11 +1,9 @@
-import { Routes } from '@angular/router';
+import {Routes} from '@angular/router';
 
-import { DashboardLayoutComponent } from './layouts/dashboard-layout/dashboard-layout.component';
+import {DashboardLayoutComponent} from './layouts/super-admin-layout/dashboard-layout/dashboard-layout.component';
 
 
-
-import { DashboardComponent } from './features/super-admin/dashboard/dashboard.component';
-
+import {DashboardComponent} from './features/super-admin/dashboard/dashboard.component';
 
 
 import {
@@ -13,12 +11,10 @@ import {
 } from './features/super-admin/empresas/dashboard-empresa/dashboard-empresa.component';
 
 
-
-
-import { ListarEmpresasComponent } from './features/super-admin/empresas/listar-empresas/listar-empresas.component';
-import { CrearEmpresaComponent } from './features/super-admin/empresas/crear-empresa/crear-empresa.component';
-import { EditarEmpresaComponent } from './features/super-admin/empresas/editar-empresa/editar-empresa.component';
-import { DetalleEmpresaComponent } from './features/super-admin/empresas/detalle-empresa/detalle-empresa.component';
+import {ListarEmpresasComponent} from './features/super-admin/empresas/listar-empresas/listar-empresas.component';
+import {CrearEmpresaComponent} from './features/super-admin/empresas/crear-empresa/crear-empresa.component';
+import {EditarEmpresaComponent} from './features/super-admin/empresas/editar-empresa/editar-empresa.component';
+import {DetalleEmpresaComponent} from './features/super-admin/empresas/detalle-empresa/detalle-empresa.component';
 
 
 import {
@@ -115,6 +111,125 @@ export const routes: Routes = [
     redirectTo: 'super-admin/dashboard',
     pathMatch: 'full'
   },
+
+
+  // ==========================
+  // EMPLEADO
+  // ==========================
+
+  {
+    path: 'empleado/sucursal/:sucursalId/ventas/generar',
+    loadComponent: () =>
+      import('./features/empleado/ventas/ventas-empleado/ventas-empleado.component')
+        .then(m => m.VentasEmpleadoComponent)
+  },
+
+
+  {
+    path: 'empleado/sucursal/:sucursalId/dashboard',
+    loadComponent: () =>
+      import('./features/empleado/dashboard/dashboard.component')
+        .then(m => m.DashboardComponent)
+  },
+
+
+  {
+    path: '',
+    redirectTo: 'empleado/sucursal/1/ventas/generar',
+    pathMatch: 'full'
+  },
+
+  {
+    path: 'empleado/sucursal/:sucursalId/ventas/panel',
+    loadComponent: () =>
+      import('./features/empleado/ventas/panel-ventas-empleado/panel-ventas-empleado.component')
+        .then(m => m.PanelVentasEmpleadoComponent)
+  },
+
+
+  //ruta de inventairo
+  {
+    path: 'empleado/sucursal/:sucursalId/inventario/panel',
+    loadComponent: () =>
+      import('./features/empleado/inventario/panel-inventario-empleado/panel-inventario-empleado.component')
+        .then(m => m.PanelInventarioEmpleadoComponent)
+  },
+  //ruta de clientes
+  {
+    path: 'empleado/sucursal/:sucursalId/clientes/panel',
+    loadComponent: () =>
+      import('./features/empleado/clientes/panel-clientes-empleado/panel-clientes-empleado.component')
+        .then(m => m.PanelClientesEmpleadoComponent)
+  },
+
+  //ruta de empleados para el inventario
+
+  {
+    path: 'empleado/sucursal/:sucursalId/inventario/panel',
+    loadComponent: () =>
+      import('./features/empleado/inventario/panel-inventario-empleado/panel-inventario-empleado.component')
+        .then(m => m.PanelInventarioEmpleadoComponent)
+  },
+
+
+  //ruta para ver las facturas
+
+  {
+    path: 'empleado/sucursal/:sucursalId/ventas/facturas',
+    loadComponent: () =>
+      import('./features/empleado/ventas/facturas-empleado/facturas-empleado.component')
+        .then(m => m.FacturasEmpleadoComponent)
+  },
+
+
+
+  //ruta para devolucion
+
+  {
+    path: 'empleado/sucursal/:sucursalId/ventas/devolucion',
+    loadComponent: () =>
+      import('./features/empleado/ventas/devolucion-venta-empleado/devolucion-venta-empleado.component')
+        .then(m => m.DevolucionVentaEmpleadoComponent)
+  },
+
+
+  //ruta para ver el historico de ventas
+  {
+    path: 'empleado/sucursal/:sucursalId/ventas/historico',
+    loadComponent: () =>
+      import('./features/empleado/ventas/historico-ventas-empleado/historico-ventas-empleado.component')
+        .then(m => m.HistoricoVentasEmpleadoComponent)
+  },
+
+  //ruta para el inventario
+
+
+  {
+    path: 'empleado/sucursal/:sucursalId/inventario/actual',
+    loadComponent: () =>
+      import('./features/empleado/inventario/inventario-actual-empleado/inventario-actual-empleado.component')
+        .then(m => m.InventarioActualEmpleadoComponent)
+  },
+
+
+  //ruta para ver inventario
+  {
+    path: 'empleado/sucursal/:sucursalId/inventario/actual',
+    loadComponent: () =>
+      import('./features/empleado/inventario/inventario-actual-empleado/inventario-actual-empleado.component')
+        .then(m => m.InventarioActualEmpleadoComponent)
+  },
+
+
+
+  //movimientos del inventario para el empleado
+  {
+    path: 'empleado/sucursal/:sucursalId/inventario/movimientos',
+    loadComponent: () =>
+      import('./features/empleado/inventario/movimientos-inventario-empleado/movimientos-inventario-empleado.component')
+        .then(m => m.MovimientosInventarioEmpleadoComponent)
+  },
+
   {
     path: 'super-admin',
     component: DashboardLayoutComponent,

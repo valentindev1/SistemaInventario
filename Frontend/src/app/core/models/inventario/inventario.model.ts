@@ -106,3 +106,31 @@ export interface ResumenInventarioSucursalDTO {
   valorVentaTotal: number;
   utilidadProyectada: number;
 }
+
+export interface MovimientoInventarioEmpleadoDTO {
+  id: number;
+
+  tipo: string;
+
+  productoId: number;
+  productoCodigo: string;
+  productoNombre: string;
+
+  sucursalId: number;
+  sucursalNombre: string;
+
+  cantidad: number;
+  stockAntes: number;
+  stockDespues: number;
+
+  precioVentaMomento: number;
+
+  usuarioId: number;
+  usuarioNombre: string;
+  usuarioRol: string;
+
+  motivo: string;
+  referenciaId: number | null;
+
+  fecha: string;
+}

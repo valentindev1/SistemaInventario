@@ -1,0 +1,192 @@
+<div class="container-fluid">
+
+  <div class="d-flex flex-column flex-md-row justify-content-md-between align-items-md-center gap-3 mb-4">
+
+    <div>
+      <a
+        [routerLink]="['/super-admin/empresas/detalle', empresaId]"
+        class="btn btn-link px-0 mb-2"
+      >
+        <i class="bi bi-arrow-left me-1"></i>
+        Volver al detalle de empresa
+      </a>
+
+      <h2 class="fw-bold mb-1">Crear usuario administrador</h2>
+
+      <p class="text-muted mb-0">
+        Crea un usuario ADMIN asociado directamente a esta empresa.
+      </p>
+    </div>
+
+  </div>
+
+  <div *ngIf="mensajeExito" class="alert alert-success">
+    <i class="bi bi-check-circle me-1"></i>
+    {{ mensajeExito }}
+  </div>
+
+  <div *ngIf="mensajeError" class="alert alert-danger">
+    <i class="bi bi-exclamation-triangle me-1"></i>
+    {{ mensajeError }}
+  </div>
+
+  <div *ngIf="cargandoEmpresa || verificandoUsuarios" class="text-center p-4">
+    <div class="spinner-border text-primary"></div>
+    <p class="text-muted mt-2 mb-0">Cargando información...</p>
+  </div>
+
+  <!-- Información de empresa -->
+  <div
+    *ngIf="empresa && !cargandoEmpresa && !verificandoUsuarios"
+    class="card border-0 shadow-sm mb-4"
+  >
+    <div class="card-body p-4">
+
+      <h5 class="fw-bold mb-3">{{ empresa.nombre }}</h5>
+
+      <div class="row g-3">
+
+        <div class="col-12 col-md-6 col-xl-3">
+          <div class="text-muted small">NIT</div>
+          <div class="fw-semibold">{{ empresa.nit }}</div>
+        </div>
+
+        <div class="col-12 col-md-6 col-xl-3">
+          <div class="text-muted small">Correo</div>
+          <div class="fw-semibold">{{ empresa.correo }}</div>
+        </div>
+
+        <div class="col-12 col-md-6 col-xl-3">
+          <div class="text-muted small">Teléfono</div>
+          <div class="fw-semibold">{{ empresa.telefono }}</div>
+        </div>
+
+        <div class="col-12 col-md-6 col-xl-3">
+          <div class="text-muted small">Fecha creación</div>
+          <div class="fw-semibold">
+            {{ empresa.fechaCreacion | date:'yyyy-MM-dd HH:mm' }}
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Aviso si NO tiene usuarios -->
+  <div
+    *ngIf="empresa && !tieneUsuarios && !verificandoUsuarios"
+    class="alert alert-warning"
+  >
+    <i class="bi bi-exclamation-triangle me-1"></i>
+    Esta empresa aún no tiene usuarios registrados. Debes crear su primer usuario administrador.
+  </div>
+
+  <!-- Aviso si YA tiene usuarios -->
+  <div
+    *ngIf="empresa && tieneUsuarios && !verificandoUsuarios"
+    class="alert alert-info"
+  >
+    <i class="bi bi-info-circle me-1"></i>
+    Esta empresa ya tiene usuarios registrados. Puedes crear otro administrador para esta empresa.
+  </div>
+
+  <!-- Formulario -->
+  <div
+    *ngIf="empresa && !cargandoEmpresa && !verificandoUsuarios"
+    class="card border-0 shadow-sm"
+  >
+    <div class="card-body p-4">
+
+      <form [formGroup]="formularioAdministrador" (ngSubmit)="crearAdministrador()">
+
+        <div class="row g-3">
+
+          <div class="col-12 col-md-6">
+            <label class="form-label">Nombre del administrador</label>
+            <input
+              type="text"
+              class="form-control"
+              formControlName="nombre"
+              placeholder="Ej: Juan Pérez"
+              [class.is-invalid]="campoInvalido('nombre')"
+            >
+
+            <div class="invalid-feedback">
+              El nombre es obligatorio.
+            </div>
+          </div>
+
+          <div class="col-12 col-md-6">
+            <label class="form-label">Username</label>
+            <input
+              type="text"
+              class="form-control"
+              formControlName="username"
+              placeholder="Ej: admin_empresa"
+              [class.is-invalid]="campoInvalido('username')"
+            >
+
+            <div class="invalid-feedback">
+              El username es obligatorio.
+            </div>
+          </div>
+
+          <div class="col-12 col-md-6">
+            <label class="form-label">Contraseña</label>
+            <input
+              type="password"
+              class="form-control"
+              formControlName="password"
+              placeholder="Mínimo 6 caracteres"
+              [class.is-invalid]="campoInvalido('password')"
+            >
+
+            <div class="invalid-feedback">
+              La contraseña es obligatoria y debe tener mínimo 6 caracteres.
+            </div>
+          </div>
+
+          <div class="col-12 col-md-6">
+            <label class="form-label">Rol</label>
+            <input
+              type="text"
+              class="form-control"
+              value="ADMIN"
+              disabled
+            >
+          </div>
+
+        </div>
+
+        <div class="d-flex flex-column flex-md-row justify-content-md-end gap-2 mt-4">
+
+          <a
+            [routerLink]="['/super-admin/empresas/detalle', empresaId]"
+            class="btn btn-light"
+          >
+            Cancelar
+          </a>
+
+          <button
+            type="submit"
+            class="btn btn-primary"
+            [disabled]="guardando"
+          >
+            <span
+              *ngIf="guardando"
+              class="spinner-border spinner-border-sm me-2"
+            ></span>
+
+            <i *ngIf="!guardando" class="bi bi-person-plus me-1"></i>
+            Crear administrador
+          </button>
+
+        </div>
+
+      </form>
+
+    </div>
+  </div>
+
+</div>

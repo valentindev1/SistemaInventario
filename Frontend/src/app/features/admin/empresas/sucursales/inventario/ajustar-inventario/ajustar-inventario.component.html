@@ -1,0 +1,366 @@
+<div class="container-fluid">
+
+  <!-- Encabezado -->
+  <div
+    class="d-flex flex-column flex-md-row justify-content-md-between align-items-md-center gap-3 mb-4">
+
+    <div>
+
+      <button
+        type="button"
+        class="btn btn-link px-0 mb-2"
+        (click)="volverAlPanel()">
+
+        <i class="bi bi-arrow-left me-1"></i>
+        Volver al panel de inventario
+
+      </button>
+
+      <h2 class="fw-bold mb-1">
+        Ajuste manual de inventario
+      </h2>
+
+      <p class="text-muted mb-0">
+        Realiza ajustes positivos o negativos sobre el stock de los productos de esta sucursal.
+      </p>
+
+    </div>
+
+    <button
+      type="button"
+      class="btn btn-outline-primary"
+      [disabled]="cargandoInventario || guardando"
+      (click)="cargarInventario()">
+
+      <i class="bi bi-arrow-clockwise me-1"></i>
+      Actualizar inventario
+
+    </button>
+
+  </div>
+
+  <!-- Mensajes -->
+  <div *ngIf="mensajeExito" class="alert alert-success">
+
+    <i class="bi bi-check-circle me-1"></i>
+    {{ mensajeExito }}
+
+  </div>
+
+  <div *ngIf="mensajeError" class="alert alert-danger">
+
+    <i class="bi bi-exclamation-triangle me-1"></i>
+    {{ mensajeError }}
+
+  </div>
+
+  <!-- Cargando -->
+  <div *ngIf="cargandoInventario" class="text-center p-4">
+
+    <div class="spinner-border text-primary"></div>
+
+    <p class="text-muted mt-2 mb-0">
+      Cargando inventario...
+    </p>
+
+  </div>
+
+  <div *ngIf="!cargandoInventario" class="row g-4">
+
+    <!-- Formulario ajuste -->
+    <div class="col-12 col-xl-5">
+
+      <div class="card border-0 shadow-sm h-100">
+
+        <div class="card-body p-4">
+
+          <h5 class="fw-bold mb-3">
+            Datos del ajuste
+          </h5>
+
+          <div class="mb-3">
+
+            <label class="form-label">
+              Producto
+            </label>
+
+            <select
+              class="form-select"
+              [(ngModel)]="productoSeleccionadoId">
+
+              <option value="">
+                Seleccione un producto
+              </option>
+
+              <option
+                *ngFor="let item of inventario"
+                [value]="item.productoId">
+
+                {{ item.codigo }} -
+                {{ item.nombre }}
+                | Stock:
+                {{ item.stockActual }}
+
+              </option>
+
+            </select>
+
+          </div>
+
+          <div class="mb-3">
+
+            <label class="form-label">
+              Cantidad del ajuste
+            </label>
+
+            <input
+              type="number"
+              class="form-control"
+              [(ngModel)]="cantidadAjuste"
+              placeholder="Ej: 5 para sumar, -3 para restar">
+
+            <div class="form-text">
+              Usa valores positivos para aumentar stock y valores negativos para reducirlo.
+            </div>
+
+          </div>
+
+          <div class="mb-3">
+
+            <label class="form-label">
+              Motivo del ajuste
+            </label>
+
+            <textarea
+              class="form-control"
+              rows="3"
+              [(ngModel)]="motivo"
+              placeholder="Ej: conteo físico, producto dañado, corrección de registro"></textarea>
+
+          </div>
+
+          <div
+            *ngIf="obtenerProductoSeleccionado()"
+            class="alert alert-info">
+
+            <div class="mb-1">
+
+              <strong>Producto:</strong>
+              {{ obtenerProductoSeleccionado()?.codigo }} -
+              {{ obtenerProductoSeleccionado()?.nombre }}
+
+            </div>
+
+            <div class="mb-1">
+
+              <strong>Stock actual:</strong>
+              {{ obtenerProductoSeleccionado()?.stockActual }}
+
+            </div>
+
+            <div class="mb-1">
+
+              <strong>Tipo:</strong>
+
+              <span [class]="obtenerClaseTipoAjuste()">
+                {{ obtenerTipoAjuste() }}
+              </span>
+
+            </div>
+
+            <div>
+
+              <strong>Stock resultante:</strong>
+              {{ calcularStockResultado() }}
+
+            </div>
+
+          </div>
+
+          <button
+            type="button"
+            class="btn btn-danger w-100"
+            [disabled]="guardando"
+            (click)="realizarAjuste()">
+
+            <span
+              *ngIf="guardando"
+              class="spinner-border spinner-border-sm me-2">
+            </span>
+
+            <i
+              *ngIf="!guardando"
+              class="bi bi-sliders me-1">
+            </i>
+
+            Registrar ajuste
+
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- Inventario referencia -->
+    <div class="col-12 col-xl-7">
+
+      <div class="card border-0 shadow-sm">
+
+        <div class="card-body p-4">
+
+          <div
+            class="d-flex flex-column flex-md-row justify-content-md-between gap-2 mb-3">
+
+            <div>
+
+              <h5 class="fw-bold mb-1">
+                Inventario actual
+              </h5>
+
+              <p class="text-muted small mb-0">
+                Referencias disponibles para ajuste en esta sucursal.
+              </p>
+
+            </div>
+
+          </div>
+
+          <div
+            *ngIf="inventario.length === 0"
+            class="empty-state">
+
+            No hay productos registrados en el inventario de esta sucursal.
+
+          </div>
+
+          <div
+            *ngIf="inventario.length > 0"
+            class="table-responsive">
+
+            <table class="table align-middle">
+
+              <thead>
+
+              <tr>
+                <th>Producto</th>
+                <th>Categoría</th>
+                <th>Color</th>
+                <th>Talla</th>
+                <th>Stock</th>
+                <th>Precio venta</th>
+              </tr>
+
+              </thead>
+
+              <tbody>
+
+              <tr *ngFor="let item of inventarioPaginado">
+
+                <td>
+
+                  <div class="fw-semibold">
+                    {{ item.nombre }}
+                  </div>
+
+                  <div class="text-muted small">
+                    {{ item.codigo }}
+                  </div>
+
+                </td>
+
+                <td>
+                  {{ item.categoria }}
+                </td>
+
+                <td>
+                  {{ item.color }}
+                </td>
+
+                <td>
+                  {{ item.talla }}
+                </td>
+
+                <td>
+
+                    <span class="badge bg-primary">
+                      {{ item.stockActual }}
+                    </span>
+
+                </td>
+
+                <td>
+                  {{
+                    item.precioVenta
+                      | currency:'COP':'symbol-narrow':'1.0-0'
+                  }}
+                </td>
+
+              </tr>
+
+              </tbody>
+
+            </table>
+
+            <!-- PAGINACIÓN -->
+            <div
+              *ngIf="totalPaginas > 1"
+              class="d-flex justify-content-center align-items-center gap-2 mt-3 flex-wrap">
+
+              <button
+                type="button"
+                class="btn btn-outline-secondary btn-sm"
+                [disabled]="paginaActual === 1"
+                (click)="cambiarPagina(paginaActual - 1)">
+
+                <i class="bi bi-chevron-left"></i>
+                Anterior
+
+              </button>
+
+              <span class="fw-semibold pagination-info">
+                Página {{ paginaActual }} de {{ totalPaginas }}
+              </span>
+
+              <button
+                type="button"
+                class="btn btn-outline-secondary btn-sm"
+                [disabled]="paginaActual === totalPaginas"
+                (click)="cambiarPagina(paginaActual + 1)">
+
+                Siguiente
+                <i class="bi bi-chevron-right"></i>
+
+              </button>
+
+            </div>
+
+            <div class="text-center text-muted small mt-2">
+
+              Mostrando
+              {{ ((paginaActual - 1) * registrosPorPagina) + 1 }}
+              -
+              {{
+                Math.min(
+                  paginaActual * registrosPorPagina,
+                  inventario.length
+                )
+              }}
+              de
+              {{ inventario.length }}
+              productos
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>

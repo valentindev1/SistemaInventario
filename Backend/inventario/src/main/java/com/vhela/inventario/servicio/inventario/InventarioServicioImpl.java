@@ -3,6 +3,7 @@ package com.vhela.inventario.servicio.inventario;
 import java.math.BigDecimal;
 import java.util.List;
 
+import com.vhela.inventario.dto.inventario.empleado.MovimientoInventarioEmpleadoDTO;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -455,4 +456,80 @@ public class InventarioServicioImpl implements InventarioServicio {
 
         return dto;
     }
+
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<MovimientoInventarioEmpleadoDTO> listarMovimientosPorSucursalEmpleado(
+            Long usuarioId,
+            Long sucursalId
+    ) {
+
+        Usuario usuario = obtenerUsuario(usuarioId);
+
+        if (usuario.getRol() != RolEnum.EMPLEADO) {
+            throw new RuntimeException("Este endpoint es solo para empleados");
+        }
+
+        Sucursal sucursal = obtenerSucursal(sucursalId);
+
+        validarAccesoConsultaInventario(usuario, sucursal);
+
+        return movimientoInventarioRepositorio.findBySucursalIdOrderByFechaDesc(sucursalId)
+                .stream()
+                .map(this::mapToMovimientoEmpleadoDTO)
+                .toList();
+    }
+
+    private MovimientoInventarioEmpleadoDTO mapToMovimientoEmpleadoDTO(
+            MovimientoInventario movimiento
+    ) {
+
+        MovimientoInventarioEmpleadoDTO dto = new MovimientoInventarioEmpleadoDTO();
+
+        dto.setId(movimiento.getId());
+
+        dto.setTipo(
+                movimiento.getTipo() == null
+                        ? null
+                        : movimiento.getTipo().name()
+        );
+
+        if (movimiento.getProducto() != null) {
+            dto.setProductoId(movimiento.getProducto().getId());
+            dto.setProductoCodigo(movimiento.getProducto().getCodigo());
+            dto.setProductoNombre(movimiento.getProducto().getNombre());
+        }
+
+        if (movimiento.getSucursal() != null) {
+            dto.setSucursalId(movimiento.getSucursal().getId());
+            dto.setSucursalNombre(movimiento.getSucursal().getNombre());
+        }
+
+        dto.setCantidad(movimiento.getCantidad());
+        dto.setStockAntes(movimiento.getStockAntes());
+        dto.setStockDespues(movimiento.getStockDespues());
+
+        /*
+         * El empleado puede ver el precio de venta,
+         * pero nunca el costo del producto.
+         */
+        dto.setPrecioVentaMomento(movimiento.getPrecioVentaMomento());
+
+        if (movimiento.getUsuario() != null) {
+            dto.setUsuarioId(movimiento.getUsuario().getId());
+            dto.setUsuarioNombre(movimiento.getUsuario().getNombre());
+            dto.setUsuarioRol(movimiento.getUsuario().getRol().name());
+        }
+
+        dto.setMotivo(movimiento.getMotivo());
+        dto.setReferenciaId(movimiento.getReferenciaId());
+        dto.setFecha(movimiento.getFecha());
+
+        return dto;
+    }
+
+
+
+
 }

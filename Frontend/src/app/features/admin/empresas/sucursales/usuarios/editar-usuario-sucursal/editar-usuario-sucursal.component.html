@@ -1,0 +1,246 @@
+<div class="container-fluid">
+
+  <!-- Encabezado -->
+  <div class="d-flex flex-column flex-md-row justify-content-md-between align-items-md-center gap-3 mb-4">
+
+    <div>
+      <button
+        type="button"
+        class="btn btn-link px-0 mb-2"
+        (click)="volver()"
+      >
+        <i class="bi bi-arrow-left me-1"></i>
+        Volver a gestión de empleados
+      </button>
+
+      <h2 class="fw-bold mb-1">
+        Cambiar contraseña
+      </h2>
+
+      <p class="text-muted mb-0">
+        Modifica únicamente la contraseña del usuario asociado a esta sucursal.
+      </p>
+    </div>
+
+  </div>
+
+  <!-- Mensaje éxito -->
+  <div *ngIf="mensajeExito" class="alert alert-success">
+    <i class="bi bi-check-circle me-1"></i>
+    {{ mensajeExito }}
+  </div>
+
+  <!-- Mensaje error -->
+  <div *ngIf="mensajeError" class="alert alert-danger">
+    <i class="bi bi-exclamation-triangle me-1"></i>
+    {{ mensajeError }}
+  </div>
+
+  <!-- Cargando -->
+  <div *ngIf="cargando" class="text-center p-4">
+    <div class="spinner-border text-primary"></div>
+
+    <p class="text-muted mt-2 mb-0">
+      Cargando usuario...
+    </p>
+  </div>
+
+  <!-- Formulario -->
+  <div
+    *ngIf="!cargando"
+    class="card border-0 shadow-sm"
+  >
+
+    <div class="card-body p-4">
+
+      <div class="mb-4">
+        <h5 class="fw-bold mb-1">
+          Información del usuario
+        </h5>
+
+        <p class="text-muted mb-0 small">
+          Los datos del usuario son de solo lectura. Solo puedes cambiar la contraseña.
+        </p>
+      </div>
+
+      <form
+        [formGroup]="formularioUsuario"
+        (ngSubmit)="guardarCambios()"
+      >
+
+        <div class="row g-3">
+
+          <!-- Nombre -->
+          <div class="col-12 col-md-6">
+
+            <label class="form-label">
+              Nombre
+            </label>
+
+            <input
+              type="text"
+              class="form-control campo-bloqueado"
+              formControlName="nombre"
+            >
+
+          </div>
+
+          <!-- Username -->
+          <div class="col-12 col-md-6">
+
+            <label class="form-label">
+              Username
+            </label>
+
+            <input
+              type="text"
+              class="form-control campo-bloqueado"
+              formControlName="username"
+            >
+
+            <small class="text-muted">
+              El username no se puede modificar desde esta vista.
+            </small>
+
+          </div>
+
+          <!-- Rol -->
+          <div class="col-12 col-md-6">
+
+            <label class="form-label">
+              Rol
+            </label>
+
+            <input
+              type="text"
+              class="form-control campo-bloqueado"
+              formControlName="rol"
+            >
+
+          </div>
+
+          <!-- Nueva contraseña -->
+          <div class="col-12 col-md-6">
+
+            <label class="form-label">
+              Nueva contraseña
+            </label>
+
+            <input
+              type="password"
+              class="form-control"
+              formControlName="password"
+              placeholder="Mínimo 6 caracteres"
+              [class.is-invalid]="campoInvalido('password')"
+            >
+
+            <div class="invalid-feedback">
+              La contraseña es obligatoria y debe tener mínimo 6 caracteres.
+            </div>
+
+          </div>
+
+          <!-- Confirmar contraseña -->
+          <div class="col-12 col-md-6">
+
+            <label class="form-label">
+              Confirmar nueva contraseña
+            </label>
+
+            <input
+              type="password"
+              class="form-control"
+              formControlName="confirmarPassword"
+              placeholder="Repite la nueva contraseña"
+              [class.is-invalid]="campoInvalido('confirmarPassword')"
+            >
+
+            <div class="invalid-feedback">
+              Debes confirmar la nueva contraseña.
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- Contexto usuario -->
+        <div
+          *ngIf="usuario"
+          class="alert alert-info mt-4 mb-0"
+        >
+
+          <div class="row g-3">
+
+            <div class="col-12 col-md-4">
+              <div class="text-muted small">
+                Empresa
+              </div>
+
+              <div class="fw-semibold">
+                {{ usuario.empresaNombre || 'Sin empresa' }}
+              </div>
+            </div>
+
+            <div class="col-12 col-md-4">
+              <div class="text-muted small">
+                Sucursal
+              </div>
+
+              <div class="fw-semibold">
+                {{ usuario.sucursalNombre || 'Sin sucursal' }}
+              </div>
+            </div>
+
+            <div class="col-12 col-md-4">
+              <div class="text-muted small">
+                ID usuario
+              </div>
+
+              <div class="fw-semibold">
+                {{ usuario.id }}
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- Acciones -->
+        <div class="d-flex flex-column flex-md-row justify-content-md-end gap-2 mt-4">
+
+          <button
+            type="button"
+            class="btn btn-light"
+            (click)="volver()"
+            [disabled]="guardando"
+          >
+            Cancelar
+          </button>
+
+          <button
+            type="submit"
+            class="btn btn-primary"
+            [disabled]="guardando"
+          >
+            <span
+              *ngIf="guardando"
+              class="spinner-border spinner-border-sm me-2"
+            ></span>
+
+            <i
+              *ngIf="!guardando"
+              class="bi bi-key me-1"
+            ></i>
+
+            Cambiar contraseña
+          </button>
+
+        </div>
+
+      </form>
+
+    </div>
+
+  </div>
+
+</div>

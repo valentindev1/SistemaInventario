@@ -1,0 +1,52 @@
+.card {
+  border-radius: 16px;
+}
+
+.info-box {
+  padding: 14px;
+  border-radius: 12px;
+  background: #f8f9fa;
+  border: 1px solid #e5e7eb;
+  min-height: 72px;
+}
+
+.empty-state {
+  padding: 24px;
+  border-radius: 12px;
+  background: #f8f9fa;
+  color: #6c757d;
+  text-align: center;
+  border: 1px dashed #ced4da;
+}
+
+.quantity-input {
+  max-width: 110px;
+}
+
+.table thead {
+  background: #f8f9fa;
+}
+
+.table th {
+  font-size: 13px;
+  color: #374151;
+  white-space: nowrap;
+}
+
+.table td {
+  vertical-align: middle;
+}
+
+.table tfoot {
+  background: #f8f9fa;
+}
+
+.badge {
+  font-size: 13px;
+  padding: 7px 10px;
+  border-radius: 999px;
+}
+
+textarea {
+  resize: vertical;
+}
