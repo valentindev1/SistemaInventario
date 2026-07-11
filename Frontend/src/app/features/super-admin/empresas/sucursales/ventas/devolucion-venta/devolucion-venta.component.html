@@ -1,24 +1,36 @@
 <div class="container-fluid">
 
-  <div class="d-flex flex-column flex-md-row justify-content-md-between align-items-md-center gap-3 mb-4">
+  <div class="returns-hero">
 
     <div>
-      <button
-        type="button"
-        class="btn btn-link px-0 mb-2"
-        (click)="volverAlPanel()">
-        <i class="bi bi-arrow-left me-1"></i>
-        Volver al panel de ventas
-      </button>
 
-      <h2 class="fw-bold mb-1">Generar devolución</h2>
+      <div class="hero-badge">
+        <i class="bi bi-arrow-counterclockwise"></i>
+        Gestión de Devoluciones
+      </div>
 
-      <p class="text-muted mb-0">
-        Consulta una factura, selecciona los productos a devolver y repón el inventario.
+      <h1>Generar devolución</h1>
+
+      <p>
+        Consulta una factura, selecciona los productos a devolver y
+        registra el reingreso automático al inventario.
       </p>
+
     </div>
 
+    <button
+      type="button"
+      class="btn btn-light-custom"
+      (click)="volverAlPanel()">
+
+      <i class="bi bi-arrow-left me-2"></i>
+      Volver
+
+    </button>
+
+
   </div>
+
 
   <div *ngIf="mensajeExito" class="alert alert-success">
     <i class="bi bi-check-circle me-1"></i>

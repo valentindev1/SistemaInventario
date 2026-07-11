@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import {ActivatedRoute, Router, RouterLink} from '@angular/router';
 
 import { EmpresaService } from '../../../../core/services/empresa/empresa.service';
 import { UsuarioService } from '../../../../core/services/usuario/usuario.service';
@@ -40,7 +40,8 @@ export class DetalleEmpresaComponent implements OnInit {
     private empresaService: EmpresaService,
     private usuarioService: UsuarioService,
     private sucursalService: SucursalService
-    ,
+    ,  private router: Router,
+
     public authTemporalService: AuthTemporalService
 
   ) {}
@@ -79,6 +80,10 @@ export class DetalleEmpresaComponent implements OnInit {
     });
   }
 
+  esSuperAdmin(): boolean {
+    return this.authTemporalService.esSuperAdmin();
+  }
+
   cargarUsuarios(): void {
     this.cargandoUsuarios = true;
     this.mensajeError = '';
@@ -111,6 +116,17 @@ export class DetalleEmpresaComponent implements OnInit {
         console.error(error);
       }
     });
+  }
+
+
+  irEditarPasswordAdmin(usuarioId: number): void {
+    this.router.navigate([
+      '/super-admin/empresas',
+      this.empresaId,
+      'usuarios',
+      usuarioId,
+      'editar-password'
+    ]);
   }
 
   eliminarUsuario(usuarioId: number): void {

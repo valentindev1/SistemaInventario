@@ -269,6 +269,11 @@ export class DevolucionVentaComponent implements OnInit {
     ]);
   }
 
+
+
+
+
+
   obtenerClaseEstado(estado: string): string {
     switch (estado) {
       case 'ACTIVA':

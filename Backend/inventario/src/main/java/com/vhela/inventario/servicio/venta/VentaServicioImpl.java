@@ -1120,7 +1120,14 @@ public class VentaServicioImpl implements VentaServicio {
     }
 
     private String generarNumeroVenta(Sucursal sucursal) {
-        return "VEN-" + sucursal.getId() + "-" + System.currentTimeMillis();
+
+        Long sucursalId = sucursal.getId();
+
+        Long cantidadVentasSucursal = facturaVentaRepositorio.countBySucursalId(sucursalId);
+
+        Long consecutivo = cantidadVentasSucursal + 1;
+
+        return String.format("VEN-%d-%07d", sucursalId, consecutivo);
     }
 
     private Usuario obtenerUsuario(Long usuarioId) {

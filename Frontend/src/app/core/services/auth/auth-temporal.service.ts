@@ -28,7 +28,7 @@ export class AuthTemporalService {
 
   // Desde aquí seleccionamos el usuario que necesitamos de forma temporal
   private usuarioActualSubject = new BehaviorSubject<UsuarioAuthTemporal>(
-    this.usuarioEmpleadoMock
+    this.usuarioSuperAdminMock
   );
 
   usuarioActual$: Observable<UsuarioAuthTemporal> =

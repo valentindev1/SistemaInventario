@@ -1,21 +1,35 @@
 <div class="ingreso-inventario-page">
 
   <!-- Encabezado -->
-  <div class="page-header">
-    <div>
+
+  <div class="inventory-hero">
+
+    <div class="inventory-badge">
+      <i class="bi bi-box-arrow-in-down"></i>
+      Ingreso de Inventario
+    </div>
+
+    <div class="hero-content">
       <h1>Ingresar mercancía</h1>
+
       <p>
-        Agrega uno o varios productos al inventario de esta sucursal.
+        Registra compras, reposiciones o ingresos iniciales de productos
+        al inventario de esta sucursal.
       </p>
     </div>
 
     <button
       type="button"
-      class="btn btn-secondary"
+      class="btn btn-light-custom"
       (click)="volverADetalleSucursal()">
+
+      <i class="bi bi-arrow-left me-2"></i>
       Volver
+
     </button>
+
   </div>
+
 
   <!-- Mensajes -->
   <div *ngIf="mensajeExito" class="alert alert-success">

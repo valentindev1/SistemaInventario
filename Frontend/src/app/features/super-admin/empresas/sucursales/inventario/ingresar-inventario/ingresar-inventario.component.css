@@ -1,56 +1,147 @@
+/* ======================================
+   PAGE
+====================================== */
+
 .ingreso-inventario-page {
   padding: 24px;
+  max-width: 1600px;
+  margin: auto;
 }
 
-/* Encabezado */
+/* ======================================
+   HERO
+====================================== */
 
-.page-header {
+.inventory-hero {
+  background: linear-gradient(
+    135deg,
+    #2563eb,
+    #1d4ed8
+  );
+
+  border-radius: 24px;
+
+  padding: 32px;
+
+  color: white;
+
+  margin-bottom: 24px;
+
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  gap: 16px;
-  margin-bottom: 24px;
+  align-items: center;
+
+  gap: 24px;
+
+  position: relative;
+
+  overflow: hidden;
 }
 
-.page-header h1 {
+.inventory-hero::before {
+  content: "";
+
+  position: absolute;
+
+  width: 350px;
+  height: 350px;
+
+  background: rgba(255,255,255,.06);
+
+  border-radius: 50%;
+
+  top: -180px;
+  right: -120px;
+}
+
+.inventory-badge {
+  position: absolute;
+
+  top: 20px;
+  left: 32px;
+
+  background: rgba(255,255,255,.15);
+
+  backdrop-filter: blur(10px);
+
+  border-radius: 999px;
+
+  padding: 8px 14px;
+
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  font-size: .85rem;
+
+  font-weight: 600;
+}
+
+.hero-content {
+  padding-top: 24px;
+}
+
+.hero-content h1 {
   margin: 0;
-  font-size: 28px;
-  font-weight: 700;
-  color: #111827;
+
+  font-size: 2rem;
+
+  font-weight: 800;
 }
 
-.page-header p {
-  margin: 6px 0 0;
-  color: #6b7280;
-  font-size: 14px;
+.hero-content p {
+  margin-top: 10px;
+
+  opacity: .9;
+
+  max-width: 650px;
 }
 
-/* Tarjetas */
+/* ======================================
+   CARD
+====================================== */
 
 .card {
-  background: #ffffff;
-  border-radius: 14px;
-  padding: 20px;
-  margin-bottom: 20px;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+  background: white;
+
+  border: none;
+
+  border-radius: 24px;
+
+  padding: 24px;
+
+  margin-bottom: 24px;
+
+  box-shadow:
+    0 4px 10px rgba(15,23,42,.03),
+    0 12px 30px rgba(15,23,42,.06);
 }
 
 .card h2 {
-  margin: 0 0 16px;
-  font-size: 20px;
-  font-weight: 700;
-  color: #111827;
+  font-size: 1.2rem;
+
+  font-weight: 800;
+
+  margin-bottom: 20px;
+
+  color: #0f172a;
 }
+
+/* ======================================
+   SECTION HEADER
+====================================== */
 
 .section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+
+  margin-bottom: 20px;
 }
 
-/* Formularios */
+/* ======================================
+   FORM
+====================================== */
 
 .form-group {
   display: flex;
@@ -58,214 +149,312 @@
 }
 
 .form-group label {
-  margin-bottom: 6px;
-  font-size: 14px;
-  font-weight: 600;
-  color: #374151;
+  margin-bottom: 8px;
+
+  font-size: .9rem;
+
+  font-weight: 700;
+
+  color: #334155;
 }
 
 .form-group input,
-.form-group select,
-.form-group textarea {
+.form-group textarea,
+.form-group select {
   width: 100%;
-  border: 1px solid #d1d5db;
-  border-radius: 10px;
-  padding: 10px 12px;
-  font-size: 14px;
-  color: #111827;
-  background: #ffffff;
-  outline: none;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+  border: 1px solid #dbe2ea;
+
+  background: white;
+
+  border-radius: 14px;
+
+  padding: 12px 14px;
+
+  font-size: .95rem;
+
+  transition: .2s;
 }
 
 .form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
+.form-group textarea:focus,
+.form-group select:focus {
+  outline: none;
+
   border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+
+  box-shadow:
+    0 0 0 4px rgba(37,99,235,.12);
 }
 
 .form-group textarea {
   resize: vertical;
-  min-height: 88px;
 }
 
 .producto-form-grid {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr;
+
+  grid-template-columns:
+    2fr
+    1fr
+    1fr
+    1fr;
+
   gap: 16px;
 }
 
-.producto-select {
-  min-width: 260px;
-}
-
-/* Botones */
-
-.form-actions,
-.footer-actions {
-  margin-top: 18px;
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-}
+/* ======================================
+   BUTTONS
+====================================== */
 
 .btn {
   border: none;
-  border-radius: 10px;
-  padding: 10px 16px;
-  font-size: 14px;
-  font-weight: 600;
+
+  border-radius: 14px;
+
+  font-weight: 700;
+
   cursor: pointer;
-  transition: background-color 0.15s ease, transform 0.05s ease;
+
+  transition: .2s;
 }
 
-.btn:active {
-  transform: scale(0.98);
+.btn:hover {
+  transform: translateY(-2px);
 }
 
 .btn-primary {
   background: #2563eb;
-  color: #ffffff;
+  color: white;
 }
 
 .btn-primary:hover {
   background: #1d4ed8;
 }
 
-.btn-primary:disabled {
-  background: #93c5fd;
-  cursor: not-allowed;
-}
-
 .btn-secondary {
-  background: #e5e7eb;
-  color: #111827;
-}
-
-.btn-secondary:hover {
-  background: #d1d5db;
+  background: #e2e8f0;
+  color: #0f172a;
 }
 
 .btn-danger {
   background: #dc2626;
-  color: #ffffff;
+  color: white;
 }
 
 .btn-danger:hover {
   background: #b91c1c;
 }
 
-.btn-small {
-  padding: 7px 10px;
-  font-size: 13px;
+.btn-success {
+  background: #16a34a;
+  color: white;
 }
 
-/* Alertas */
+.btn-success:hover {
+  background: #15803d;
+}
+
+.btn-warning {
+  background: #f59e0b;
+  color: white;
+}
+
+.btn-warning:hover {
+  background: #d97706;
+}
+
+.btn-light-custom {
+  background: rgba(255,255,255,.15);
+
+  color: white;
+
+  border: 1px solid rgba(255,255,255,.2);
+
+  backdrop-filter: blur(10px);
+}
+
+.btn-light-custom:hover {
+  background: rgba(255,255,255,.25);
+}
+
+.btn-small {
+  padding: 8px 12px;
+  font-size: .8rem;
+}
+
+.form-actions,
+.footer-actions {
+  margin-top: 20px;
+
+  display: flex;
+
+  justify-content: flex-end;
+
+  gap: 10px;
+}
+
+/* ======================================
+   ALERTS
+====================================== */
 
 .alert {
-  border-radius: 10px;
-  padding: 12px 16px;
-  margin-bottom: 16px;
-  font-size: 14px;
-  font-weight: 500;
+  border-radius: 16px;
+
+  padding: 14px 18px;
+
+  font-weight: 600;
+
+  margin-bottom: 20px;
+
+  border: none;
 }
 
 .alert-success {
   background: #dcfce7;
   color: #166534;
-  border: 1px solid #bbf7d0;
 }
 
 .alert-error {
   background: #fee2e2;
   color: #991b1b;
-  border: 1px solid #fecaca;
 }
 
-/* Estados */
-
-.loading,
-.empty-state {
-  padding: 14px 0;
-  color: #6b7280;
-  font-size: 14px;
-}
+/* ======================================
+   BADGE
+====================================== */
 
 .badge {
-  display: inline-flex;
-  align-items: center;
-  border-radius: 999px;
   background: #eff6ff;
+
   color: #1d4ed8;
-  padding: 5px 10px;
-  font-size: 13px;
+
+  border-radius: 999px;
+
+  padding: 8px 12px;
+
   font-weight: 700;
 }
 
-/* Tabla */
+/* ======================================
+   TABLE
+====================================== */
 
 .table-wrapper {
-  width: 100%;
   overflow-x: auto;
 }
 
 table {
   width: 100%;
-  border-collapse: collapse;
-  min-width: 900px;
+  min-width: 1000px;
+
+  border-collapse: separate;
+  border-spacing: 0;
 }
 
-thead {
-  background: #f3f4f6;
-}
+thead th {
+  background: #f8fafc;
 
-th {
-  padding: 12px;
+  padding: 14px;
+
   text-align: left;
-  font-size: 13px;
-  font-weight: 700;
-  color: #374151;
-  border-bottom: 1px solid #e5e7eb;
-  white-space: nowrap;
+
+  font-size: .85rem;
+
+  text-transform: uppercase;
+
+  color: #64748b;
+
+  font-weight: 800;
+}
+
+tbody tr {
+  transition: .2s;
+}
+
+tbody tr:hover {
+  background: #f8fafc;
 }
 
 td {
-  padding: 12px;
-  font-size: 14px;
-  color: #111827;
-  border-bottom: 1px solid #e5e7eb;
-  vertical-align: middle;
-}
+  padding: 16px 14px;
 
-.producto-cell {
-  font-weight: 600;
+  border-top: 1px solid #eef2f7;
 }
 
 tfoot {
-  background: #f9fafb;
+  background: #f8fafc;
 }
 
 tfoot td {
-  font-weight: 700;
+  font-weight: 800;
 }
 
-/* Responsive */
+.producto-cell {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+/* ======================================
+   TABLE INPUT
+====================================== */
+
+.table-input {
+  width: 120px;
+
+  border: 1px solid #dbe2ea;
+
+  border-radius: 10px;
+
+  padding: 8px 10px;
+}
+
+.table-input:focus {
+  outline: none;
+
+  border-color: #2563eb;
+
+  box-shadow:
+    0 0 0 4px rgba(37,99,235,.12);
+}
+
+.table-actions {
+  display: flex;
+
+  gap: 8px;
+}
+
+/* ======================================
+   EMPTY
+====================================== */
+
+.loading,
+.empty-state {
+  padding: 30px;
+
+  text-align: center;
+
+  color: #64748b;
+}
+
+/* ======================================
+   MOBILE
+====================================== */
 
 @media (max-width: 1024px) {
+
   .producto-form-grid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns:
+      1fr 1fr;
   }
+
 }
 
-@media (max-width: 720px) {
-  .ingreso-inventario-page {
-    padding: 16px;
-  }
+@media (max-width: 768px) {
 
-  .page-header {
+  .inventory-hero {
     flex-direction: column;
-    align-items: stretch;
+    align-items: flex-start;
   }
 
   .producto-form-grid {
@@ -274,47 +463,11 @@ tfoot td {
 
   .form-actions,
   .footer-actions {
-    justify-content: stretch;
+    flex-direction: column;
   }
 
   .btn {
     width: 100%;
   }
-}
-.table-input {
-  width: 110px;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  padding: 7px 9px;
-  font-size: 13px;
-  outline: none;
-}
 
-.table-input:focus {
-  border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
-}
-
-.table-actions {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.btn-warning {
-  background: #f59e0b;
-  color: #ffffff;
-}
-
-.btn-warning:hover {
-  background: #d97706;
-}
-
-.btn-success {
-  background: #16a34a;
-  color: #ffffff;
-}
-
-.btn-success:hover {
-  background: #15803d;
 }

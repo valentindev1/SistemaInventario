@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import com.vhela.inventario.dto.venta.FacturaVentaDTO;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.vhela.inventario.modelo.sucursal.Sucursal;
@@ -11,6 +12,8 @@ import com.vhela.inventario.modelo.ventas.EstadoFactura;
 import com.vhela.inventario.modelo.ventas.Venta;
 
 public interface FacturaVentaRepositorio extends JpaRepository<Venta, Long> {
+
+
 
     Optional<Venta> findByNumeroVenta(String numeroVenta);
 
@@ -47,5 +50,9 @@ public interface FacturaVentaRepositorio extends JpaRepository<Venta, Long> {
     boolean existsByClienteId(Long clienteId);
 
     boolean existsByUsuarioId(Long usuarioId);
+
+
+
+    Long countBySucursalId(Long sucursalId);
 
 }

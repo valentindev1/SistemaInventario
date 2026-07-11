@@ -1,71 +1,99 @@
-<div class="container-fluid dashboard-empresa-page">
+<div class="container-fluid dashboard-empresa-page py-4">
 
-  <div class="d-flex flex-column flex-md-row justify-content-md-between align-items-md-center gap-3 mb-4">
+  <!-- Header -->
+  <div class="dashboard-header mb-4">
 
-    <div>
+    <div class="dashboard-header-content">
+
       <button
         type="button"
-        class="btn btn-link px-0 mb-2"
+        class="btn btn-back mb-3"
         (click)="volverADetalleEmpresa()">
-        <i class="bi bi-arrow-left me-1"></i>
+        <i class="bi bi-arrow-left me-2"></i>
         Volver al detalle de empresa
       </button>
 
-      <h2 class="fw-bold mb-1">
-        Dashboard empresa
-      </h2>
+      <div class="d-flex flex-column flex-lg-row justify-content-lg-between align-items-lg-end gap-3">
 
-      <p class="text-muted mb-0">
-        Consulta inventario global, ventas consolidadas, rentabilidad, ajustes y comparativo por sucursal.
-      </p>
+        <div>
+          <div class="dashboard-kicker">
+            Panel administrativo
+          </div>
+
+          <h2 class="dashboard-title mb-2">
+            Dashboard empresa
+          </h2>
+
+          <p class="dashboard-description mb-0">
+            Consulta inventario global, ventas consolidadas, rentabilidad, ajustes y comparativo por sucursal.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          class="btn btn-refresh"
+          (click)="cargarDashboard()"
+          [disabled]="cargando">
+
+          @if (cargando) {
+            <span class="spinner-border spinner-border-sm me-2"></span>
+            Actualizando...
+          } @else {
+            <i class="bi bi-arrow-clockwise me-2"></i>
+            Actualizar dashboard
+          }
+
+        </button>
+
+      </div>
     </div>
-
-    <button
-      type="button"
-      class="btn btn-outline-primary"
-      (click)="cargarDashboard()"
-      [disabled]="cargando">
-      @if (cargando) {
-        <span class="spinner-border spinner-border-sm me-1"></span>
-        Actualizando...
-      } @else {
-        <i class="bi bi-arrow-clockwise me-1"></i>
-        Actualizar dashboard
-      }
-    </button>
 
   </div>
 
+  <!-- Alerts -->
   @if (mensajeError) {
-    <div class="alert alert-danger">
-      <i class="bi bi-exclamation-triangle me-1"></i>
+    <div class="alert alert-danger dashboard-alert">
+      <i class="bi bi-exclamation-triangle me-2"></i>
       {{ mensajeError }}
     </div>
   }
 
   @if (mensajeExito) {
-    <div class="alert alert-success">
-      <i class="bi bi-check-circle me-1"></i>
+    <div class="alert alert-success dashboard-alert">
+      <i class="bi bi-check-circle me-2"></i>
       {{ mensajeExito }}
     </div>
   }
 
-  <div class="card border-0 shadow-sm mb-4">
-    <div class="card-body p-4">
+  <!-- Filters -->
+  <div class="dashboard-card mb-4">
+    <div class="dashboard-card-body">
 
-      <h5 class="fw-bold mb-3">
-        Filtros del dashboard
-      </h5>
+      <div class="d-flex flex-column flex-lg-row justify-content-lg-between align-items-lg-center gap-2 mb-4">
+        <div>
+          <h5 class="section-title mb-1">
+            Filtros del dashboard
+          </h5>
+
+          <p class="section-subtitle mb-0">
+            Selecciona el periodo que deseas analizar.
+          </p>
+        </div>
+
+        <span class="filter-note">
+          Máximo 12 meses para rango personalizado
+        </span>
+      </div>
 
       <div class="row g-3 align-items-end">
 
-        <div class="col-12 col-md-4 col-xl-3">
-          <label class="form-label">
+        <div class="col-12 col-md-6 col-xl-3">
+          <label class="form-label dashboard-label">
             Tipo de periodo
           </label>
 
           <select
-            class="form-select"
+            class="form-select dashboard-input"
             [(ngModel)]="tipoFiltro"
             (change)="cambiarTipoFiltro()">
             <option value="DIA">Día</option>
@@ -75,95 +103,114 @@
         </div>
 
         @if (tipoFiltro === 'DIA') {
-          <div class="col-12 col-md-4 col-xl-3">
-            <label class="form-label">
+          <div class="col-12 col-md-6 col-xl-3">
+            <label class="form-label dashboard-label">
               Día
             </label>
 
             <input
               type="date"
-              class="form-control"
+              class="form-control dashboard-input"
               [(ngModel)]="fechaDia">
           </div>
         }
 
         @if (tipoFiltro === 'MES') {
-          <div class="col-12 col-md-4 col-xl-3">
-            <label class="form-label">
+          <div class="col-12 col-md-6 col-xl-3">
+            <label class="form-label dashboard-label">
               Mes
             </label>
 
             <input
               type="month"
-              class="form-control"
+              class="form-control dashboard-input"
               [(ngModel)]="fechaMes">
           </div>
         }
 
         @if (tipoFiltro === 'RANGO') {
-          <div class="col-12 col-md-4 col-xl-3">
-            <label class="form-label">
+          <div class="col-12 col-md-6 col-xl-3">
+            <label class="form-label dashboard-label">
               Fecha inicial
             </label>
 
             <input
               type="date"
-              class="form-control"
+              class="form-control dashboard-input"
               [(ngModel)]="fechaInicio">
           </div>
 
-          <div class="col-12 col-md-4 col-xl-3">
-            <label class="form-label">
+          <div class="col-12 col-md-6 col-xl-3">
+            <label class="form-label dashboard-label">
               Fecha final
             </label>
 
             <input
               type="date"
-              class="form-control"
+              class="form-control dashboard-input"
               [(ngModel)]="fechaFin">
           </div>
         }
 
-        <div class="col-12 col-md-4 col-xl-3">
+        <div class="col-12 col-md-6 col-xl-3">
           <button
             type="button"
-            class="btn btn-primary w-100"
+            class="btn btn-generate w-100"
             (click)="cargarDashboard()"
             [disabled]="cargando">
-            Generar dashboard
+
+            @if (cargando) {
+              <span class="spinner-border spinner-border-sm me-2"></span>
+              Generando...
+            } @else {
+              <i class="bi bi-bar-chart-line me-2"></i>
+              Generar dashboard
+            }
+
           </button>
         </div>
 
       </div>
 
-      <div class="text-muted small mt-3">
-        El rango personalizado puede comprender máximo 12 meses.
-      </div>
-
     </div>
   </div>
 
+  <!-- Loading -->
   @if (cargando) {
-    <div class="text-center p-5">
-      <div class="spinner-border text-primary"></div>
-      <p class="text-muted mt-2 mb-0">
-        Calculando dashboard global de empresa...
-      </p>
+    <div class="loading-state">
+      <div class="loading-box">
+        <div class="spinner-border text-primary mb-3"></div>
+        <h6 class="mb-1">Calculando información</h6>
+        <p class="text-muted mb-0">
+          Estamos consolidando el dashboard global de empresa...
+        </p>
+      </div>
     </div>
   }
 
   @if (!cargando && dashboard) {
 
-    <div class="mb-4">
-      <h5 class="fw-bold mb-1">
-        {{ dashboard.empresaNombre }}
-      </h5>
+    <!-- Company Summary -->
+    <div class="company-summary mb-4">
 
-      <p class="text-muted mb-0">
-        Periodo analizado: {{ dashboard.fechaInicio }} a {{ dashboard.fechaFin }}
-      </p>
+      <div>
+        <span class="company-label">
+          Empresa
+        </span>
+
+        <h4 class="company-name mb-1">
+          {{ dashboard.empresaNombre }}
+        </h4>
+
+        <p class="company-period mb-0">
+          <i class="bi bi-calendar3 me-2"></i>
+          Periodo analizado: {{ dashboard.fechaInicio }} a {{ dashboard.fechaFin }}
+        </p>
+      </div>
+
     </div>
 
+    <!-- Main Metrics -->
     <div class="row g-4 mb-4">
 
       <div class="col-12 col-md-6 col-xl-3">
@@ -172,14 +219,16 @@
             <i class="bi bi-cash-stack"></i>
           </div>
 
-          <div>
-            <div class="metric-label">Ventas netas</div>
-            <div class="metric-value money">
+          <div class="metric-content">
+            <span class="metric-label">Ventas netas</span>
+
+            <strong class="metric-value money">
               {{ dashboard.ventasNetas | currency:'COP':'symbol-narrow':'1.0-0' }}
-            </div>
-            <div class="metric-help">
-              {{ dashboard.facturasActivas }} factura(s) activa(s).
-            </div>
+            </strong>
+
+            <small class="metric-help">
+              {{ dashboard.facturasActivas }} factura(s) activa(s)
+            </small>
           </div>
         </div>
       </div>
@@ -190,14 +239,16 @@
             <i class="bi bi-graph-up-arrow"></i>
           </div>
 
-          <div>
-            <div class="metric-label">Utilidad bruta</div>
-            <div class="metric-value money">
+          <div class="metric-content">
+            <span class="metric-label">Utilidad bruta</span>
+
+            <strong class="metric-value money">
               {{ dashboard.utilidadBruta | currency:'COP':'symbol-narrow':'1.0-0' }}
-            </div>
-            <div class="metric-help">
+            </strong>
+
+            <small class="metric-help">
               Margen: {{ dashboard.margenUtilidadBruta | number:'1.1-2' }}%
-            </div>
+            </small>
           </div>
         </div>
       </div>
@@ -208,14 +259,16 @@
             <i class="bi bi-calculator"></i>
           </div>
 
-          <div>
-            <div class="metric-label">Resultado operativo</div>
-            <div class="metric-value money">
+          <div class="metric-content">
+            <span class="metric-label">Resultado operativo</span>
+
+            <strong class="metric-value money">
               {{ dashboard.resultadoOperativoEstimado | currency:'COP':'symbol-narrow':'1.0-0' }}
-            </div>
-            <div class="metric-help">
+            </strong>
+
+            <small class="metric-help">
               Margen: {{ dashboard.margenOperativo | number:'1.1-2' }}%
-            </div>
+            </small>
           </div>
         </div>
       </div>
@@ -226,29 +279,44 @@
             <i class="bi bi-exclamation-triangle"></i>
           </div>
 
-          <div>
-            <div class="metric-label">Ajustes negativos</div>
-            <div class="metric-value money">
+          <div class="metric-content">
+            <span class="metric-label">Ajustes negativos</span>
+
+            <strong class="metric-value money">
               {{ dashboard.costoAjustesNegativos | currency:'COP':'symbol-narrow':'1.0-0' }}
-            </div>
-            <div class="metric-help">
-              {{ dashboard.unidadesAjustadasNegativas }} unidad(es).
-            </div>
+            </strong>
+
+            <small class="metric-help">
+              {{ dashboard.unidadesAjustadasNegativas }} unidad(es)
+            </small>
           </div>
         </div>
       </div>
 
     </div>
 
+    <!-- Inventory and Billing -->
     <div class="row g-4 mb-4">
 
       <div class="col-12 col-xl-8">
-        <div class="card border-0 shadow-sm h-100">
-          <div class="card-body p-4">
+        <div class="dashboard-card h-100">
+          <div class="dashboard-card-body">
 
-            <h5 class="fw-bold mb-3">
-              Inventario global de empresa
-            </h5>
+            <div class="section-heading mb-4">
+              <div>
+                <h5 class="section-title mb-1">
+                  Inventario global de empresa
+                </h5>
+
+                <p class="section-subtitle mb-0">
+                  Resumen consolidado de existencias, costos y valor comercial.
+                </p>
+              </div>
+
+              <div class="section-icon">
+                <i class="bi bi-box-seam"></i>
+              </div>
+            </div>
 
             <div class="inventory-grid">
 
@@ -293,7 +361,7 @@
                 <strong>{{ dashboard.productosBajoStock }}</strong>
               </div>
 
-              <div class="inventory-item">
+              <div class="inventory-item neutral">
                 <span>Alto inventario</span>
                 <strong>{{ dashboard.productosAltoStock }}</strong>
               </div>
@@ -305,56 +373,70 @@
       </div>
 
       <div class="col-12 col-xl-4">
-        <div class="card border-0 shadow-sm h-100">
-          <div class="card-body p-4">
+        <div class="dashboard-card h-100">
+          <div class="dashboard-card-body">
 
-            <h5 class="fw-bold mb-3">
-              Estado de facturación
-            </h5>
+            <div class="section-heading mb-4">
+              <div>
+                <h5 class="section-title mb-1">
+                  Estado de facturación
+                </h5>
+
+                <p class="section-subtitle mb-0">
+                  Comportamiento de documentos emitidos.
+                </p>
+              </div>
+
+              <div class="section-icon">
+                <i class="bi bi-receipt"></i>
+              </div>
+            </div>
 
             <div class="status-grid">
 
-              <div>
+              <div class="status-item">
                 <span>Emitidas</span>
                 <strong>{{ dashboard.facturasEmitidas }}</strong>
               </div>
 
-              <div>
+              <div class="status-item success">
                 <span>Activas</span>
-                <strong class="text-success">{{ dashboard.facturasActivas }}</strong>
+                <strong>{{ dashboard.facturasActivas }}</strong>
               </div>
 
-              <div>
+              <div class="status-item danger">
                 <span>Canceladas</span>
-                <strong class="text-danger">{{ dashboard.facturasCanceladas }}</strong>
+                <strong>{{ dashboard.facturasCanceladas }}</strong>
               </div>
 
-              <div>
+              <div class="status-item warning">
                 <span>Dev. parcial</span>
-                <strong class="text-warning">{{ dashboard.facturasDevueltasParcial }}</strong>
+                <strong>{{ dashboard.facturasDevueltasParcial }}</strong>
               </div>
 
-              <div>
+              <div class="status-item muted">
                 <span>Dev. total</span>
-                <strong class="text-secondary">{{ dashboard.facturasDevueltasTotal }}</strong>
+                <strong>{{ dashboard.facturasDevueltasTotal }}</strong>
               </div>
 
             </div>
 
-            <hr>
+            <div class="billing-summary mt-4">
 
-            <div class="small text-muted">
-              Valor cancelado:
-              <strong class="text-danger">
-                {{ dashboard.valorCancelado | currency:'COP':'symbol-narrow':'1.0-0' }}
-              </strong>
-            </div>
+              <div class="billing-row">
+                <span>Valor cancelado</span>
+                <strong class="text-danger">
+                  {{ dashboard.valorCancelado | currency:'COP':'symbol-narrow':'1.0-0' }}
+                </strong>
+              </div>
 
-            <div class="small text-muted mt-2">
-              Valor devuelto:
-              <strong class="text-warning">
-                {{ dashboard.valorDevuelto | currency:'COP':'symbol-narrow':'1.0-0' }}
-              </strong>
+              <div class="billing-row">
+                <span>Valor devuelto</span>
+                <strong class="text-warning">
+                  {{ dashboard.valorDevuelto | currency:'COP':'symbol-narrow':'1.0-0' }}
+                </strong>
+              </div>
+
             </div>
 
           </div>
@@ -363,14 +445,21 @@
 
     </div>
 
+    <!-- Rankings -->
     <div class="row g-4 mb-4">
 
       <div class="col-12 col-md-6 col-xl-3">
         <div class="ranking-card">
+          <div class="ranking-icon success">
+            <i class="bi bi-trophy"></i>
+          </div>
+
           <span>Mayor venta neta</span>
+
           <strong>
             {{ dashboard.mejorSucursalVentas?.sucursalNombre || 'Sin datos' }}
           </strong>
+
           <small>
             {{ dashboard.mejorSucursalVentas?.ventasNetas || 0 | currency:'COP':'symbol-narrow':'1.0-0' }}
           </small>
@@ -379,10 +468,16 @@
 
       <div class="col-12 col-md-6 col-xl-3">
         <div class="ranking-card">
+          <div class="ranking-icon primary">
+            <i class="bi bi-stars"></i>
+          </div>
+
           <span>Mayor utilidad</span>
+
           <strong>
             {{ dashboard.mejorSucursalUtilidad?.sucursalNombre || 'Sin datos' }}
           </strong>
+
           <small>
             {{ dashboard.mejorSucursalUtilidad?.utilidadBruta || 0 | currency:'COP':'symbol-narrow':'1.0-0' }}
           </small>
@@ -391,10 +486,16 @@
 
       <div class="col-12 col-md-6 col-xl-3">
         <div class="ranking-card">
+          <div class="ranking-icon info">
+            <i class="bi bi-boxes"></i>
+          </div>
+
           <span>Mayor inventario</span>
+
           <strong>
             {{ dashboard.sucursalMayorInventario?.sucursalNombre || 'Sin datos' }}
           </strong>
+
           <small>
             {{ dashboard.sucursalMayorInventario?.valorComercialInventario || 0 | currency:'COP':'symbol-narrow':'1.0-0' }}
           </small>
@@ -403,10 +504,16 @@
 
       <div class="col-12 col-md-6 col-xl-3">
         <div class="ranking-card">
+          <div class="ranking-icon warning">
+            <i class="bi bi-exclamation-octagon"></i>
+          </div>
+
           <span>Más ajustes negativos</span>
+
           <strong>
             {{ dashboard.sucursalMasAjustesNegativos?.sucursalNombre || 'Sin datos' }}
           </strong>
+
           <small>
             {{ dashboard.sucursalMasAjustesNegativos?.costoAjustesNegativos || 0 | currency:'COP':'symbol-narrow':'1.0-0' }}
           </small>
@@ -415,23 +522,33 @@
 
     </div>
 
-    <div class="card border-0 shadow-sm mb-4">
-      <div class="card-body p-4">
+    <!-- Branch Comparison -->
+    <div class="dashboard-card mb-4">
+      <div class="dashboard-card-body">
 
-        <h5 class="fw-bold mb-3">
-          Comparativo por sucursal
-        </h5>
+        <div class="section-heading mb-4">
+          <div>
+            <h5 class="section-title mb-1">
+              Comparativo por sucursal
+            </h5>
+
+            <p class="section-subtitle mb-0">
+              Indicadores consolidados por cada punto de operación.
+            </p>
+          </div>
+        </div>
 
         @if (obtenerSucursales().length === 0) {
-          <div class="alert alert-info mb-0">
-            No hay sucursales para mostrar.
+          <div class="empty-state">
+            <i class="bi bi-info-circle"></i>
+            <p class="mb-0">No hay sucursales para mostrar.</p>
           </div>
         }
 
         @if (obtenerSucursales().length > 0) {
-          <div class="table-responsive">
-            <table class="table table-hover align-middle">
-              <thead class="table-light">
+          <div class="dashboard-table-wrapper">
+            <table class="table dashboard-table align-middle">
+              <thead>
               <tr>
                 <th>Sucursal</th>
                 <th>Unidades</th>
@@ -442,15 +559,17 @@
                 <th>Utilidad</th>
                 <th>Ajustes negativos</th>
                 <th>Resultado operativo</th>
-                <th></th>
+                <th class="text-end">Acción</th>
               </tr>
               </thead>
 
               <tbody>
                 @for (sucursal of obtenerSucursales(); track sucursal.sucursalId) {
                   <tr>
-                    <td class="fw-semibold">
-                      {{ sucursal.sucursalNombre }}
+                    <td>
+                      <div class="table-main-text">
+                        {{ sucursal.sucursalNombre }}
+                      </div>
                     </td>
 
                     <td>{{ sucursal.unidadesInventario }}</td>
@@ -463,7 +582,7 @@
                       {{ sucursal.valorComercialInventario | currency:'COP':'symbol-narrow':'1.0-0' }}
                     </td>
 
-                    <td class="text-success fw-semibold">
+                    <td class="text-success fw-bold">
                       {{ sucursal.ventasNetas | currency:'COP':'symbol-narrow':'1.0-0' }}
                     </td>
 
@@ -475,7 +594,7 @@
                       {{ sucursal.utilidadBruta | currency:'COP':'symbol-narrow':'1.0-0' }}
                     </td>
 
-                    <td class="text-warning fw-semibold">
+                    <td class="text-warning fw-bold">
                       {{ sucursal.costoAjustesNegativos | currency:'COP':'symbol-narrow':'1.0-0' }}
                     </td>
 
@@ -486,7 +605,7 @@
                     <td class="text-end">
                       <button
                         type="button"
-                        class="btn btn-sm btn-outline-primary"
+                        class="btn btn-table-action"
                         (click)="irASucursal(sucursal)">
                         Ver
                       </button>
@@ -501,23 +620,33 @@
       </div>
     </div>
 
-    <div class="card border-0 shadow-sm">
-      <div class="card-body p-4">
+    <!-- Critical Products -->
+    <div class="dashboard-card">
+      <div class="dashboard-card-body">
 
-        <h5 class="fw-bold mb-3">
-          Productos críticos
-        </h5>
+        <div class="section-heading mb-4">
+          <div>
+            <h5 class="section-title mb-1">
+              Productos críticos
+            </h5>
+
+            <p class="section-subtitle mb-0">
+              Productos con alerta por bajo stock, agotados o condiciones especiales.
+            </p>
+          </div>
+        </div>
 
         @if (obtenerProductosCriticos().length === 0) {
-          <div class="alert alert-info mb-0">
-            No hay productos críticos para mostrar.
+          <div class="empty-state">
+            <i class="bi bi-check-circle"></i>
+            <p class="mb-0">No hay productos críticos para mostrar.</p>
           </div>
         }
 
         @if (obtenerProductosCriticos().length > 0) {
-          <div class="table-responsive">
-            <table class="table table-hover align-middle">
-              <thead class="table-light">
+          <div class="dashboard-table-wrapper">
+            <table class="table dashboard-table align-middle">
+              <thead>
               <tr>
                 <th>Producto</th>
                 <th>Sucursal</th>
@@ -534,17 +663,22 @@
                 @for (producto of obtenerProductosCriticos(); track producto.productoId + '-' + producto.sucursalId) {
                   <tr>
                     <td>
-                      <div class="fw-semibold">
+                      <div class="table-main-text">
                         {{ producto.nombre }}
                       </div>
-                      <div class="text-muted small">
+
+                      <div class="table-secondary-text">
                         {{ producto.codigo }}
                       </div>
                     </td>
 
                     <td>{{ producto.sucursalNombre }}</td>
 
-                    <td>{{ producto.stockActual }}</td>
+                    <td>
+                      <span class="stock-pill">
+                        {{ producto.stockActual }}
+                      </span>
+                    </td>
 
                     <td>
                       {{ producto.costoUnitario | currency:'COP':'symbol-narrow':'1.0-0' }}
@@ -558,7 +692,7 @@
                       {{ producto.valorCostoTotal | currency:'COP':'symbol-narrow':'1.0-0' }}
                     </td>
 
-                    <td class="fw-semibold">
+                    <td class="fw-bold">
                       {{ producto.valorComercialTotal | currency:'COP':'symbol-narrow':'1.0-0' }}
                     </td>
 

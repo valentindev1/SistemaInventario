@@ -1,28 +1,41 @@
 <div class="container-fluid">
 
   <!-- Encabezado -->
-  <div class="d-flex flex-column flex-md-row justify-content-md-between align-items-md-center gap-3 mb-4">
+  <div class="sales-hero">
 
     <div>
+
+      <div class="hero-badge">
+        <i class="bi bi-graph-up"></i>
+        Gestión Comercial
+      </div>
+
+      <h1>Panel de ventas</h1>
+
+      <p>
+        Gestiona ventas, devoluciones, facturas e informes comerciales
+        desde un único centro de operaciones.
+      </p>
+
+    </div>
+
+    <div class="hero-actions">
+
       <a
+        class="btn btn-light-custom"
         [routerLink]="[
-          '/super-admin/empresas',
-          empresaId,
-          'sucursales',
-          'detalle',
-          sucursalId
-        ]"
-        class="btn btn-link px-0 mb-2">
-        <i class="bi bi-arrow-left me-1"></i>
+        '/super-admin/empresas',
+        empresaId,
+        'sucursales',
+        'detalle',
+        sucursalId
+      ]">
+
+        <i class="bi bi-arrow-left me-2"></i>
         Volver a la sucursal
+
       </a>
 
-      <h2 class="fw-bold mb-1">Panel de ventas</h2>
-
-      <p class="text-muted mb-0">
-        Desde aquí puedes generar ventas, consultar históricos, revisar informes y gestionar operaciones comerciales de
-        esta sucursal.
-      </p>
     </div>
 
   </div>

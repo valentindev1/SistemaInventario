@@ -1,95 +1,125 @@
-<div class="container-fluid">
+<div class="container-fluid empresa-detalle-page py-4">
 
-  <!-- Encabezado -->
-  <div class="d-flex flex-column flex-md-row justify-content-md-between align-items-md-center gap-3 mb-4">
+  <!-- Header -->
+  <div class="empresa-hero mb-4">
+    <div class="empresa-hero-content">
 
-    <div>
-      <a routerLink="/super-admin/empresas" class="btn btn-link px-0 mb-2">
-        <i class="bi bi-arrow-left me-1"></i>
+
+      <a
+        *ngIf="esSuperAdmin()"
+        routerLink="/super-admin/empresas"
+        class="btn btn-back mb-3">
+
+        <i class="bi bi-arrow-left me-2"></i>
         Volver a empresas
+
       </a>
 
-      <h2 class="fw-bold mb-1">
-        {{ empresa?.nombre || 'Detalle de empresa' }}
-      </h2>
 
-      <p class="text-muted mb-0">
-        Información general, sucursales y usuarios asociados a la empresa.
-      </p>
+      <div class="d-flex flex-column flex-xl-row justify-content-xl-between align-items-xl-end gap-4">
+
+        <div>
+          <div class="hero-kicker">
+            Gestión empresarial
+          </div>
+
+          <h2 class="hero-title mb-2">
+            {{ empresa?.nombre || 'Detalle de empresa' }}
+          </h2>
+
+          <p class="hero-description mb-0">
+            Información general, sucursales, usuarios administradores y catálogo asociado a la empresa.
+          </p>
+        </div>
+
+        <div class="hero-actions">
+
+          <a
+            *ngIf="empresa"
+            [routerLink]="['/super-admin/empresas/editar', empresa.id]"
+            class="btn btn-hero-light">
+            <i class="bi bi-pencil me-2"></i>
+            Editar empresa
+          </a>
+
+          <a
+            [routerLink]="['/super-admin/empresas', empresaId, 'usuarios', 'crear']"
+            class="btn btn-hero-primary">
+            <i class="bi bi-person-plus me-2"></i>
+            Crear administrador
+          </a>
+
+          <a
+            [routerLink]="['/super-admin/empresas', empresaId, 'sucursales', 'crear']"
+            class="btn btn-hero-success">
+            <i class="bi bi-building-add me-2"></i>
+            Crear sucursal
+          </a>
+
+        </div>
+
+      </div>
+
     </div>
-
-    <div class="d-flex flex-column flex-md-row gap-2">
-      <a
-        *ngIf="empresa"
-        [routerLink]="['/super-admin/empresas/editar', empresa.id]"
-        class="btn btn-outline-primary"
-      >
-        <i class="bi bi-pencil me-1"></i>
-        Editar empresa
-      </a>
-
-      <a
-        [routerLink]="['/super-admin/empresas', empresaId, 'usuarios', 'crear']"
-        class="btn btn-primary"
-      >
-        <i class="bi bi-person-plus me-1"></i>
-        Crear administrador
-      </a>
-
-      <a
-        [routerLink]="['/super-admin/empresas', empresaId, 'sucursales', 'crear']"
-        class="btn btn-success"
-      >
-        <i class="bi bi-building-add me-1"></i>
-        Crear sucursal
-      </a>
-    </div>
-
   </div>
 
   <!-- Error -->
-  <div *ngIf="mensajeError" class="alert alert-danger">
-    <i class="bi bi-exclamation-triangle me-1"></i>
+  <div *ngIf="mensajeError" class="alert alert-danger app-alert">
+    <i class="bi bi-exclamation-triangle me-2"></i>
     {{ mensajeError }}
   </div>
 
   <!-- Cargando empresa -->
-  <div *ngIf="cargandoEmpresa" class="text-center p-4">
-    <div class="spinner-border text-primary"></div>
-    <p class="text-muted mt-2 mb-0">Cargando empresa...</p>
+  <div *ngIf="cargandoEmpresa" class="loading-state">
+    <div class="loading-card">
+      <div class="spinner-border text-primary mb-3"></div>
+      <h6 class="mb-1">Cargando empresa</h6>
+      <p class="text-muted mb-0">Estamos consultando la información general...</p>
+    </div>
   </div>
 
   <!-- Datos empresa -->
-  <div class="card border-0 shadow-sm mb-4" *ngIf="empresa && !cargandoEmpresa">
-    <div class="card-body p-4">
+  <div class="app-card mb-4" *ngIf="empresa && !cargandoEmpresa">
+    <div class="app-card-body">
 
-      <div class="row g-3">
-
-        <div class="col-12 col-md-6 col-xl-3">
-          <div class="text-muted small">NIT</div>
-          <div class="fw-semibold">{{ empresa.nit }}</div>
+      <div class="section-heading mb-4">
+        <div>
+          <h5 class="section-title mb-1">Información general</h5>
+          <p class="section-subtitle mb-0">
+            Datos principales registrados para esta empresa.
+          </p>
         </div>
 
-        <div class="col-12 col-md-6 col-xl-3">
-          <div class="text-muted small">Correo</div>
-          <div class="fw-semibold">{{ empresa.correo }}</div>
+        <div class="section-icon primary">
+          <i class="bi bi-building"></i>
+        </div>
+      </div>
+
+      <div class="empresa-info-grid">
+
+        <div class="info-item">
+          <span>NIT</span>
+          <strong>{{ empresa.nit }}</strong>
         </div>
 
-        <div class="col-12 col-md-6 col-xl-3">
-          <div class="text-muted small">Teléfono</div>
-          <div class="fw-semibold">{{ empresa.telefono }}</div>
+        <div class="info-item">
+          <span>Correo</span>
+          <strong>{{ empresa.correo }}</strong>
         </div>
 
-        <div class="col-12 col-md-6 col-xl-3">
-          <div class="text-muted small">Fecha creación</div>
-          <div class="fw-semibold">
-            {{ empresa.fechaCreacion | date:'yyyy-MM-dd HH:mm' }}
-          </div>
+        <div class="info-item">
+          <span>Teléfono</span>
+          <strong>{{ empresa.telefono }}</strong>
         </div>
 
-        <div class="col-12">
-          <div class="text-muted small">Dirección</div>
-          <div class="fw-semibold">{{ empresa.direccion }}</div>
+        <div class="info-item">
+          <span>Fecha creación</span>
+          <strong>{{ empresa.fechaCreacion | date:'yyyy-MM-dd HH:mm' }}</strong>
+        </div>
+
+        <div class="info-item info-item-wide">
+          <span>Dirección</span>
+          <strong>{{ empresa.direccion }}</strong>
         </div>
 
       </div>
@@ -97,83 +127,78 @@
     </div>
   </div>
 
-  <!-- Catálogo de productos -->
-  <div class="card border-0 shadow-sm mb-4">
-    <div class="card-header bg-white border-0 p-4 d-flex flex-column flex-md-row justify-content-md-between align-items-md-center gap-3">
+  <!-- Catálogo y Dashboard -->
+  <div class="app-card mb-4">
+    <div class="app-card-body">
 
-      <div>
-        <h5 class="fw-bold mb-1">Catálogo de productos</h5>
-        <p class="text-muted mb-0 small">
-          Gestiona los productos, colores, categorías, géneros y tallas de esta empresa.
-        </p>
+      <div class="section-heading mb-4">
+        <div>
+          <h5 class="section-title mb-1">Herramientas de gestión</h5>
+          <p class="section-subtitle mb-0">
+            Accede al dashboard empresarial y administra el catálogo global de productos.
+          </p>
+        </div>
+
+        <div class="section-icon info">
+          <i class="bi bi-grid-1x2"></i>
+        </div>
       </div>
 
+      <div class="row g-4">
 
-      
-      @if (empresa) {
-        <div class="col-12 col-md-6 col-xl-3">
-          <div class="card border-0 shadow-sm h-100 option-card">
-            <div class="card-body p-4 d-flex flex-column">
+        @if (empresa) {
+          <div class="col-12 col-md-6 col-xl-4">
+            <div class="option-card option-dashboard h-100">
 
-              <div class="option-icon bg-primary-subtle text-primary mb-3">
+              <div class="option-icon primary">
                 <i class="bi bi-speedometer2"></i>
               </div>
 
-              <h5 class="fw-bold mb-2">
-                Dashboard empresa
-              </h5>
+              <div class="option-content">
+                <h5>Dashboard empresa</h5>
 
-              <p class="text-muted small flex-grow-1">
-                Consulta inventario global, ventas consolidadas, rentabilidad y comparativo por sucursal.
-              </p>
+                <p>
+                  Consulta inventario global, ventas consolidadas, rentabilidad y comparativo por sucursal.
+                </p>
+              </div>
 
               <a
-                class="btn btn-primary w-100"
+                class="btn btn-option-primary w-100"
                 [routerLink]="[
-            '/super-admin/empresas',
-            empresa.id,
-            'dashboard'
-          ]">
+                  '/super-admin/empresas',
+                  empresa.id,
+                  'dashboard'
+                ]">
+                <i class="bi bi-bar-chart-line me-2"></i>
                 Ver dashboard
               </a>
 
             </div>
           </div>
-        </div>
-      }
-
-
-    </div>
-
-    <div class="card-body p-4">
-
-      <div class="row g-3">
+        }
 
         <div class="col-12 col-md-6 col-xl-4">
-          <div class="card border-0 shadow-sm h-100 producto-card">
-            <div class="card-body p-4 d-flex flex-column">
+          <div class="option-card option-products h-100">
 
-              <div class="mb-3">
-                <div class="producto-icon bg-info-subtle text-info">
-                  <i class="bi bi-tags"></i>
-                </div>
-              </div>
+            <div class="option-icon info">
+              <i class="bi bi-tags"></i>
+            </div>
 
-              <h5 class="fw-bold mb-2">Productos</h5>
+            <div class="option-content">
+              <h5>Productos</h5>
 
-              <p class="text-muted small flex-grow-1">
+              <p>
                 Accede al catálogo global de productos de la empresa y administra sus atributos reutilizables.
               </p>
-
-              <a
-                [routerLink]="['/super-admin/empresas', empresaId, 'productos']"
-                class="btn btn-outline-info w-100"
-              >
-                <i class="bi bi-box-arrow-in-right me-1"></i>
-                Ingresar
-              </a>
-
             </div>
+
+            <a
+              [routerLink]="['/super-admin/empresas', empresaId, 'productos']"
+              class="btn btn-option-info w-100">
+              <i class="bi bi-box-arrow-in-right me-2"></i>
+              Ingresar
+            </a>
+
           </div>
         </div>
 
@@ -182,111 +207,108 @@
     </div>
   </div>
 
-
-
-
-
-
-
   <!-- Sucursales -->
-  <div class="card border-0 shadow-sm mb-4">
-    <div class="card-header bg-white border-0 p-4 d-flex flex-column flex-md-row justify-content-md-between align-items-md-center gap-3">
+  <div class="app-card mb-4">
+    <div class="app-card-header">
 
       <div>
-        <h5 class="fw-bold mb-1">Sucursales de la empresa</h5>
-        <p class="text-muted mb-0 small">
-          Visualiza las sucursales registradas para esta empresa.
+        <h5 class="section-title mb-1">Sucursales de la empresa</h5>
+        <p class="section-subtitle mb-0">
+          Visualiza y administra las sucursales registradas para esta empresa.
         </p>
       </div>
 
       <a
         [routerLink]="['/super-admin/empresas', empresaId, 'sucursales', 'crear']"
-        class="btn btn-success"
-      >
-        <i class="bi bi-building-add me-1"></i>
+        class="btn btn-app-success">
+        <i class="bi bi-building-add me-2"></i>
         Crear sucursal
       </a>
 
     </div>
 
-    <div class="card-body">
+    <div class="app-card-body">
 
       <!-- Cargando sucursales -->
-      <div *ngIf="cargandoSucursales" class="text-center p-4">
-        <div class="spinner-border text-primary"></div>
-        <p class="text-muted mt-2 mb-0">Cargando sucursales...</p>
+      <div *ngIf="cargandoSucursales" class="loading-inline">
+        <div class="spinner-border text-primary mb-3"></div>
+        <p class="text-muted mb-0">Cargando sucursales...</p>
       </div>
 
       <!-- Sin sucursales -->
-      <div *ngIf="!cargandoSucursales && sucursales.length === 0" class="text-center p-4">
+      <div *ngIf="!cargandoSucursales && sucursales.length === 0" class="empty-state">
 
-        <i class="bi bi-building fs-1 text-muted"></i>
+        <div class="empty-icon success">
+          <i class="bi bi-building"></i>
+        </div>
 
-        <h5 class="mt-3">Esta empresa no tiene sucursales</h5>
+        <h5>Esta empresa no tiene sucursales</h5>
 
-        <p class="text-muted mb-3">
-          Crea la primera sucursal para comenzar a organizar usuarios e inventario.
+        <p>
+          Crea la primera sucursal para comenzar a organizar usuarios, inventario y operaciones.
         </p>
 
         <a
           [routerLink]="['/super-admin/empresas', empresaId, 'sucursales', 'crear']"
-          class="btn btn-success"
-        >
-          <i class="bi bi-building-add me-1"></i>
+          class="btn btn-app-success">
+          <i class="bi bi-building-add me-2"></i>
           Crear sucursal
         </a>
 
       </div>
 
       <!-- Tarjetas sucursales -->
-      <div *ngIf="!cargandoSucursales && sucursales.length > 0" class="row g-3">
+      <div *ngIf="!cargandoSucursales && sucursales.length > 0" class="row g-4">
 
         <div
           class="col-12 col-md-6 col-xl-4"
-          *ngFor="let sucursal of sucursales"
-        >
-          <div class="card border-0 shadow-sm h-100 sucursal-card">
-            <div class="card-body p-3">
+          *ngFor="let sucursal of sucursales">
 
-              <div class="d-flex justify-content-between align-items-start mb-2">
-                <div>
-                  <h6 class="fw-bold mb-1">{{ sucursal.nombre }}</h6>
+          <div class="sucursal-card h-100">
 
-                  <span class="badge bg-success-subtle text-success">
-                    {{ sucursal.ciudad }}
-                  </span>
-                </div>
+            <div class="sucursal-header">
+              <div>
+                <h6>{{ sucursal.nombre }}</h6>
 
-                <i class="bi bi-shop fs-4 text-success"></i>
+                <span class="city-badge">
+                  <i class="bi bi-geo-alt me-1"></i>
+                  {{ sucursal.ciudad }}
+                </span>
               </div>
 
-              <div class="text-muted small mb-2">
-                <i class="bi bi-geo-alt me-1"></i>
-                {{ sucursal.direccion }}
+              <div class="sucursal-icon">
+                <i class="bi bi-shop"></i>
+              </div>
+            </div>
+
+            <div class="sucursal-info">
+
+              <div class="sucursal-info-row">
+                <i class="bi bi-geo-alt"></i>
+                <span>{{ sucursal.direccion }}</span>
               </div>
 
-              <div class="text-muted small mb-2">
-                <i class="bi bi-telephone me-1"></i>
-                {{ sucursal.telefono }}
+              <div class="sucursal-info-row">
+                <i class="bi bi-telephone"></i>
+                <span>{{ sucursal.telefono }}</span>
               </div>
 
-              <div class="text-muted small mt-3">
-                <i class="bi bi-calendar me-1"></i>
-                Creada: {{ sucursal.fechaCreacion | date:'yyyy-MM-dd HH:mm' }}
-              </div>
-
-              <div class="d-grid mt-3">
-                <a
-                  [routerLink]="['/super-admin/empresas', empresaId, 'sucursales', 'detalle', sucursal.id]"
-                  class="btn btn-sm btn-outline-success"
-                >
-                  <i class="bi bi-box-arrow-in-right me-1"></i>
-                  Ingresar a la sucursal
-                </a>
+              <div class="sucursal-info-row">
+                <i class="bi bi-calendar"></i>
+                <span>Creada: {{ sucursal.fechaCreacion | date:'yyyy-MM-dd HH:mm' }}</span>
               </div>
 
             </div>
+
+            <a
+              [routerLink]="['/super-admin/empresas', empresaId, 'sucursales', 'detalle', sucursal.id]"
+              class="btn btn-sucursal w-100">
+              <i class="bi bi-box-arrow-in-right me-2"></i>
+              Ingresar a la sucursal
+            </a>
+
           </div>
+
         </div>
 
       </div>
@@ -295,60 +317,60 @@
   </div>
 
   <!-- Usuarios -->
-  <div class="card border-0 shadow-sm">
-    <div class="card-header bg-white border-0 p-4 d-flex flex-column flex-md-row justify-content-md-between align-items-md-center gap-3">
+  <div class="app-card">
+    <div class="app-card-header">
 
       <div>
-        <h5 class="fw-bold mb-1">Usuarios administradores de la empresa</h5>
-        <p class="text-muted mb-0 small">
+        <h5 class="section-title mb-1">Usuarios administradores</h5>
+        <p class="section-subtitle mb-0">
           Administra los usuarios administradores asociados a esta empresa.
         </p>
       </div>
 
       <a
         [routerLink]="['/super-admin/empresas', empresaId, 'usuarios', 'crear']"
-        class="btn btn-primary"
-      >
-        <i class="bi bi-person-plus me-1"></i>
+        class="btn btn-app-primary">
+        <i class="bi bi-person-plus me-2"></i>
         Crear administrador
       </a>
 
     </div>
 
-    <div class="card-body p-0">
+    <div class="app-card-body p-0">
 
       <!-- Cargando usuarios -->
-      <div *ngIf="cargandoUsuarios" class="text-center p-4">
-        <div class="spinner-border text-primary"></div>
-        <p class="text-muted mt-2 mb-0">Cargando usuarios...</p>
+      <div *ngIf="cargandoUsuarios" class="loading-inline">
+        <div class="spinner-border text-primary mb-3"></div>
+        <p class="text-muted mb-0">Cargando usuarios...</p>
       </div>
 
       <!-- Sin usuarios -->
-      <div *ngIf="!cargandoUsuarios && usuarios.length === 0" class="p-4 text-center">
+      <div *ngIf="!cargandoUsuarios && usuarios.length === 0" class="empty-state m-4">
 
-        <i class="bi bi-people fs-1 text-muted"></i>
+        <div class="empty-icon primary">
+          <i class="bi bi-people"></i>
+        </div>
 
-        <h5 class="mt-3">Esta empresa no tiene administradores</h5>
+        <h5>Esta empresa no tiene administradores</h5>
 
-        <p class="text-muted mb-3">
+        <p>
           Debes crear el primer usuario administrador para esta empresa.
         </p>
 
         <a
           [routerLink]="['/super-admin/empresas', empresaId, 'usuarios', 'crear']"
-          class="btn btn-primary"
-        >
-          <i class="bi bi-person-plus me-1"></i>
+          class="btn btn-app-primary">
+          <i class="bi bi-person-plus me-2"></i>
           Crear administrador inicial
         </a>
 
       </div>
 
       <!-- Tabla usuarios -->
-      <div *ngIf="!cargandoUsuarios && usuarios.length > 0" class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
+      <div *ngIf="!cargandoUsuarios && usuarios.length > 0" class="app-table-wrapper">
+        <table class="table app-table align-middle mb-0">
 
-          <thead class="table-light">
+          <thead>
           <tr>
             <th>ID</th>
             <th>Nombre</th>
@@ -362,18 +384,34 @@
           <tbody>
           <tr *ngFor="let usuario of usuarios">
 
-            <td>{{ usuario.id }}</td>
-
-            <td class="fw-semibold">
-              {{ usuario.nombre }}
+            <td>
+                <span class="id-pill">
+                  #{{ usuario.id }}
+                </span>
             </td>
 
             <td>
-              {{ usuario.username }}
+              <div class="user-cell">
+                <div class="user-avatar">
+                  {{ usuario.nombre.charAt(0) || 'U' }}
+                </div>
+
+                <div>
+                  <div class="table-main-text">
+                    {{ usuario.nombre }}
+                  </div>
+                </div>
+              </div>
             </td>
 
             <td>
-                <span class="badge bg-secondary">
+                <span class="username-text">
+                  {{ usuario.username }}
+                </span>
+            </td>
+
+            <td>
+                <span class="role-badge">
                   {{ usuario.rol }}
                 </span>
             </td>
@@ -383,21 +421,31 @@
             </td>
 
             <td class="text-end">
-              <a
-                [routerLink]="['/super-admin/usuarios/editar', usuario.id]"
-                class="btn btn-sm btn-outline-primary me-2"
-              >
-                <i class="bi bi-pencil"></i>
-              </a>
+              <div class="table-actions">
 
-              <button
-                *ngIf="usuario.rol !== 'ADMIN' || authTemporalService.esSuperAdmin()"
-                type="button"
-                class="btn btn-sm btn-outline-danger"
-                (click)="eliminarUsuario(usuario.id)"
-              >
-                <i class="bi bi-trash"></i>
-              </button>
+                @if (usuario.rol === 'ADMIN') {
+                  <button
+                    type="button"
+                    class="btn btn-action-edit"
+                    title="Cambiar contraseña"
+                    (click)="irEditarPasswordAdmin(usuario.id)">
+
+                    <i class="bi bi-key"></i>
+
+                  </button>
+                }
+
+                <button
+                  *ngIf="usuario.rol !== 'ADMIN' || authTemporalService.esSuperAdmin()"
+                  type="button"
+                  class="btn btn-action-delete"
+                  (click)="eliminarUsuario(usuario.id)">
+
+                  <i class="bi bi-trash"></i>
+
+                </button>
+
+              </div>
             </td>
 
           </tr>

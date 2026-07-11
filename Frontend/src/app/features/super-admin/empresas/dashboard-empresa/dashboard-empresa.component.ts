@@ -11,6 +11,8 @@ import {
   DashboardSucursalResumenDTO
 } from '../../../../core/models/empresa/empresa.model';
 
+import { AuthTemporalService } from '../../../../core/services/auth/auth-temporal.service';
+
 type TipoFiltroDashboard = 'DIA' | 'MES' | 'RANGO';
 
 @Component({
@@ -45,7 +47,8 @@ export class DashboardEmpresaComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private empresaService: EmpresaService
+    private empresaService: EmpresaService,
+    private authTemporalService: AuthTemporalService
   ) {}
 
   ngOnInit(): void {
@@ -272,6 +275,10 @@ export class DashboardEmpresaComponent implements OnInit {
       default:
         return tipoAlerta;
     }
+  }
+
+  esSuperAdmin(): boolean {
+    return this.authTemporalService.esSuperAdmin();
   }
 
   private formatearFecha(fecha: Date): string {

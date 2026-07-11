@@ -12,4 +12,6 @@ public interface DetalleFacturaVentaRepositorio extends JpaRepository<DetalleVen
     List<DetalleVenta> findByVenta(Venta venta);
 
     boolean existsByProductoId(Long productoId);
+
+
 }
