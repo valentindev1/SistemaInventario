@@ -1,0 +1,307 @@
+<div class="container-fluid inventario-actual-empleado">
+
+  <div class="d-flex flex-column flex-lg-row justify-content-lg-between align-items-lg-center gap-3 mb-4">
+
+    <div>
+      <button
+        type="button"
+        class="btn btn-link px-0 mb-2"
+        (click)="volverPanelInventario()">
+
+        <i class="bi bi-arrow-left me-1"></i>
+        Volver al panel de inventario
+
+      </button>
+
+      <span class="badge bg-primary-subtle text-primary mb-2">
+        Inventario actual
+      </span>
+
+      <h2 class="fw-bold mb-1">
+        Inventario actual
+      </h2>
+
+      <p class="text-muted mb-0">
+        Consulta productos disponibles, stock actual, características y precio de venta.
+      </p>
+    </div>
+
+    <button
+      type="button"
+      class="btn btn-outline-primary"
+      (click)="cargarInventario()">
+
+      <i class="bi bi-arrow-clockwise me-1"></i>
+      Actualizar inventario
+
+    </button>
+
+  </div>
+
+  @if (mensajeExito) {
+    <div class="alert alert-success">
+      <i class="bi bi-check-circle me-1"></i>
+      {{ mensajeExito }}
+    </div>
+  }
+
+  @if (mensajeError) {
+    <div class="alert alert-danger">
+      <i class="bi bi-exclamation-triangle me-1"></i>
+      {{ mensajeError }}
+    </div>
+  }
+
+  <div class="row g-3 mb-4">
+
+    <div class="col-12 col-md-6 col-xl-3">
+      <div class="summary-card summary-referencias">
+        <span>Referencias</span>
+        <strong>{{ calcularTotalReferencias() }}</strong>
+      </div>
+    </div>
+
+    <div class="col-12 col-md-6 col-xl-3">
+      <div class="summary-card summary-unidades">
+        <span>Unidades disponibles</span>
+        <strong>{{ calcularUnidadesDisponibles() }}</strong>
+      </div>
+    </div>
+
+    <div class="col-12 col-md-6 col-xl-3">
+      <div class="summary-card summary-bajo">
+        <span>Bajo stock</span>
+        <strong>{{ calcularProductosBajoStock() }}</strong>
+      </div>
+    </div>
+
+    <div class="col-12 col-md-6 col-xl-3">
+      <div class="summary-card summary-agotado">
+        <span>Agotados</span>
+        <strong>{{ calcularProductosAgotados() }}</strong>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-4">
+
+      <div class="row g-3 align-items-end">
+
+        <div class="col-12 col-lg-8">
+          <label class="form-label">
+            Buscar producto
+          </label>
+
+          <input
+            type="text"
+            class="form-control"
+            placeholder="Buscar por código, nombre, categoría, color, talla o género"
+            [(ngModel)]="filtro"
+            (input)="filtrarInventario()">
+        </div>
+
+        <div class="col-12 col-md-6 col-lg-2">
+          <label class="form-label">
+            Estado stock
+          </label>
+
+          <select
+            class="form-select"
+            [(ngModel)]="filtroStock"
+            (change)="filtrarInventario()">
+
+            <option value="TODOS">Todos</option>
+            <option value="DISPONIBLE">Disponible</option>
+            <option value="BAJO">Bajo stock</option>
+            <option value="AGOTADO">Agotado</option>
+
+          </select>
+        </div>
+
+        <div class="col-12 col-md-6 col-lg-2">
+          <button
+            type="button"
+            class="btn btn-outline-secondary w-100"
+            (click)="limpiarFiltros()">
+
+            Limpiar
+
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  @if (cargando) {
+    <div class="text-center p-4">
+      <div class="spinner-border text-primary"></div>
+
+      <p class="text-muted mt-2 mb-0">
+        Cargando inventario...
+      </p>
+    </div>
+  }
+
+  @if (!cargando) {
+    <div class="card border-0 shadow-sm">
+      <div class="card-body p-4">
+
+        <div class="d-flex flex-column flex-md-row justify-content-md-between gap-2 mb-3">
+
+          <div>
+            <h5 class="fw-bold mb-1">
+              Productos en inventario
+            </h5>
+
+            <p class="text-muted mb-0">
+              {{ inventarioFiltrado.length }} producto(s) encontrado(s).
+            </p>
+          </div>
+
+          <div class="text-muted small">
+            Máximo {{ registrosPorPagina }} registros por página
+          </div>
+
+        </div>
+
+        @if (inventarioFiltrado.length === 0) {
+          <div class="empty-state">
+            No hay productos para mostrar.
+          </div>
+        }
+
+        @if (inventarioFiltrado.length > 0) {
+          <div class="table-responsive">
+
+            <table class="table align-middle">
+
+              <thead>
+              <tr>
+                <th>Código</th>
+                <th>Producto</th>
+                <th>Categoría</th>
+                <th>Color</th>
+                <th>Talla</th>
+                <th>Género</th>
+                <th class="text-center">Stock</th>
+                <th>Estado</th>
+                <th class="text-end">Precio venta</th>
+              </tr>
+              </thead>
+
+              <tbody>
+
+                @for (item of inventarioPaginado; track item.inventarioId) {
+                  <tr>
+
+                    <td>
+                      <div class="fw-semibold">
+                        {{ item.codigo }}
+                      </div>
+                    </td>
+
+                    <td>
+                      <div class="fw-semibold">
+                        {{ item.nombre }}
+                      </div>
+
+                      <div class="text-muted small">
+                        {{ item.descripcion }}
+                      </div>
+                    </td>
+
+                    <td>{{ item.categoria }}</td>
+
+                    <td>{{ item.color }}</td>
+
+                    <td>{{ item.talla }}</td>
+
+                    <td>{{ item.genero }}</td>
+
+                    <td class="text-center fw-semibold">
+                      {{ item.stockActual }}
+                    </td>
+
+                    <td>
+                      <span
+                        class="stock-badge"
+                        [ngClass]="getClaseStock(item)">
+
+                        {{ getTextoStock(item) }}
+
+                      </span>
+                    </td>
+
+                    <td class="text-end fw-semibold">
+                      {{ item.precioVenta | currency:'COP':'symbol-narrow':'1.0-0' }}
+                    </td>
+
+                  </tr>
+                }
+
+              </tbody>
+
+            </table>
+
+          </div>
+
+          @if (inventarioFiltrado.length > registrosPorPagina) {
+            <div class="pagination-box mt-3">
+
+              <div class="text-muted small">
+                Página {{ paginaActual }} de {{ totalPaginas }}
+                —
+                Mostrando máximo {{ registrosPorPagina }} registros por página
+              </div>
+
+              <div class="pagination-actions">
+
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-secondary"
+                  (click)="irPaginaAnterior()"
+                  [disabled]="paginaActual === 1">
+
+                  Anterior
+
+                </button>
+
+                @for (pagina of paginasDisponibles; track pagina) {
+                  <button
+                    type="button"
+                    class="btn btn-sm"
+                    [class.btn-primary]="paginaActual === pagina"
+                    [class.btn-outline-primary]="paginaActual !== pagina"
+                    (click)="irAPagina(pagina)">
+
+                    {{ pagina }}
+
+                  </button>
+                }
+
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-secondary"
+                  (click)="irPaginaSiguiente()"
+                  [disabled]="paginaActual === totalPaginas">
+
+                  Siguiente
+
+                </button>
+
+              </div>
+
+            </div>
+          }
+
+        }
+
+      </div>
+    </div>
+  }
+
+</div>

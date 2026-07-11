@@ -1,0 +1,162 @@
+.container-fluid {
+  padding: 1.5rem;
+}
+
+.modulo-venta {
+  transition: opacity 0.2s ease, filter 0.2s ease;
+}
+
+.modulo-bloqueado {
+  opacity: 0.58;
+  filter: grayscale(0.15);
+}
+
+.empty-state {
+  border: 1px dashed #ced4da;
+  border-radius: 0.75rem;
+  padding: 2rem;
+  text-align: center;
+  color: #6c757d;
+  background: #f8f9fa;
+}
+
+.quantity-input {
+  width: 90px;
+}
+
+.discount-box {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.85rem;
+  padding: 1rem;
+  background: #f8fafc;
+}
+
+.discount-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.discount-btn {
+  min-width: 72px;
+}
+
+.manual-discount {
+  max-width: 320px;
+}
+
+.sale-summary {
+  border-top: 1px solid #e5e7eb;
+  padding-top: 1rem;
+}
+
+.sale-summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.35rem 0;
+}
+
+.sale-summary-row span {
+  color: #6b7280;
+}
+
+.sale-summary-row strong {
+  color: #111827;
+}
+
+.discount-row strong {
+  color: #dc3545;
+}
+
+.total-row {
+  border-top: 1px solid #d1d5db;
+  margin-top: 0.5rem;
+  padding-top: 0.8rem;
+  font-size: 1.1rem;
+}
+
+.total-row strong {
+  color: #198754;
+  font-size: 1.25rem;
+}
+
+.clientes-sugerencias {
+  position: absolute;
+  z-index: 20;
+  width: calc(100% - 1.5rem);
+  background: #ffffff;
+  border: 1px solid #dee2e6;
+  border-radius: 0.75rem;
+  margin-top: 0.35rem;
+  overflow: hidden;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.cliente-sugerencia-item {
+  width: 100%;
+  border: 0;
+  background: #ffffff;
+  padding: 0.85rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid #f1f3f5;
+  cursor: pointer;
+}
+
+.cliente-sugerencia-item:hover {
+  background: #f8f9fa;
+}
+
+.cliente-sugerencia-item:last-child {
+  border-bottom: 0;
+}
+
+.table th {
+  font-size: 0.85rem;
+  color: #6b7280;
+  font-weight: 700;
+}
+
+.table td {
+  vertical-align: middle;
+}
+
+.alert {
+  border-radius: 0.75rem;
+}
+
+.card {
+  border-radius: 1rem;
+}
+
+.form-control,
+.form-select {
+  border-radius: 0.65rem;
+}
+
+.btn {
+  border-radius: 0.65rem;
+}
+
+@media (max-width: 768px) {
+  .container-fluid {
+    padding: 1rem;
+  }
+
+  .quantity-input {
+    width: 100%;
+  }
+
+  .clientes-sugerencias {
+    width: calc(100% - 1.5rem);
+  }
+
+  .discount-options {
+    flex-direction: column;
+  }
+
+  .discount-btn {
+    width: 100%;
+  }
+}

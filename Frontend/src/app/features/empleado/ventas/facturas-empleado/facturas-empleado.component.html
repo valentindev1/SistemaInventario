@@ -1,0 +1,472 @@
+<div class="container-fluid facturas-empleado">
+
+  <div class="d-flex flex-column flex-lg-row justify-content-lg-between align-items-lg-center gap-3 mb-4">
+
+    <div>
+      <button
+        type="button"
+        class="btn btn-link px-0 mb-2"
+        (click)="volverPanelVentas()">
+
+        <i class="bi bi-arrow-left me-1"></i>
+        Volver al panel de ventas
+
+      </button>
+
+      <span class="badge bg-primary-subtle text-primary mb-2">
+        Facturas de la sucursal
+      </span>
+
+      <h2 class="fw-bold mb-1">
+        Ver facturas
+      </h2>
+
+      <p class="text-muted mb-0">
+        Consulta las ventas generadas en la sucursal y revisa el detalle de cada factura.
+      </p>
+    </div>
+
+    <div class="d-flex flex-column flex-md-row gap-2">
+
+      <button
+        type="button"
+        class="btn btn-outline-primary"
+        (click)="cargarFacturas()">
+
+        <i class="bi bi-arrow-clockwise me-1"></i>
+        Actualizar
+
+      </button>
+
+      <button
+        type="button"
+        class="btn btn-primary"
+        (click)="irGenerarVenta()">
+
+        <i class="bi bi-cart-plus me-1"></i>
+        Crear venta
+
+      </button>
+
+    </div>
+
+  </div>
+
+  @if (mensajeExito) {
+    <div class="alert alert-success">
+      <i class="bi bi-check-circle me-1"></i>
+      {{ mensajeExito }}
+    </div>
+  }
+
+  @if (mensajeError) {
+    <div class="alert alert-danger">
+      <i class="bi bi-exclamation-triangle me-1"></i>
+      {{ mensajeError }}
+    </div>
+  }
+
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-4">
+
+      <div class="row g-3 align-items-end">
+
+        <div class="col-12 col-lg-9">
+          <label class="form-label">
+            Buscar factura
+          </label>
+
+          <input
+            type="text"
+            class="form-control"
+            placeholder="Buscar por número, cliente, documento, vendedor o estado"
+            [(ngModel)]="filtro"
+            (input)="filtrarFacturas()">
+        </div>
+
+        <div class="col-12 col-lg-3">
+          <button
+            type="button"
+            class="btn btn-outline-secondary w-100"
+            (click)="limpiarBusqueda()">
+
+            Limpiar búsqueda
+
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  @if (cargando) {
+    <div class="text-center p-4">
+      <div class="spinner-border text-primary"></div>
+
+      <p class="text-muted mt-2 mb-0">
+        Cargando facturas...
+      </p>
+    </div>
+  }
+
+  @if (!cargando) {
+    <div class="row g-4">
+
+      @if (facturaSeleccionada) {
+        <div #detalleFactura class="col-12">
+
+          <div class="card border-0 shadow-sm detalle-card mb-4">
+            <div class="card-body p-4">
+
+              <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+
+                <div>
+                  <h5 class="fw-bold mb-1">
+                    Factura {{ facturaSeleccionada.numeroVenta }}
+                  </h5>
+
+                  <p class="text-muted mb-0">
+                    {{ facturaSeleccionada.fechaVenta | date:'medium' }}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-secondary"
+                  (click)="cerrarDetalle()">
+
+                  Cerrar
+
+                </button>
+
+              </div>
+
+              @if (cargandoDetalle) {
+                <div class="text-center p-3">
+                  <div class="spinner-border text-primary"></div>
+                </div>
+              }
+
+              <div class="detalle-info mb-3">
+
+                <div class="info-box">
+                  <span>Cliente</span>
+                  <strong>{{ facturaSeleccionada.clienteNombre }}</strong>
+                </div>
+
+                <div class="info-box">
+                  <span>Documento</span>
+                  <strong>{{ facturaSeleccionada.clienteDocumento }}</strong>
+                </div>
+
+                <div class="info-box">
+                  <span>Vendedor</span>
+                  <strong>{{ facturaSeleccionada.usuarioNombre }}</strong>
+                </div>
+
+                <div class="info-box">
+                  <span>Estado</span>
+                  <strong
+                    class="estado-badge"
+                    [ngClass]="getClaseEstado(facturaSeleccionada.estado)">
+
+                    {{ facturaSeleccionada.estado }}
+
+                  </strong>
+                </div>
+
+              </div>
+
+              <div class="table-responsive mb-3">
+
+                <table class="table table-sm align-middle detalle-table">
+
+                  <thead>
+                  <tr>
+                    <th>Producto</th>
+                    <th class="text-center">Cant.</th>
+                    <th class="text-center">Devuelta</th>
+                    <th class="text-center">Disponible devolución</th>
+                    <th class="text-end">Precio venta</th>
+                    <th class="text-end">Subtotal</th>
+                  </tr>
+                  </thead>
+
+                  <tbody>
+
+                    @for (detalle of facturaSeleccionada.detalles; track detalle.productoId) {
+                      <tr>
+
+                        <td>
+                          <div class="fw-semibold">
+                            {{ detalle.productoNombre }}
+                          </div>
+
+                          <div class="text-muted small">
+                            {{ detalle.productoCodigo }}
+                          </div>
+                        </td>
+
+                        <td class="text-center">
+                          {{ detalle.cantidad }}
+                        </td>
+
+                        <td class="text-center">
+                          {{ detalle.cantidadDevuelta }}
+                        </td>
+
+                        <td class="text-center">
+                          {{ detalle.cantidadDisponibleDevolucion }}
+                        </td>
+
+                        <td class="text-end">
+                          {{ detalle.precioUnitarioMomento | currency:'COP':'symbol-narrow':'1.0-0' }}
+                        </td>
+
+                        <td class="text-end">
+                          {{ detalle.subtotal | currency:'COP':'symbol-narrow':'1.0-0' }}
+                        </td>
+
+                      </tr>
+                    }
+
+                  </tbody>
+
+                </table>
+
+              </div>
+
+              @if (facturaSeleccionada.observacion) {
+                <div class="observacion-box mb-3">
+                  <span>Observación</span>
+                  <p>{{ facturaSeleccionada.observacion }}</p>
+                </div>
+              }
+
+              <div class="totales-box">
+
+                <div class="total-row">
+                  <span>Subtotal</span>
+                  <strong>
+                    {{ facturaSeleccionada.subtotal | currency:'COP':'symbol-narrow':'1.0-0' }}
+                  </strong>
+                </div>
+
+                <div class="total-row descuento-row">
+                  <span>Descuento</span>
+                  <strong>
+                    - {{ facturaSeleccionada.descuento | currency:'COP':'symbol-narrow':'1.0-0' }}
+                  </strong>
+                </div>
+
+                <div class="total-row final-row">
+                  <span>Total</span>
+                  <strong>
+                    {{ facturaSeleccionada.total | currency:'COP':'symbol-narrow':'1.0-0' }}
+                  </strong>
+                </div>
+
+              </div>
+
+              @if (puedeGenerarDevolucion(facturaSeleccionada.estado)) {
+                <button
+                  type="button"
+                  class="btn btn-warning w-100 mt-3"
+                  (click)="irGenerarDevolucion(facturaSeleccionada.numeroVenta)">
+
+                  <i class="bi bi-arrow-counterclockwise me-1"></i>
+                  Generar devolución
+
+                </button>
+              }
+
+            </div>
+          </div>
+
+        </div>
+      }
+
+      <div class="col-12">
+
+        <div class="card border-0 shadow-sm">
+          <div class="card-body p-4">
+
+            <div class="d-flex flex-column flex-md-row justify-content-md-between gap-2 mb-3">
+
+              <div>
+                <h5 class="fw-bold mb-1">
+                  Historial de facturas
+                </h5>
+
+                <p class="text-muted mb-0">
+                  {{ facturasFiltradas.length }} factura(s) encontrada(s).
+                </p>
+              </div>
+
+              <div class="text-muted small">
+                Máximo {{ registrosPorPagina }} registros por página
+              </div>
+
+            </div>
+
+            @if (facturasFiltradas.length === 0) {
+              <div class="empty-state">
+                No hay facturas para mostrar.
+              </div>
+            }
+
+            @if (facturasFiltradas.length > 0) {
+              <div class="table-responsive">
+
+                <table class="table align-middle">
+
+                  <thead>
+                  <tr>
+                    <th>Número</th>
+                    <th>Cliente</th>
+                    <th>Documento</th>
+                    <th>Vendedor</th>
+                    <th>Estado</th>
+                    <th>Fecha</th>
+                    <th class="text-end">Total</th>
+                    <th class="text-end">Acciones</th>
+                  </tr>
+                  </thead>
+
+                  <tbody>
+
+                    @for (factura of facturasPaginadas; track factura.id) {
+                      <tr>
+
+                        <td>
+                          <div class="fw-semibold">
+                            {{ factura.numeroVenta }}
+                          </div>
+                        </td>
+
+                        <td>
+                          {{ factura.clienteNombre }}
+                        </td>
+
+                        <td>
+                          {{ factura.clienteDocumento }}
+                        </td>
+
+                        <td>
+                          {{ factura.usuarioNombre }}
+                        </td>
+
+                        <td>
+                          <span
+                            class="estado-badge"
+                            [ngClass]="getClaseEstado(factura.estado)">
+
+                            {{ factura.estado }}
+
+                          </span>
+                        </td>
+
+                        <td>
+                          {{ factura.fechaVenta | date:'short' }}
+                        </td>
+
+                        <td class="text-end fw-semibold">
+                          {{ factura.total | currency:'COP':'symbol-narrow':'1.0-0' }}
+                        </td>
+
+                        <td class="text-end">
+                          <div class="d-flex justify-content-end gap-2 flex-wrap">
+
+                            <button
+                              type="button"
+                              class="btn btn-sm btn-outline-primary"
+                              (click)="verDetalleFactura(factura.id)">
+
+                              Ver
+
+                            </button>
+
+                            @if (puedeGenerarDevolucion(factura.estado)) {
+                              <button
+                                type="button"
+                                class="btn btn-sm btn-outline-warning"
+                                (click)="irGenerarDevolucion(factura.numeroVenta)">
+
+                                Devolución
+
+                              </button>
+                            }
+
+                          </div>
+                        </td>
+
+                      </tr>
+                    }
+
+                  </tbody>
+
+                </table>
+
+              </div>
+
+              @if (facturasFiltradas.length > registrosPorPagina) {
+                <div class="pagination-box mt-3">
+
+                  <div class="text-muted small">
+                    Página {{ paginaActual }} de {{ totalPaginas }}
+                    —
+                    Mostrando máximo {{ registrosPorPagina }} registros por página
+                  </div>
+
+                  <div class="pagination-actions">
+
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-secondary"
+                      (click)="irPaginaAnterior()"
+                      [disabled]="paginaActual === 1">
+
+                      Anterior
+
+                    </button>
+
+                    @for (pagina of paginasDisponibles; track pagina) {
+                      <button
+                        type="button"
+                        class="btn btn-sm"
+                        [class.btn-primary]="paginaActual === pagina"
+                        [class.btn-outline-primary]="paginaActual !== pagina"
+                        (click)="irAPagina(pagina)">
+
+                        {{ pagina }}
+
+                      </button>
+                    }
+
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-secondary"
+                      (click)="irPaginaSiguiente()"
+                      [disabled]="paginaActual === totalPaginas">
+
+                      Siguiente
+
+                    </button>
+
+                  </div>
+
+                </div>
+              }
+
+            }
+
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  }
+
+</div>

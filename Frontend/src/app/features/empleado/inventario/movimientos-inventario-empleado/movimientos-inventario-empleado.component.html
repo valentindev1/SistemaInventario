@@ -1,0 +1,368 @@
+<div class="container-fluid movimientos-inventario-empleado">
+
+  <div class="d-flex flex-column flex-lg-row justify-content-lg-between align-items-lg-center gap-3 mb-4">
+
+    <div>
+      <button
+        type="button"
+        class="btn btn-link px-0 mb-2"
+        (click)="volverPanelInventario()">
+
+        <i class="bi bi-arrow-left me-1"></i>
+        Volver al panel de inventario
+
+      </button>
+
+      <span class="badge bg-purple-subtle text-purple mb-2">
+        Movimientos
+      </span>
+
+      <h2 class="fw-bold mb-1">
+        Movimientos del inventario
+      </h2>
+
+      <p class="text-muted mb-0">
+        Consulta entradas, salidas, ventas, devoluciones y ajustes de la sucursal.
+      </p>
+    </div>
+
+    <button
+      type="button"
+      class="btn btn-outline-primary"
+      (click)="cargarMovimientos()">
+
+      <i class="bi bi-arrow-clockwise me-1"></i>
+      Actualizar
+
+    </button>
+
+  </div>
+
+  @if (mensajeExito) {
+    <div class="alert alert-success">
+      <i class="bi bi-check-circle me-1"></i>
+      {{ mensajeExito }}
+    </div>
+  }
+
+  @if (mensajeError) {
+    <div class="alert alert-danger">
+      <i class="bi bi-exclamation-triangle me-1"></i>
+      {{ mensajeError }}
+    </div>
+  }
+
+  <div class="row g-3 mb-4">
+
+    <div class="col-12 col-md-6 col-xl-3">
+      <div class="summary-card summary-total">
+        <span>Movimientos</span>
+        <strong>{{ calcularTotalMovimientos() }}</strong>
+      </div>
+    </div>
+
+    <div class="col-12 col-md-6 col-xl-3">
+      <div class="summary-card summary-unidades">
+        <span>Unidades movidas</span>
+        <strong>{{ calcularUnidadesMovidas() }}</strong>
+      </div>
+    </div>
+
+    <div class="col-12 col-md-6 col-xl-3">
+      <div class="summary-card summary-entradas">
+        <span>Entradas</span>
+        <strong>{{ calcularEntradas() }}</strong>
+      </div>
+    </div>
+
+    <div class="col-12 col-md-6 col-xl-3">
+      <div class="summary-card summary-salidas">
+        <span>Salidas</span>
+        <strong>{{ calcularSalidas() }}</strong>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-4">
+
+      <div class="row g-3 align-items-end">
+
+        <div class="col-12 col-xl-4">
+          <label class="form-label">
+            Buscar movimiento
+          </label>
+
+          <input
+            type="text"
+            class="form-control"
+            placeholder="Producto, código, usuario, motivo o tipo"
+            [(ngModel)]="filtro"
+            (input)="filtrarMovimientos()">
+        </div>
+
+        <div class="col-12 col-md-6 col-xl-2">
+          <label class="form-label">
+            Tipo
+          </label>
+
+          <select
+            class="form-select"
+            [(ngModel)]="tipoFiltro"
+            (change)="filtrarMovimientos()">
+
+            <option value="">Todos</option>
+            <option value="INGRESO_MERCANCIA">Ingreso</option>
+            <option value="VENTA">Venta</option>
+            <option value="DEVOLUCION">Devolución</option>
+            <option value="AJUSTE_POSITIVO">Ajuste +</option>
+            <option value="AJUSTE_NEGATIVO">Ajuste -</option>
+            <option value="CANCELACION_FACTURA">Cancelación</option>
+
+          </select>
+        </div>
+
+        <div class="col-12 col-md-6 col-xl-2">
+          <label class="form-label">
+            Fecha
+          </label>
+
+          <select
+            class="form-select"
+            [(ngModel)]="tipoFiltroFecha"
+            (change)="cambiarTipoFiltroFecha()">
+
+            <option value="TODOS">Todas</option>
+            <option value="DIA">Por día</option>
+            <option value="MES">Por mes</option>
+
+          </select>
+        </div>
+
+        @if (tipoFiltroFecha === 'DIA') {
+          <div class="col-12 col-md-6 col-xl-2">
+            <label class="form-label">
+              Día
+            </label>
+
+            <input
+              type="date"
+              class="form-control"
+              [(ngModel)]="fechaDia"
+              (change)="filtrarMovimientos()">
+          </div>
+        }
+
+        @if (tipoFiltroFecha === 'MES') {
+          <div class="col-12 col-md-6 col-xl-2">
+            <label class="form-label">
+              Mes
+            </label>
+
+            <input
+              type="month"
+              class="form-control"
+              [(ngModel)]="mesSeleccionado"
+              (change)="filtrarMovimientos()">
+          </div>
+        }
+
+        <div class="col-12 col-md-6 col-xl-2">
+          <button
+            type="button"
+            class="btn btn-outline-secondary w-100"
+            (click)="limpiarFiltros()">
+
+            Limpiar
+
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  @if (cargando) {
+    <div class="text-center p-4">
+      <div class="spinner-border text-primary"></div>
+
+      <p class="text-muted mt-2 mb-0">
+        Cargando movimientos...
+      </p>
+    </div>
+  }
+
+  @if (!cargando) {
+    <div class="card border-0 shadow-sm">
+      <div class="card-body p-4">
+
+        <div class="d-flex flex-column flex-md-row justify-content-md-between gap-2 mb-3">
+
+          <div>
+            <h5 class="fw-bold mb-1">
+              Movimientos encontrados
+            </h5>
+
+            <p class="text-muted mb-0">
+              {{ movimientosFiltrados.length }} movimiento(s) encontrado(s).
+            </p>
+          </div>
+
+          <div class="text-muted small">
+            Máximo {{ registrosPorPagina }} registros por página
+          </div>
+
+        </div>
+
+        @if (movimientosFiltrados.length === 0) {
+          <div class="empty-state">
+            No hay movimientos para mostrar.
+          </div>
+        }
+
+        @if (movimientosFiltrados.length > 0) {
+          <div class="table-responsive">
+
+            <table class="table align-middle">
+
+              <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Tipo</th>
+                <th>Producto</th>
+                <th class="text-center">Cantidad</th>
+                <th class="text-center">Stock antes</th>
+                <th class="text-center">Stock después</th>
+                <th class="text-end">Precio venta</th>
+                <th>Usuario</th>
+                <th>Motivo</th>
+              </tr>
+              </thead>
+
+              <tbody>
+
+                @for (movimiento of movimientosPaginados; track movimiento.id) {
+                  <tr>
+
+                    <td>
+                      {{ movimiento.fecha | date:'short' }}
+                    </td>
+
+                    <td>
+                      <span
+                        class="tipo-badge"
+                        [ngClass]="getClaseTipo(movimiento.tipo)">
+
+                        {{ formatearTipo(movimiento.tipo) }}
+
+                      </span>
+                    </td>
+
+                    <td>
+                      <div class="fw-semibold">
+                        {{ movimiento.productoNombre }}
+                      </div>
+
+                      <div class="text-muted small">
+                        {{ movimiento.productoCodigo }}
+                      </div>
+                    </td>
+
+                    <td
+                      class="text-center fw-semibold"
+                      [class.text-success]="movimiento.cantidad > 0"
+                      [class.text-danger]="movimiento.cantidad < 0">
+
+                      {{ movimiento.cantidad }}
+
+                    </td>
+
+                    <td class="text-center">
+                      {{ movimiento.stockAntes }}
+                    </td>
+
+                    <td class="text-center">
+                      {{ movimiento.stockDespues }}
+                    </td>
+
+                    <td class="text-end fw-semibold">
+                      {{ movimiento.precioVentaMomento | currency:'COP':'symbol-narrow':'1.0-0' }}
+                    </td>
+
+                    <td>
+                      {{ movimiento.usuarioNombre }}
+                    </td>
+
+                    <td>
+                      <div class="motivo-text">
+                        {{ movimiento.motivo || 'Sin motivo' }}
+                      </div>
+                    </td>
+
+                  </tr>
+                }
+
+              </tbody>
+
+            </table>
+
+          </div>
+
+          @if (movimientosFiltrados.length > registrosPorPagina) {
+            <div class="pagination-box mt-3">
+
+              <div class="text-muted small">
+                Página {{ paginaActual }} de {{ totalPaginas }}
+                —
+                Mostrando máximo {{ registrosPorPagina }} registros por página
+              </div>
+
+              <div class="pagination-actions">
+
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-secondary"
+                  (click)="irPaginaAnterior()"
+                  [disabled]="paginaActual === 1">
+
+                  Anterior
+
+                </button>
+
+                @for (pagina of paginasDisponibles; track pagina) {
+                  <button
+                    type="button"
+                    class="btn btn-sm"
+                    [class.btn-primary]="paginaActual === pagina"
+                    [class.btn-outline-primary]="paginaActual !== pagina"
+                    (click)="irAPagina(pagina)">
+
+                    {{ pagina }}
+
+                  </button>
+                }
+
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-secondary"
+                  (click)="irPaginaSiguiente()"
+                  [disabled]="paginaActual === totalPaginas">
+
+                  Siguiente
+
+                </button>
+
+              </div>
+
+            </div>
+          }
+
+        }
+
+      </div>
+    </div>
+  }
+
+</div>

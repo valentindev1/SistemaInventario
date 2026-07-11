@@ -1,0 +1,245 @@
+<div class="container-fluid dashboard-empleado">
+
+  <div class="dashboard-header mb-4">
+
+    <div>
+      <span class="badge bg-primary-subtle text-primary mb-2">
+        Panel empleado
+      </span>
+
+      <h2 class="fw-bold mb-1">
+        Bienvenido, {{ usuarioActual.nombre }}
+      </h2>
+
+      <p class="text-muted mb-0">
+        Selecciona el módulo que deseas utilizar en la sucursal.
+      </p>
+    </div>
+
+    <div class="usuario-card">
+      <div class="usuario-icon">
+        <i class="bi bi-person-badge"></i>
+      </div>
+
+      <div>
+        <div class="fw-semibold">
+          {{ usuarioActual.username }}
+        </div>
+
+        <div class="text-muted small">
+          Rol: {{ usuarioActual.rol }}
+        </div>
+
+        <div class="text-muted small">
+          Sucursal ID: {{ sucursalId }}
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  @if (mensajeError) {
+    <div class="alert alert-danger">
+      <i class="bi bi-exclamation-triangle me-1"></i>
+      {{ mensajeError }}
+    </div>
+  }
+
+  <div class="row g-4 mb-4">
+
+    <div class="col-12 col-xl-8">
+
+      <div class="card border-0 shadow-sm metric-card">
+        <div class="card-body p-4">
+
+          <div class="d-flex flex-column flex-md-row justify-content-md-between gap-3 mb-4">
+
+            <div>
+              <h5 class="fw-bold mb-1">
+                Resumen de ventas del día
+              </h5>
+
+              <p class="text-muted mb-0">
+                Métricas operativas de la sucursal para el día actual.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              class="btn btn-outline-primary"
+              (click)="cargarMetricasDashboard()">
+
+              <i class="bi bi-arrow-clockwise me-1"></i>
+              Actualizar
+
+            </button>
+
+          </div>
+
+          @if (cargandoMetricas) {
+            <div class="text-center p-4">
+              <div class="spinner-border text-primary"></div>
+
+              <p class="text-muted mt-2 mb-0">
+                Cargando métricas...
+              </p>
+            </div>
+          }
+
+          @if (!cargandoMetricas) {
+            <div class="row g-3 mb-0">
+
+              <div class="col-12 col-md-6 col-xl-3">
+                <div class="metric-box metric-total">
+                  <span>Total vendido hoy</span>
+                  <strong>
+                    {{ totalVendidoHoy | currency:'COP':'symbol-narrow':'1.0-0' }}
+                  </strong>
+                </div>
+              </div>
+
+              <div class="col-12 col-md-6 col-xl-3">
+                <div class="metric-box metric-facturas">
+                  <span>Facturas hoy</span>
+                  <strong>{{ cantidadVentasHoy }}</strong>
+                </div>
+              </div>
+
+              <div class="col-12 col-md-6 col-xl-3">
+                <div class="metric-box metric-activas">
+                  <span>Ventas activas</span>
+                  <strong>{{ ventasActivasHoy }}</strong>
+                </div>
+              </div>
+
+              <div class="col-12 col-md-6 col-xl-3">
+                <div class="metric-box metric-devueltas">
+                  <span>Devueltas / canceladas</span>
+                  <strong>
+                    {{ ventasDevueltasHoy + ventasCanceladasHoy }}
+                  </strong>
+                </div>
+              </div>
+
+            </div>
+          }
+
+        </div>
+      </div>
+
+    </div>
+
+    <div class="col-12 col-xl-4">
+
+      <div class="card border-0 shadow-sm quick-card">
+        <div class="card-body p-4">
+
+          <h5 class="fw-bold mb-2">
+            Acceso rápido
+          </h5>
+
+          <p class="text-muted mb-4">
+            Acciones frecuentes para operar la sucursal.
+          </p>
+
+          <div class="d-grid gap-2">
+
+            <button
+              type="button"
+              class="btn btn-success"
+              (click)="irCrearVenta()">
+
+              <i class="bi bi-cart-plus me-1"></i>
+              Crear venta
+
+            </button>
+
+            <button
+              type="button"
+              class="btn btn-outline-primary"
+              (click)="irVerFacturas()">
+
+              <i class="bi bi-receipt me-1"></i>
+              Ver facturas
+
+            </button>
+
+            <button
+              type="button"
+              class="btn btn-outline-secondary"
+              (click)="irInventarioActual()">
+
+              <i class="bi bi-box-seam me-1"></i>
+              Inventario actual
+
+            </button>
+
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <div class="row g-4">
+
+    @for (modulo of modulos; track modulo.titulo) {
+      <div class="col-12 col-md-6 col-xl-4">
+
+        <button
+          type="button"
+          class="modulo-card"
+          [class.modulo-disabled]="!modulo.disponible"
+          (click)="navegarModulo(modulo)">
+
+          <div class="modulo-icon" [ngClass]="modulo.color">
+            <i [class]="modulo.icono"></i>
+          </div>
+
+          <div class="modulo-content">
+            <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+
+              <h5 class="fw-bold mb-0">
+                {{ modulo.titulo }}
+              </h5>
+
+              @if (modulo.disponible) {
+                <span class="badge bg-success-subtle text-success">
+                  Disponible
+                </span>
+              } @else {
+                <span class="badge bg-secondary-subtle text-secondary">
+                  Próximamente
+                </span>
+              }
+
+            </div>
+
+            <p class="text-muted mb-3">
+              {{ modulo.descripcion }}
+            </p>
+
+            <div class="modulo-action">
+              @if (modulo.disponible) {
+                <span>
+                  Entrar al módulo
+                  <i class="bi bi-arrow-right ms-1"></i>
+                </span>
+              } @else {
+                <span>
+                  Módulo en construcción
+                </span>
+              }
+            </div>
+          </div>
+
+        </button>
+
+      </div>
+    }
+
+  </div>
+
+</div>

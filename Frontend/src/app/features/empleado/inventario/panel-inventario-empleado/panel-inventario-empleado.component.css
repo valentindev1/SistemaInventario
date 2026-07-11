@@ -1,0 +1,92 @@
+.panel-inventario-empleado {
+  padding: 1.5rem;
+}
+
+.opcion-card {
+  width: 100%;
+  min-height: 250px;
+  border: 0;
+  text-align: left;
+  background: #ffffff;
+  border-radius: 1.25rem;
+  padding: 1.25rem;
+  box-shadow: 0 0.75rem 1.75rem rgba(15, 23, 42, 0.08);
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    opacity 0.18s ease;
+}
+
+.opcion-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 1rem 2.2rem rgba(15, 23, 42, 0.12);
+}
+
+.opcion-disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+  filter: grayscale(0.2);
+}
+
+.opcion-disabled:hover {
+  transform: none;
+  box-shadow: 0 0.75rem 1.75rem rgba(15, 23, 42, 0.08);
+}
+
+.opcion-icon {
+  width: 58px;
+  height: 58px;
+  border-radius: 1rem;
+  display: grid;
+  place-items: center;
+  font-size: 1.65rem;
+  margin-bottom: 1.25rem;
+}
+
+.opcion-inventario {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.opcion-movimientos {
+  background: #ede9fe;
+  color: #6d28d9;
+}
+
+.opcion-content h5 {
+  color: #111827;
+}
+
+.opcion-content p {
+  min-height: 72px;
+  font-size: 0.95rem;
+}
+
+.opcion-action {
+  color: #2563eb;
+  font-weight: 600;
+}
+
+.opcion-disabled .opcion-action {
+  color: #6b7280;
+}
+
+.btn,
+.badge,
+.alert {
+  border-radius: 0.75rem;
+}
+
+@media (max-width: 768px) {
+  .panel-inventario-empleado {
+    padding: 1rem;
+  }
+
+  .opcion-card {
+    min-height: auto;
+  }
+
+  .opcion-content p {
+    min-height: auto;
+  }
+}

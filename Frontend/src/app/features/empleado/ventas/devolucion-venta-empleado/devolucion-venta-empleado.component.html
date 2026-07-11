@@ -1,0 +1,360 @@
+<div class="container-fluid devolucion-venta-empleado">
+
+  <div class="d-flex flex-column flex-lg-row justify-content-lg-between align-items-lg-center gap-3 mb-4">
+
+    <div>
+      <button
+        type="button"
+        class="btn btn-link px-0 mb-2"
+        (click)="volverPanelVentas()">
+
+        <i class="bi bi-arrow-left me-1"></i>
+        Volver al panel de ventas
+
+      </button>
+
+      <span class="badge bg-warning-subtle text-warning mb-2">
+        Devoluciones
+      </span>
+
+      <h2 class="fw-bold mb-1">
+        Generar devolución
+      </h2>
+
+      <p class="text-muted mb-0">
+        Busca la factura, selecciona los productos disponibles y registra la devolución.
+      </p>
+    </div>
+
+    <button
+      type="button"
+      class="btn btn-outline-primary"
+      (click)="volverFacturas()">
+
+      <i class="bi bi-receipt me-1"></i>
+      Ver facturas
+
+    </button>
+
+  </div>
+
+  @if (mensajeExito) {
+    <div class="alert alert-success">
+      <i class="bi bi-check-circle me-1"></i>
+      {{ mensajeExito }}
+    </div>
+  }
+
+  @if (mensajeError) {
+    <div class="alert alert-danger">
+      <i class="bi bi-exclamation-triangle me-1"></i>
+      {{ mensajeError }}
+    </div>
+  }
+
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-4">
+
+      <h5 class="fw-bold mb-3">
+        Buscar factura
+      </h5>
+
+      <div class="row g-3">
+
+        <div class="col-12 col-lg-8">
+          <label class="form-label">
+            Número de factura
+          </label>
+
+          <input
+            type="text"
+            class="form-control"
+            placeholder="Ej: VEN-1-1720000000000"
+            [(ngModel)]="numeroVenta"
+            (keyup.enter)="buscarFactura()">
+        </div>
+
+        <div class="col-12 col-lg-4 d-flex align-items-end gap-2">
+
+          <button
+            type="button"
+            class="btn btn-primary w-100"
+            (click)="buscarFactura()"
+            [disabled]="buscando">
+
+            @if (buscando) {
+              <span class="spinner-border spinner-border-sm me-1"></span>
+              Buscando...
+            } @else {
+              <i class="bi bi-search me-1"></i>
+              Buscar
+            }
+
+          </button>
+
+          <button
+            type="button"
+            class="btn btn-outline-secondary w-100"
+            (click)="limpiarBusqueda()"
+            [disabled]="buscando">
+
+            Limpiar
+
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  @if (factura) {
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-body p-4">
+
+        <div class="d-flex flex-column flex-lg-row justify-content-lg-between gap-3 mb-3">
+
+          <div>
+            <h5 class="fw-bold mb-1">
+              Factura {{ factura.numeroVenta }}
+            </h5>
+
+            <p class="text-muted mb-0">
+              Cliente: {{ factura.clienteNombre }} —
+              Documento: {{ factura.clienteDocumento }}
+            </p>
+          </div>
+
+          <div class="d-flex flex-wrap gap-2">
+            <span
+              class="estado-badge"
+              [ngClass]="getClaseEstado(factura.estado)">
+
+              {{ factura.estado }}
+
+            </span>
+
+            <span class="badge bg-success-subtle text-success">
+              Total: {{ factura.total | currency:'COP':'symbol-narrow':'1.0-0' }}
+            </span>
+          </div>
+
+        </div>
+
+        <div class="row g-3">
+
+          <div class="col-12 col-md-3">
+            <div class="info-box">
+              <span>Sucursal</span>
+              <strong>{{ factura.sucursalNombre }}</strong>
+            </div>
+          </div>
+
+          <div class="col-12 col-md-3">
+            <div class="info-box">
+              <span>Vendedor</span>
+              <strong>{{ factura.usuarioNombre }}</strong>
+            </div>
+          </div>
+
+          <div class="col-12 col-md-3">
+            <div class="info-box">
+              <span>Subtotal</span>
+              <strong>
+                {{ factura.subtotal | currency:'COP':'symbol-narrow':'1.0-0' }}
+              </strong>
+            </div>
+          </div>
+
+          <div class="col-12 col-md-3">
+            <div class="info-box">
+              <span>Descuento</span>
+              <strong>
+                {{ factura.descuento | currency:'COP':'symbol-narrow':'1.0-0' }}
+              </strong>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  }
+
+  @if (factura && itemsDevolucion.length > 0) {
+    <div class="card border-0 shadow-sm">
+      <div class="card-body p-4">
+
+        <h5 class="fw-bold mb-3">
+          Productos disponibles para devolución
+        </h5>
+
+        <p class="text-muted">
+          Solo se muestran productos con unidades disponibles para devolver. El valor mostrado corresponde al precio de venta.
+        </p>
+
+        <div class="table-responsive mb-3">
+
+          <table class="table align-middle">
+
+            <thead>
+            <tr>
+              <th>Producto</th>
+              <th class="text-end">Precio venta</th>
+              <th class="text-center">Vendido</th>
+              <th class="text-center">Devuelto</th>
+              <th class="text-center">Disponible</th>
+              <th class="text-center">A devolver</th>
+              <th class="text-end">Valor estimado</th>
+              <th class="text-end">Acciones</th>
+            </tr>
+            </thead>
+
+            <tbody>
+
+              @for (item of itemsDevolucion; track item.productoId; let i = $index) {
+                <tr>
+
+                  <td>
+                    <div class="fw-semibold">
+                      {{ item.productoNombre }}
+                    </div>
+
+                    <div class="text-muted small">
+                      {{ item.productoCodigo }}
+                    </div>
+                  </td>
+
+                  <td class="text-end">
+                    {{ item.precioUnitarioMomento | currency:'COP':'symbol-narrow':'1.0-0' }}
+                  </td>
+
+                  <td class="text-center">
+                    {{ item.cantidadVendida }}
+                  </td>
+
+                  <td class="text-center">
+                    {{ item.cantidadDevuelta }}
+                  </td>
+
+                  <td class="text-center">
+                    {{ item.cantidadDisponibleDevolucion }}
+                  </td>
+
+                  <td class="text-center">
+                    <input
+                      type="number"
+                      class="form-control form-control-sm cantidad-input"
+                      min="0"
+                      [max]="item.cantidadDisponibleDevolucion"
+                      [(ngModel)]="item.cantidadADevolver"
+                      (change)="actualizarCantidad(i)">
+                  </td>
+
+                  <td class="text-end fw-semibold">
+                    {{
+                      (item.cantidadADevolver * item.precioUnitarioMomento)
+                        | currency:'COP':'symbol-narrow':'1.0-0'
+                    }}
+                  </td>
+
+                  <td class="text-end">
+                    <div class="d-flex justify-content-end gap-2 flex-wrap">
+
+                      <button
+                        type="button"
+                        class="btn btn-sm btn-outline-primary"
+                        (click)="seleccionarCantidadMaxima(i)">
+
+                        Máx.
+
+                      </button>
+
+                      <button
+                        type="button"
+                        class="btn btn-sm btn-outline-secondary"
+                        (click)="limpiarCantidad(i)">
+
+                        Limpiar
+
+                      </button>
+
+                    </div>
+                  </td>
+
+                </tr>
+              }
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+        <div class="mb-3">
+
+          <label class="form-label">
+            Motivo de la devolución
+          </label>
+
+          <textarea
+            class="form-control"
+            rows="3"
+            placeholder="Ej: cambio de talla, producto defectuoso, cliente no desea el producto..."
+            [(ngModel)]="motivo"></textarea>
+
+        </div>
+
+        <div class="devolucion-summary">
+
+          <div class="summary-row">
+            <span>Total estimado por precio de venta</span>
+            <strong>
+              {{ calcularTotalEstimadoDevolucion() | currency:'COP':'symbol-narrow':'1.0-0' }}
+            </strong>
+          </div>
+
+        </div>
+
+        <div class="d-flex flex-column flex-md-row justify-content-md-end gap-2 mt-4">
+
+          <button
+            type="button"
+            class="btn btn-light"
+            (click)="volverPanelVentas()">
+
+            Cancelar
+
+          </button>
+
+          <button
+            type="button"
+            class="btn btn-warning"
+            [disabled]="guardando || !hayItemsSeleccionados()"
+            (click)="generarDevolucion()">
+
+            @if (guardando) {
+              <span class="spinner-border spinner-border-sm me-2"></span>
+            } @else {
+              <i class="bi bi-arrow-counterclockwise me-1"></i>
+            }
+
+            Generar devolución
+
+          </button>
+
+        </div>
+
+      </div>
+    </div>
+  }
+
+  @if (factura && itemsDevolucion.length === 0) {
+    <div class="alert alert-secondary">
+      <i class="bi bi-info-circle me-1"></i>
+      Esta factura no tiene productos disponibles para devolución.
+    </div>
+  }
+
+</div>

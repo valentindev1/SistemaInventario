@@ -1,0 +1,573 @@
+<div class="container-fluid">
+
+  <div class="d-flex flex-column flex-md-row justify-content-md-between align-items-md-center gap-3 mb-4">
+
+    <div>
+      <button
+        type="button"
+        class="btn btn-link px-0 mb-2"
+        (click)="volverAlPanel()">
+
+        <i class="bi bi-arrow-left me-1"></i>
+        Volver al panel de ventas
+
+      </button>
+
+      <h2 class="fw-bold mb-1">
+        Generar venta
+      </h2>
+
+      <p class="text-muted mb-0">
+        Selecciona un cliente, agrega productos disponibles en inventario y registra una nueva venta.
+      </p>
+    </div>
+
+    <div class="d-flex flex-column flex-md-row gap-2">
+
+      <button
+        type="button"
+        class="btn btn-outline-primary"
+        (click)="cargarInventario()">
+
+        <i class="bi bi-arrow-clockwise me-1"></i>
+        Actualizar inventario
+
+      </button>
+
+      <button
+        type="button"
+        class="btn btn-primary"
+        (click)="irCrearCliente()">
+
+        <i class="bi bi-person-plus me-1"></i>
+        Crear cliente
+
+      </button>
+
+    </div>
+
+  </div>
+
+  @if (mensajeExito) {
+    <div class="alert alert-success">
+      <i class="bi bi-check-circle me-1"></i>
+      {{ mensajeExito }}
+    </div>
+  }
+
+  @if (mensajeError) {
+    <div class="alert alert-danger">
+      <i class="bi bi-exclamation-triangle me-1"></i>
+      {{ mensajeError }}
+    </div>
+  }
+
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-4">
+
+      <div class="d-flex flex-column flex-md-row justify-content-md-between align-items-md-center gap-3 mb-3">
+        <div>
+          <h5 class="fw-bold mb-1">
+            Cliente de la venta
+          </h5>
+
+          <p class="text-muted mb-0">
+            Busca el cliente por número de documento antes de generar la venta.
+          </p>
+        </div>
+      </div>
+
+      <div class="row g-3">
+
+        <div class="col-12 col-md-8 position-relative">
+
+          <label class="form-label">
+            Número de documento / cédula
+          </label>
+
+          <input
+            type="text"
+            class="form-control"
+            placeholder="Ej: 1075289632"
+            [(ngModel)]="numeroDocumentoCliente"
+            [disabled]="ventaHabilitada"
+            (ngModelChange)="onDocumentoClienteChange()"
+            (keyup.enter)="buscarClientePorDocumento()">
+
+          @if (mostrarSugerenciasClientes) {
+            <div class="clientes-sugerencias shadow-sm">
+
+              @for (cliente of clientesSugeridos; track cliente.id) {
+                <button
+                  type="button"
+                  class="cliente-sugerencia-item"
+                  (click)="seleccionarClienteSugerido(cliente)">
+
+                  <div class="d-flex justify-content-between align-items-center gap-2">
+
+                    <div>
+                      <div class="fw-semibold">
+                        {{ cliente.numeroDocumento }}
+                      </div>
+
+                      <div class="text-muted small">
+                        {{ cliente.nombre }}
+                      </div>
+                    </div>
+
+                    <span class="badge bg-primary-subtle text-primary">
+                      Seleccionar
+                    </span>
+
+                  </div>
+
+                </button>
+              }
+
+            </div>
+          }
+
+        </div>
+
+        <div class="col-12 col-md-4 d-flex align-items-end gap-2">
+
+          <button
+            type="button"
+            class="btn btn-primary w-100"
+            (click)="buscarClientePorDocumento()"
+            [disabled]="buscandoCliente || ventaHabilitada">
+
+            @if (buscandoCliente) {
+              <span class="spinner-border spinner-border-sm me-1"></span>
+              Buscando...
+            } @else {
+              <i class="bi bi-search me-1"></i>
+              Buscar
+            }
+
+          </button>
+
+          <button
+            type="button"
+            class="btn btn-outline-secondary w-100"
+            (click)="limpiarClienteSeleccionado()"
+            [disabled]="buscandoCliente">
+
+            Limpiar
+
+          </button>
+
+        </div>
+
+      </div>
+
+      @if (ventaHabilitada && clienteSeleccionado) {
+        <div class="alert alert-info mt-3 mb-0">
+
+          <div class="row g-2">
+
+            <div class="col-12 col-md-3">
+              <strong>Cliente:</strong>
+              {{ clienteSeleccionado.nombre }}
+            </div>
+
+            <div class="col-12 col-md-3">
+              <strong>Documento:</strong>
+              {{ clienteSeleccionado.numeroDocumento }}
+            </div>
+
+            <div class="col-12 col-md-3">
+              <strong>Correo:</strong>
+              {{ clienteSeleccionado.correo || 'No registrado' }}
+            </div>
+
+            <div class="col-12 col-md-3">
+              <strong>Teléfono:</strong>
+              {{ clienteSeleccionado.telefono || 'No registrado' }}
+            </div>
+
+          </div>
+
+        </div>
+      } @else {
+        <div class="alert alert-warning mt-3 mb-0">
+          <i class="bi bi-info-circle me-1"></i>
+          Debes buscar y seleccionar un cliente antes de agregar productos y generar la venta.
+        </div>
+      }
+
+    </div>
+  </div>
+
+  @if (!ventaHabilitada) {
+    <div class="alert alert-secondary mb-4">
+      <i class="bi bi-lock me-1"></i>
+      Las secciones de productos y detalle de venta estarán bloqueadas hasta seleccionar un cliente.
+    </div>
+  }
+
+  @if (cargandoInventario) {
+    <div class="text-center p-4">
+      <div class="spinner-border text-primary"></div>
+
+      <p class="text-muted mt-2 mb-0">
+        Cargando inventario...
+      </p>
+    </div>
+  }
+
+  @if (!cargandoInventario) {
+    <div class="row g-4">
+
+      <div class="col-12 col-xl-5">
+
+        <div
+          class="card border-0 shadow-sm h-100 modulo-venta"
+          [class.modulo-bloqueado]="!ventaHabilitada">
+
+          <div class="card-body p-4">
+
+            <h5 class="fw-bold mb-3">
+              Agregar producto
+            </h5>
+
+            <div class="mb-3">
+
+              <label class="form-label">
+                Producto
+              </label>
+
+              <select
+                class="form-select"
+                [(ngModel)]="productoSeleccionadoId"
+                [disabled]="!ventaHabilitada">
+
+                <option value="">
+                  Seleccione un producto
+                </option>
+
+                @for (item of inventario; track item.productoId) {
+                  <option [value]="item.productoId">
+                    {{ item.codigo }} - {{ item.nombre }} |
+                    Stock: {{ item.stockActual }} |
+                    Precio: {{ item.precioVenta | currency:'COP':'symbol-narrow':'1.0-0' }}
+                  </option>
+                }
+
+              </select>
+
+            </div>
+
+            <div class="mb-3">
+
+              <label class="form-label">
+                Cantidad
+              </label>
+
+              <input
+                type="number"
+                class="form-control"
+                min="1"
+                [(ngModel)]="cantidadSeleccionada"
+                [disabled]="!ventaHabilitada">
+
+            </div>
+
+            @if (obtenerProductoSeleccionado()) {
+              <div class="alert alert-info">
+
+                <div>
+                  <strong>Disponible:</strong>
+                  {{ obtenerProductoSeleccionado()?.stockActual }}
+                </div>
+
+                <div>
+                  <strong>Precio venta:</strong>
+                  {{ obtenerProductoSeleccionado()?.precioVenta | currency:'COP':'symbol-narrow':'1.0-0' }}
+                </div>
+
+              </div>
+            }
+
+            <button
+              type="button"
+              class="btn btn-primary w-100"
+              (click)="agregarProducto()"
+              [disabled]="!ventaHabilitada">
+
+              Agregar a la venta
+
+            </button>
+
+          </div>
+        </div>
+
+      </div>
+
+      <div class="col-12 col-xl-7">
+
+        <div
+          class="card border-0 shadow-sm modulo-venta"
+          [class.modulo-bloqueado]="!ventaHabilitada">
+
+          <div class="card-body p-4">
+
+            <h5 class="fw-bold mb-3">
+              Detalle de la venta
+            </h5>
+
+            <div class="mb-3">
+
+              <label class="form-label">
+                Observación
+              </label>
+
+              <textarea
+                class="form-control"
+                rows="2"
+                placeholder="Ej: venta mostrador, cliente frecuente, etc."
+                [(ngModel)]="observacion"
+                [disabled]="!ventaHabilitada"></textarea>
+
+            </div>
+
+            @if (itemsVenta.length === 0) {
+              <div class="empty-state">
+                No hay productos agregados a la venta.
+              </div>
+            }
+
+            @if (itemsVenta.length > 0) {
+              <div class="table-responsive mb-3">
+
+                <table class="table align-middle">
+
+                  <thead>
+                  <tr>
+                    <th>Producto</th>
+                    <th>Precio</th>
+                    <th>Cantidad</th>
+                    <th>Subtotal</th>
+                    <th></th>
+                  </tr>
+                  </thead>
+
+                  <tbody>
+
+                    @for (item of itemsVenta; track item.productoId; let i = $index) {
+                      <tr>
+
+                        <td>
+                          <div class="fw-semibold">
+                            {{ item.productoNombre }}
+                          </div>
+
+                          <div class="text-muted small">
+                            {{ item.productoCodigo }}
+                          </div>
+
+                          <div class="text-muted small">
+                            Stock disponible: {{ item.stockActual }}
+                          </div>
+                        </td>
+
+                        <td>
+                          {{ item.precioVenta | currency:'COP':'symbol-narrow':'1.0-0' }}
+                        </td>
+
+                        <td>
+                          <input
+                            type="number"
+                            class="form-control form-control-sm quantity-input"
+                            min="1"
+                            [max]="item.stockActual"
+                            [(ngModel)]="item.cantidad"
+                            (change)="actualizarCantidad(i)"
+                            [disabled]="!ventaHabilitada">
+                        </td>
+
+                        <td>
+                          {{ item.subtotal | currency:'COP':'symbol-narrow':'1.0-0' }}
+                        </td>
+
+                        <td class="text-end">
+                          <button
+                            type="button"
+                            class="btn btn-sm btn-outline-danger"
+                            (click)="eliminarItem(i)"
+                            [disabled]="!ventaHabilitada">
+
+                            Eliminar
+
+                          </button>
+                        </td>
+
+                      </tr>
+                    }
+
+                  </tbody>
+
+                </table>
+
+              </div>
+
+              <div class="discount-box mb-3">
+
+                <div class="d-flex flex-column flex-md-row justify-content-md-between gap-2 mb-3">
+
+                  <div>
+                    <h6 class="fw-bold mb-1">
+                      Descuento
+                    </h6>
+
+                    <p class="text-muted small mb-0">
+                      Aplica un porcentaje rápido o ingresa un porcentaje manual.
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-secondary"
+                    (click)="limpiarDescuento()"
+                    [disabled]="!ventaHabilitada || descuento === 0">
+
+                    Quitar descuento
+
+                  </button>
+
+                </div>
+
+                <div class="discount-options">
+
+                  @for (porcentaje of porcentajesDescuento; track porcentaje) {
+                    <button
+                      type="button"
+                      class="btn discount-btn"
+                      [class.btn-primary]="porcentajeDescuentoSeleccionado === porcentaje"
+                      [class.btn-outline-primary]="porcentajeDescuentoSeleccionado !== porcentaje"
+                      (click)="aplicarDescuentoPorcentaje(porcentaje)"
+                      [disabled]="!ventaHabilitada">
+
+                      {{ porcentaje }}%
+
+                    </button>
+                  }
+
+                  <button
+                    type="button"
+                    class="btn"
+                    [class.btn-warning]="descuentoManualActivo"
+                    [class.btn-outline-warning]="!descuentoManualActivo"
+                    (click)="activarDescuentoManual()"
+                    [disabled]="!ventaHabilitada">
+
+                    Descuento manual
+
+                  </button>
+
+                </div>
+
+                @if (descuentoManualActivo) {
+                  <div class="manual-discount mt-3">
+
+                    <label class="form-label">
+                      Porcentaje de descuento manual
+                    </label>
+
+                    <div class="input-group">
+                      <input
+                        type="number"
+                        class="form-control"
+                        min="0"
+                        max="100"
+                        [(ngModel)]="porcentajeDescuentoManual"
+                        (input)="actualizarDescuentoManual()"
+                        [disabled]="!ventaHabilitada"
+                        placeholder="Ej: 12">
+
+                      <span class="input-group-text">
+        %
+      </span>
+                    </div>
+
+                    <div class="form-text">
+                      Valor calculado:
+                      <strong>
+                        {{ descuento | currency:'COP':'symbol-narrow':'1.0-0' }}
+                      </strong>
+                    </div>
+
+                  </div>
+                }
+
+                <div class="sale-summary mt-3">
+
+                  <div class="sale-summary-row">
+                    <span>Subtotal</span>
+                    <strong>
+                      {{ calcularSubtotal() | currency:'COP':'symbol-narrow':'1.0-0' }}
+                    </strong>
+                  </div>
+
+                  <div class="sale-summary-row discount-row">
+                    <span>Descuento</span>
+                    <strong>
+                      - {{ (descuento || 0) | currency:'COP':'symbol-narrow':'1.0-0' }}
+                    </strong>
+                  </div>
+
+                  <div class="sale-summary-row total-row">
+                    <span>Total a pagar</span>
+                    <strong>
+                      {{ calcularTotalConDescuento() | currency:'COP':'symbol-narrow':'1.0-0' }}
+                    </strong>
+                  </div>
+
+                </div>
+
+              </div>
+            }
+
+            <div class="d-flex flex-column flex-md-row justify-content-md-end gap-2 mt-4">
+
+              <button
+                type="button"
+                class="btn btn-light"
+                (click)="volverAlPanel()">
+
+                Cancelar
+
+              </button>
+
+              <button
+                type="button"
+                class="btn btn-success"
+                [disabled]="
+                  guardando ||
+                  itemsVenta.length === 0 ||
+                  !ventaHabilitada ||
+                  descuento > calcularSubtotal()
+                "
+                (click)="generarVenta()">
+
+                @if (guardando) {
+                  <span class="spinner-border spinner-border-sm me-2"></span>
+                } @else {
+                  <i class="bi bi-cart-check me-1"></i>
+                }
+
+                Generar venta
+
+              </button>
+
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  }
+
+</div>

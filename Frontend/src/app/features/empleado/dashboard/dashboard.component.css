@@ -1,0 +1,180 @@
+.dashboard-empleado {
+  padding: 1.5rem;
+}
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.usuario-card {
+  min-width: 260px;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 1rem;
+  padding: 1rem;
+  box-shadow: 0 0.5rem 1.25rem rgba(15, 23, 42, 0.06);
+}
+
+.usuario-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: #eff6ff;
+  color: #2563eb;
+  font-size: 1.3rem;
+}
+
+.metric-card,
+.quick-card {
+  border-radius: 1.25rem;
+}
+
+.quick-card {
+  height: 100%;
+}
+
+.metric-box {
+  min-height: 110px;
+  border-radius: 1rem;
+  padding: 1rem;
+  background: #ffffff;
+  border: 1px solid #eef2f7;
+}
+
+.metric-box span {
+  display: block;
+  color: #6b7280;
+  font-size: 0.86rem;
+  margin-bottom: 0.5rem;
+}
+
+.metric-box strong {
+  display: block;
+  color: #111827;
+  font-size: 1.35rem;
+}
+
+.metric-total {
+  border-left: 5px solid #16a34a;
+}
+
+.metric-facturas {
+  border-left: 5px solid #2563eb;
+}
+
+.metric-activas {
+  border-left: 5px solid #0d9488;
+}
+
+.metric-devueltas {
+  border-left: 5px solid #d97706;
+}
+
+.modulo-card {
+  width: 100%;
+  min-height: 230px;
+  border: 0;
+  text-align: left;
+  background: #ffffff;
+  border-radius: 1.25rem;
+  padding: 1.25rem;
+  box-shadow: 0 0.75rem 1.75rem rgba(15, 23, 42, 0.08);
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    opacity 0.18s ease;
+}
+
+.modulo-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 1rem 2.2rem rgba(15, 23, 42, 0.12);
+}
+
+.modulo-disabled {
+  cursor: not-allowed;
+  opacity: 0.68;
+  filter: grayscale(0.25);
+}
+
+.modulo-disabled:hover {
+  transform: none;
+  box-shadow: 0 0.75rem 1.75rem rgba(15, 23, 42, 0.08);
+}
+
+.modulo-icon {
+  width: 58px;
+  height: 58px;
+  border-radius: 1rem;
+  display: grid;
+  place-items: center;
+  font-size: 1.65rem;
+  margin-bottom: 1.25rem;
+}
+
+.modulo-ventas {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.modulo-inventario {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.modulo-clientes {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.modulo-content h5 {
+  color: #111827;
+}
+
+.modulo-content p {
+  min-height: 48px;
+  font-size: 0.95rem;
+}
+
+.modulo-action {
+  margin-top: auto;
+  color: #2563eb;
+  font-weight: 600;
+}
+
+.modulo-disabled .modulo-action {
+  color: #6b7280;
+}
+
+.card,
+.btn,
+.badge {
+  border-radius: 0.75rem;
+}
+
+.alert {
+  border-radius: 0.85rem;
+}
+
+@media (max-width: 768px) {
+  .dashboard-empleado {
+    padding: 1rem;
+  }
+
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .usuario-card {
+    width: 100%;
+    min-width: auto;
+  }
+}

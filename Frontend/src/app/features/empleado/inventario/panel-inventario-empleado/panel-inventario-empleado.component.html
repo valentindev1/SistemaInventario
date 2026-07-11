@@ -1,0 +1,99 @@
+<div class="container-fluid panel-inventario-empleado">
+
+  <div class="d-flex flex-column flex-md-row justify-content-md-between align-items-md-center gap-3 mb-4">
+
+    <div>
+      <button
+        type="button"
+        class="btn btn-link px-0 mb-2"
+        (click)="volverDashboard()">
+
+        <i class="bi bi-arrow-left me-1"></i>
+        Volver al dashboard
+
+      </button>
+
+      <span class="badge bg-primary-subtle text-primary mb-2">
+        Módulo de inventario
+      </span>
+
+      <h2 class="fw-bold mb-1">
+        Inventario
+      </h2>
+
+      <p class="text-muted mb-0">
+        Consulta la disponibilidad de productos y los movimientos del inventario de la sucursal.
+      </p>
+    </div>
+
+  </div>
+
+  @if (mensajeError) {
+    <div class="alert alert-danger">
+      <i class="bi bi-exclamation-triangle me-1"></i>
+      {{ mensajeError }}
+    </div>
+  }
+
+  <div class="row g-4">
+
+    @for (opcion of opciones; track opcion.titulo) {
+      <div class="col-12 col-md-6">
+
+        <button
+          type="button"
+          class="opcion-card"
+          [class.opcion-disabled]="!opcion.disponible"
+          (click)="navegar(opcion)">
+
+          <div class="opcion-icon" [ngClass]="opcion.color">
+            <i [class]="opcion.icono"></i>
+          </div>
+
+          <div class="opcion-content">
+
+            <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+
+              <h5 class="fw-bold mb-0">
+                {{ opcion.titulo }}
+              </h5>
+
+              @if (opcion.disponible) {
+                <span class="badge bg-success-subtle text-success">
+                  Activo
+                </span>
+              } @else {
+                <span class="badge bg-secondary-subtle text-secondary">
+                  Próximamente
+                </span>
+              }
+
+            </div>
+
+            <p class="text-muted mb-3">
+              {{ opcion.descripcion }}
+            </p>
+
+            <div class="opcion-action">
+              @if (opcion.disponible) {
+                <span>
+                  Entrar
+                  <i class="bi bi-arrow-right ms-1"></i>
+                </span>
+              } @else {
+                <span>
+                  En construcción
+                </span>
+              }
+            </div>
+
+          </div>
+
+        </button>
+
+      </div>
+    }
+
+  </div>
+
+</div>
