@@ -1,0 +1,165 @@
+<div class="dashboard-layout">
+
+  <!-- Sidebar -->
+  <aside
+    class="sidebar"
+    [class.sidebar-collapsed]="sidebarCollapsed"
+    [class.sidebar-expanded-temp]="sidebarTemporal"
+    [class.sidebar-mobile-open]="sidebarMobileOpen"
+    (mouseenter)="abrirSidebarTemporal()"
+    (mouseleave)="cerrarSidebarTemporal()">
+
+    <!-- Brand -->
+    <div class="sidebar-brand">
+
+      <div class="brand-icon">
+        <i class="bi bi-person-badge"></i>
+      </div>
+
+      @if (sidebarExpandida) {
+        <div class="brand-text">
+          <h5>EMPLEADO</h5>
+          <small>Sucursal #{{ sucursalId }}</small>
+        </div>
+      }
+
+      <button
+        type="button"
+        class="sidebar-toggle d-none d-lg-inline-flex"
+        title="Contraer menú"
+        (click)="toggleSidebar()">
+
+        <i
+          class="bi"
+          [class.bi-chevron-left]="!sidebarCollapsed"
+          [class.bi-chevron-right]="sidebarCollapsed">
+        </i>
+
+      </button>
+
+    </div>
+
+    <!-- Menu -->
+    <nav class="sidebar-menu">
+
+      @for (group of menuGroups; track group.title) {
+
+        <div class="menu-group">
+
+          @if (sidebarExpandida) {
+            <div class="menu-group-title">
+              <i class="bi" [class]="group.icon"></i>
+              <span>{{ group.title }}</span>
+            </div>
+          }
+
+          <ul class="nav-list">
+
+            @for (item of group.items; track item.label) {
+
+              <li class="nav-item">
+                <a
+                  class="sidebar-link"
+                  [routerLink]="item.route"
+                  routerLinkActive="active"
+                  [routerLinkActiveOptions]="{ exact: true }"
+                  [title]="item.label"
+                  (click)="cerrarSidebarMobile()">
+
+                  <i class="bi sidebar-icon" [class]="item.icon"></i>
+
+                  @if (sidebarExpandida) {
+                    <span class="sidebar-text">
+                      {{ item.label }}
+                    </span>
+                  }
+
+                </a>
+              </li>
+
+            }
+
+          </ul>
+
+        </div>
+
+      }
+
+    </nav>
+
+    <!-- Footer -->
+    <div class="sidebar-footer">
+
+      <button
+        type="button"
+        class="logout-button"
+        title="Cerrar sesión"
+        (click)="cerrarSesion()">
+
+        <i class="bi bi-box-arrow-right"></i>
+
+        @if (sidebarExpandida) {
+          <span>Cerrar sesión</span>
+        }
+
+      </button>
+
+    </div>
+
+  </aside>
+
+  <!-- Backdrop mobile -->
+  @if (sidebarMobileOpen) {
+    <div
+      class="sidebar-backdrop d-lg-none"
+      (click)="cerrarSidebarMobile()">
+    </div>
+  }
+
+  <!-- Main content -->
+  <main
+    class="main-content"
+    [class.main-collapsed]="sidebarCollapsed"
+    [class.main-expanded]="!sidebarCollapsed">
+
+    <!-- Topbar -->
+    <nav class="topbar">
+
+      <div class="topbar-left">
+
+        <button
+          type="button"
+          class="mobile-menu-button d-lg-none"
+          title="Abrir menú"
+          (click)="toggleSidebar()">
+
+          <i class="bi bi-list"></i>
+
+        </button>
+
+        <div>
+          <h4>Panel de empleado</h4>
+          <small>Gestión operativa de la sucursal #{{ sucursalId }}</small>
+        </div>
+
+      </div>
+
+      <div class="topbar-actions">
+
+        <span class="role-badge">
+          <i class="bi bi-person-check"></i>
+          EMPLEADO
+        </span>
+
+      </div>
+
+    </nav>
+
+    <!-- Router content -->
+    <section class="content-wrapper">
+      <router-outlet></router-outlet>
+    </section>
+
+  </main>
+
+</div>
