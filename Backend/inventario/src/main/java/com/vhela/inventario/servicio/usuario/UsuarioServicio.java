@@ -31,4 +31,6 @@ public interface UsuarioServicio {
 
     boolean empresaTieneUsuarios(Long usuarioId, Long empresaId);
 
+    void cambiarPassword(Long usuarioId, Long id, String nuevaPassword);
+
 }

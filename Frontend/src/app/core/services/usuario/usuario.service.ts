@@ -3,7 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 import { environment } from '../../../../environments/environment';
-import { AuthTemporalService } from '../auth/auth-temporal.service';
+import { AuthService } from '../auth/auth.service';
 
 import {
   UsuarioCrearDTO,
@@ -20,22 +20,31 @@ export class UsuarioService {
 
   constructor(
     private http: HttpClient,
-    private authTemporalService: AuthTemporalService
+    private authService: AuthService
   ) {}
 
   crear(dto: UsuarioCrearDTO): Observable<UsuarioObtenerDTO> {
     const params = this.obtenerUsuarioIdComoParam();
 
-    return this.http.post<UsuarioObtenerDTO>(this.apiUrl, dto, { params });
+    return this.http.post<UsuarioObtenerDTO>(
+      this.apiUrl,
+      dto,
+      { params }
+    );
   }
 
   listar(): Observable<UsuarioObtenerDTO[]> {
     const params = this.obtenerUsuarioIdComoParam();
 
-    return this.http.get<UsuarioObtenerDTO[]>(this.apiUrl, { params });
+    return this.http.get<UsuarioObtenerDTO[]>(
+      this.apiUrl,
+      { params }
+    );
   }
 
-  listarPorEmpresaSeleccionada(empresaId: number): Observable<UsuarioObtenerDTO[]> {
+  listarPorEmpresaSeleccionada(
+    empresaId: number
+  ): Observable<UsuarioObtenerDTO[]> {
     const params = this.obtenerUsuarioIdComoParam();
 
     return this.http.get<UsuarioObtenerDTO[]>(
@@ -44,7 +53,9 @@ export class UsuarioService {
     );
   }
 
-  listarPorSucursal(sucursalId: number): Observable<UsuarioObtenerDTO[]> {
+  listarPorSucursal(
+    sucursalId: number
+  ): Observable<UsuarioObtenerDTO[]> {
     const params = this.obtenerUsuarioIdComoParam();
 
     return this.http.get<UsuarioObtenerDTO[]>(
@@ -53,8 +64,9 @@ export class UsuarioService {
     );
   }
 
-
-  empresaTieneUsuarios(empresaId: number): Observable<boolean> {
+  empresaTieneUsuarios(
+    empresaId: number
+  ): Observable<boolean> {
     const params = this.obtenerUsuarioIdComoParam();
 
     return this.http.get<boolean>(
@@ -63,28 +75,68 @@ export class UsuarioService {
     );
   }
 
-  obtenerPorId(id: number): Observable<UsuarioObtenerDTO> {
+  obtenerPorId(
+    id: number
+  ): Observable<UsuarioObtenerDTO> {
     const params = this.obtenerUsuarioIdComoParam();
 
-    return this.http.get<UsuarioObtenerDTO>(`${this.apiUrl}/${id}`, { params });
+    return this.http.get<UsuarioObtenerDTO>(
+      `${this.apiUrl}/${id}`,
+      { params }
+    );
   }
 
-  editar(id: number, dto: UsuarioEditarDTO): Observable<UsuarioObtenerDTO> {
+  editar(
+    id: number,
+    dto: UsuarioEditarDTO
+  ): Observable<UsuarioObtenerDTO> {
     const params = this.obtenerUsuarioIdComoParam();
 
-    return this.http.put<UsuarioObtenerDTO>(`${this.apiUrl}/${id}`, dto, { params });
+    return this.http.put<UsuarioObtenerDTO>(
+      `${this.apiUrl}/${id}`,
+      dto,
+      { params }
+    );
   }
 
-  eliminar(id: number): Observable<void> {
+  cambiarPassword(
+    usuarioId: number,
+    nuevaPassword: string
+  ): Observable<void> {
     const params = this.obtenerUsuarioIdComoParam();
 
-    return this.http.delete<void>(`${this.apiUrl}/${id}`, { params });
+    return this.http.put<void>(
+      `${this.apiUrl}/${usuarioId}/cambiar-password`,
+      {
+        nuevaPassword
+      },
+      {
+        params
+      }
+    );
+  }
+
+  eliminar(
+    id: number
+  ): Observable<void> {
+    const params = this.obtenerUsuarioIdComoParam();
+
+    return this.http.delete<void>(
+      `${this.apiUrl}/${id}`,
+      { params }
+    );
   }
 
   private obtenerUsuarioIdComoParam(): HttpParams {
+    const usuarioId = this.authService.obtenerUsuarioId();
+
+    if (!usuarioId) {
+      throw new Error('No se pudo identificar el usuario autenticado.');
+    }
+
     return new HttpParams().set(
       'usuarioId',
-      this.authTemporalService.obtenerUsuarioId()
+      usuarioId.toString()
     );
   }
 }

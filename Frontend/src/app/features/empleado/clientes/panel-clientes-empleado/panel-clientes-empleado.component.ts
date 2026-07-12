@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { ClienteService } from '../../../../core/services/cliente/cliente.service';
-import { AuthTemporalService } from '../../../../core/services/auth/auth-temporal.service';
+import { AuthService } from '../../../../core/services/auth/auth.service';
 
 import {
   ClienteCrearDTO,
@@ -61,36 +61,107 @@ export class PanelClientesEmpleadoComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private clienteService: ClienteService,
-    private authTemporalService: AuthTemporalService
+    private authService: AuthService
   ) {}
 
   ngOnInit(): void {
 
-    const sucursalIdParam = this.route.snapshot.paramMap.get('sucursalId');
+    const accesoValido = this.validarAccesoEmpleado();
 
-    if (!sucursalIdParam) {
-      this.mensajeError = 'No se pudo identificar la sucursal.';
+    if (!accesoValido) {
       return;
     }
-
-    this.sucursalId = Number(sucursalIdParam);
-
-    if (!this.sucursalId) {
-      this.mensajeError = 'El identificador de la sucursal no es válido.';
-      return;
-    }
-
-    const empresaIdActual = this.authTemporalService.obtenerEmpresaId();
-
-    if (!empresaIdActual) {
-      this.mensajeError = 'No se pudo identificar la empresa del usuario actual.';
-      return;
-    }
-
-    this.empresaId = empresaIdActual;
 
     this.cargarClientes();
     this.verificarAccionDesdeRuta();
+  }
+
+  private validarAccesoEmpleado(): boolean {
+
+    this.mensajeError = '';
+
+    if (!this.authService.estaAutenticado()) {
+      this.router.navigate(['/login']);
+      return false;
+    }
+
+    const rol = this.authService.obtenerRol();
+    const empresaIdUsuario = this.authService.obtenerEmpresaId();
+    const sucursalIdUsuario = this.authService.obtenerSucursalId();
+
+    if (!rol) {
+      this.router.navigate(['/login']);
+      return false;
+    }
+
+    if (rol !== 'EMPLEADO') {
+      this.router.navigate(['/acceso-denegado']);
+      return false;
+    }
+
+    if (!empresaIdUsuario || !sucursalIdUsuario) {
+      this.mensajeError = 'No se pudo identificar la empresa o sucursal del empleado.';
+      this.router.navigate(['/login']);
+      return false;
+    }
+
+    const sucursalIdParam = this.obtenerSucursalIdDesdeRuta();
+
+    if (!sucursalIdParam) {
+      this.router.navigate([
+        '/empleado',
+        'sucursal',
+        sucursalIdUsuario,
+        'clientes',
+        'panel'
+      ]);
+
+      return false;
+    }
+
+    const sucursalIdRuta = Number(sucursalIdParam);
+
+    if (
+      Number.isNaN(sucursalIdRuta) ||
+      sucursalIdRuta <= 0
+    ) {
+      this.router.navigate([
+        '/empleado',
+        'sucursal',
+        sucursalIdUsuario,
+        'clientes',
+        'panel'
+      ]);
+
+      return false;
+    }
+
+    if (sucursalIdRuta !== sucursalIdUsuario) {
+      this.router.navigate([
+        '/empleado',
+        'sucursal',
+        sucursalIdUsuario,
+        'clientes',
+        'panel'
+      ]);
+
+      return false;
+    }
+
+    this.empresaId = empresaIdUsuario;
+    this.sucursalId = sucursalIdUsuario;
+
+    return true;
+  }
+
+  private obtenerSucursalIdDesdeRuta(): string | null {
+    return (
+      this.route.snapshot.paramMap.get('sucursalId') ??
+      this.route.parent?.snapshot.paramMap.get('sucursalId') ??
+      this.route.parent?.parent?.snapshot.paramMap.get('sucursalId') ??
+      this.route.parent?.parent?.parent?.snapshot.paramMap.get('sucursalId') ??
+      null
+    );
   }
 
   private verificarAccionDesdeRuta(): void {
@@ -127,10 +198,12 @@ export class PanelClientesEmpleadoComponent implements OnInit {
         error: (error) => {
           this.cargando = false;
 
-          this.mensajeError =
-            error?.error?.message ||
-            error?.error ||
-            'No se pudieron cargar los clientes.';
+          this.mensajeError = this.obtenerMensajeError(
+            error,
+            'No se pudieron cargar los clientes.'
+          );
+
+          console.error(error);
         }
       });
   }
@@ -226,7 +299,7 @@ export class PanelClientesEmpleadoComponent implements OnInit {
     }
 
     if (this.modoFormulario === 'CREAR' && !this.formulario.numeroDocumento.trim()) {
-      this.mensajeError = 'El número de documento es obligatorio.';
+      this.mensajeError = 'El numero de documento es obligatorio.';
       return;
     }
 
@@ -285,10 +358,12 @@ export class PanelClientesEmpleadoComponent implements OnInit {
         error: (error) => {
           this.guardando = false;
 
-          this.mensajeError =
-            error?.error?.message ||
-            error?.error ||
-            'No se pudo crear el cliente.';
+          this.mensajeError = this.obtenerMensajeError(
+            error,
+            'No se pudo crear el cliente.'
+          );
+
+          console.error(error);
         }
       });
   }
@@ -320,10 +395,12 @@ export class PanelClientesEmpleadoComponent implements OnInit {
         error: (error) => {
           this.guardando = false;
 
-          this.mensajeError =
-            error?.error?.message ||
-            error?.error ||
-            'No se pudo actualizar el cliente.';
+          this.mensajeError = this.obtenerMensajeError(
+            error,
+            'No se pudo actualizar el cliente.'
+          );
+
+          console.error(error);
         }
       });
   }
@@ -338,7 +415,7 @@ export class PanelClientesEmpleadoComponent implements OnInit {
     }
 
     const confirmar = confirm(
-      `¿Seguro que deseas eliminar el cliente "${cliente.nombre}"?`
+      `Seguro que deseas eliminar el cliente "${cliente.nombre}"?`
     );
 
     if (!confirmar) {
@@ -364,10 +441,12 @@ export class PanelClientesEmpleadoComponent implements OnInit {
         error: (error) => {
           this.eliminandoId = null;
 
-          this.mensajeError =
-            error?.error?.message ||
-            error?.error ||
-            'No se pudo eliminar el cliente. Puede tener ventas asociadas.';
+          this.mensajeError = this.obtenerMensajeError(
+            error,
+            'No se pudo eliminar el cliente. Puede tener ventas asociadas.'
+          );
+
+          console.error(error);
         }
       });
   }
@@ -494,5 +573,26 @@ export class PanelClientesEmpleadoComponent implements OnInit {
       top: 0,
       behavior: 'smooth'
     });
+  }
+
+  private obtenerMensajeError(error: any, mensajeDefecto: string): string {
+
+    if (Array.isArray(error?.error?.errores)) {
+      return error.error.errores.join(', ');
+    }
+
+    if (typeof error?.error === 'string') {
+      return error.error;
+    }
+
+    if (error?.error?.message) {
+      return error.error.message;
+    }
+
+    if (error?.error?.error) {
+      return error.error.error;
+    }
+
+    return mensajeDefecto;
   }
 }

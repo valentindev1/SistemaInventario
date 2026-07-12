@@ -1,293 +1,336 @@
-<div class="container-fluid">
+<div class="productos-page">
 
-  <!-- Encabezado -->
-  <div class="d-flex flex-column flex-md-row justify-content-md-between align-items-md-center gap-3 mb-4">
+  <!-- HERO -->
+  <section class="productos-hero mb-4">
 
-    <div>
-      <a
-        *ngIf="empresa"
-        [routerLink]="['/super-admin/empresas/detalle', empresa.id]"
-        class="btn btn-link px-0 mb-2"
-      >
-        <i class="bi bi-arrow-left me-1"></i>
-        Volver al detalle de empresa
-      </a>
+    <div class="hero-content">
 
-      <h2 class="fw-bold mb-1">Productos</h2>
+      <div class="hero-top">
 
-      <p class="text-muted mb-0">
-        Catálogo de productos de la empresa.
-      </p>
-    </div>
+        <a
+          *ngIf="empresa"
+          [routerLink]="rutaDetalleEmpresa()"
+          class="btn-back">
+          <i class="bi bi-arrow-left"></i>
+          Volver al detalle de empresa
+        </a>
 
-    <a
-      [routerLink]="['/super-admin/empresas', empresaId, 'productos', 'crear']"
-      class="btn btn-primary"
-    >
-      <i class="bi bi-plus-circle me-1"></i>
-      Crear producto
-    </a>
-
-  </div>
-
-  <!-- Error local -->
-  <div *ngIf="mensajeError" class="alert alert-danger">
-    <i class="bi bi-exclamation-triangle me-1"></i>
-    {{ mensajeError }}
-  </div>
-
-  <!-- Cargando empresa -->
-  <div *ngIf="cargandoEmpresa" class="text-center p-4">
-    <div class="spinner-border text-primary"></div>
-    <p class="text-muted mt-2 mb-0">Cargando empresa...</p>
-  </div>
-
-  <!-- Contexto empresa -->
-  <div
-    *ngIf="empresa && !cargandoEmpresa"
-    class="card border-0 shadow-sm mb-4"
-  >
-    <div class="card-body p-4">
-
-      <h5 class="fw-bold mb-3">{{ empresa.nombre }}</h5>
-
-      <div class="row g-3">
-
-        <div class="col-12 col-md-6 col-xl-3">
-          <div class="text-muted small">NIT</div>
-          <div class="fw-semibold">{{ empresa.nit }}</div>
-        </div>
-
-        <div class="col-12 col-md-6 col-xl-3">
-          <div class="text-muted small">Correo</div>
-          <div class="fw-semibold">{{ empresa.correo }}</div>
-        </div>
-
-        <div class="col-12 col-md-6 col-xl-3">
-          <div class="text-muted small">Teléfono</div>
-          <div class="fw-semibold">{{ empresa.telefono }}</div>
-        </div>
-
-        <div class="col-12 col-md-6 col-xl-3">
-          <div class="text-muted small">Fecha creación</div>
-          <div class="fw-semibold">
-            {{ empresa.fechaCreacion | date:'yyyy-MM-dd HH:mm' }}
-          </div>
-        </div>
+        <span class="hero-badge">
+          <i class="bi bi-box-seam"></i>
+          Catálogo empresarial
+        </span>
 
       </div>
 
-    </div>
-  </div>
+      <div class="hero-main">
 
-  <!-- Catálogos auxiliares -->
-  <div class="row g-3 mb-4">
+        <div>
+          <h1>
+            <i class="bi bi-tags me-2"></i>
+            Productos
+          </h1>
 
-    <div class="col-12 col-md-6 col-xl-3">
-      <div class="card border-0 shadow-sm h-100 catalog-card">
-        <div class="card-body p-3">
-          <h6 class="fw-bold mb-2">
-            <i class="bi bi-palette me-1 text-primary"></i>
-            Colores
-          </h6>
-          <p class="text-muted small mb-3">
-            Gestiona los colores reutilizables del catálogo.
-          </p>
-          <a
-            [routerLink]="['/super-admin/empresas', empresaId, 'productos', 'detalles', 'colores']"
-            class="btn btn-outline-primary w-100"
-          >
-            <i class="bi bi-box-arrow-in-right me-1"></i>
-            Ingresar
-          </a>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-12 col-md-6 col-xl-3">
-      <div class="card border-0 shadow-sm h-100 catalog-card">
-        <div class="card-body p-3">
-          <h6 class="fw-bold mb-2">
-            <i class="bi bi-grid me-1 text-success"></i>
-            Categorías
-          </h6>
-          <p class="text-muted small mb-3">
-            Gestiona categorías reutilizables del catálogo.
-          </p>
-          <a
-            [routerLink]="['/super-admin/empresas', empresaId, 'productos', 'detalles', 'categorias']"
-            class="btn btn-outline-success w-100"
-          >
-            <i class="bi bi-box-arrow-in-right me-1"></i>
-            Ingresar
-          </a>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-12 col-md-6 col-xl-3">
-      <div class="card border-0 shadow-sm h-100 catalog-card">
-        <div class="card-body p-3">
-          <h6 class="fw-bold mb-2">
-            <i class="bi bi-person-badge me-1 text-info"></i>
-            Géneros
-          </h6>
-          <p class="text-muted small mb-3">
-            Gestiona géneros reutilizables del catálogo.
-          </p>
-          <a
-            [routerLink]="['/super-admin/empresas', empresaId, 'productos', 'detalles', 'generos']"
-            class="btn btn-outline-info w-100"
-          >
-            <i class="bi bi-box-arrow-in-right me-1"></i>
-            Ingresar
-          </a>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-12 col-md-6 col-xl-3">
-      <div class="card border-0 shadow-sm h-100 catalog-card">
-        <div class="card-body p-3">
-          <h6 class="fw-bold mb-2">
-            <i class="bi bi-rulers me-1 text-warning"></i>
-            Tallas
-          </h6>
-          <p class="text-muted small mb-3">
-            Gestiona tallas reutilizables del catálogo.
-          </p>
-          <a
-            [routerLink]="['/super-admin/empresas', empresaId, 'productos', 'detalles', 'tallas']"
-            class="btn btn-outline-warning w-100"
-          >
-            <i class="bi bi-box-arrow-in-right me-1"></i>
-            Ingresar
-          </a>
-        </div>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- Tabla productos -->
-  <div class="card border-0 shadow-sm">
-
-    <div class="card-header bg-white border-0 p-4">
-
-      <div class="row g-3 align-items-center">
-
-        <div class="col-12 col-lg-5">
-          <h5 class="fw-bold mb-1">Lista de productos</h5>
-          <p class="text-muted mb-0 small">
-            Aquí aparecen los productos del catálogo de la empresa con sus atributos.
+          <p>
+            Administra el catálogo de productos de la empresa, sus atributos reutilizables,
+            códigos, colores, categorías, tallas y géneros.
           </p>
         </div>
 
-        <div class="col-12 col-lg-4">
-          <div class="input-group">
-            <span class="input-group-text bg-white">
-              <i class="bi bi-search"></i>
-            </span>
+        <div class="hero-actions">
 
-            <input
-              type="text"
-              class="form-control"
-              placeholder="Buscar por código..."
-              [(ngModel)]="codigoBusqueda"
-              (ngModelChange)="onBuscarCodigo()"
-            >
-
-            <button
-              *ngIf="codigoBusqueda"
-              type="button"
-              class="btn btn-outline-secondary"
-              (click)="limpiarBusqueda()"
-              title="Limpiar búsqueda"
-            >
-              <i class="bi bi-x-lg"></i>
-            </button>
-          </div>
-        </div>
-
-        <div class="col-12 col-lg-3 text-lg-end">
           <a
-            [routerLink]="['/super-admin/empresas', empresaId, 'productos', 'crear']"
-            class="btn btn-primary"
-          >
-            <i class="bi bi-plus-circle me-1"></i>
+            [routerLink]="rutaCrearProducto()"
+            class="btn btn-hero-primary">
+            <i class="bi bi-plus-circle me-2"></i>
             Crear producto
           </a>
+
         </div>
 
       </div>
 
     </div>
 
-    <div class="card-body p-0">
+  </section>
 
-      <div *ngIf="cargandoProductos" class="text-center p-4">
-        <div class="spinner-border text-primary"></div>
-        <p class="text-muted mt-2 mb-0">Cargando productos...</p>
+  <!-- ERROR -->
+  <div *ngIf="mensajeError" class="app-alert-danger mb-4">
+    <i class="bi bi-exclamation-triangle"></i>
+    <span>{{ mensajeError }}</span>
+  </div>
+
+  <!-- CARGANDO EMPRESA -->
+  <div *ngIf="cargandoEmpresa" class="loading-state">
+    <div class="spinner-border text-primary"></div>
+    <p>Cargando empresa...</p>
+  </div>
+
+  <!-- EMPRESA -->
+  <section
+    *ngIf="empresa && !cargandoEmpresa"
+    class="empresa-card mb-4">
+
+    <div class="empresa-card-header">
+
+      <div class="empresa-icon">
+        <i class="bi bi-building"></i>
       </div>
 
-      <!-- Sin productos registrados -->
+      <div>
+        <h2>{{ empresa.nombre }}</h2>
+        <p>Información principal de la empresa asociada al catálogo.</p>
+      </div>
+
+    </div>
+
+    <div class="empresa-grid">
+
+      <div class="empresa-info-item">
+        <span>NIT</span>
+        <strong>{{ empresa.nit }}</strong>
+      </div>
+
+      <div class="empresa-info-item">
+        <span>Correo</span>
+        <strong>{{ empresa.correo }}</strong>
+      </div>
+
+      <div class="empresa-info-item">
+        <span>Teléfono</span>
+        <strong>{{ empresa.telefono }}</strong>
+      </div>
+
+      <div class="empresa-info-item">
+        <span>Fecha creación</span>
+        <strong>{{ empresa.fechaCreacion | date:'yyyy-MM-dd HH:mm' }}</strong>
+      </div>
+
+    </div>
+
+  </section>
+
+  <!-- CATÁLOGOS AUXILIARES -->
+  <section class="catalog-section mb-4">
+
+    <div class="section-heading mb-3">
+      <div>
+        <h3>Atributos reutilizables</h3>
+        <p>
+          Gestiona los datos base que se asignan a los productos del catálogo.
+        </p>
+      </div>
+    </div>
+
+    <div class="row g-4">
+
+      <div class="col-12 col-md-6 col-xl-3">
+        <div class="catalog-card catalog-card-blue h-100">
+
+          <div class="catalog-icon">
+            <i class="bi bi-palette"></i>
+          </div>
+
+          <div class="catalog-content">
+            <h4>Colores</h4>
+            <p>Gestiona los colores reutilizables del catálogo.</p>
+          </div>
+
+          <a
+            [routerLink]="rutaDetalleProducto('colores')"
+            class="btn btn-catalog">
+            <span>Ingresar</span>
+            <i class="bi bi-arrow-right"></i>
+          </a>
+
+        </div>
+      </div>
+
+      <div class="col-12 col-md-6 col-xl-3">
+        <div class="catalog-card catalog-card-green h-100">
+
+          <div class="catalog-icon">
+            <i class="bi bi-grid"></i>
+          </div>
+
+          <div class="catalog-content">
+            <h4>Categorías</h4>
+            <p>Gestiona categorías reutilizables del catálogo.</p>
+          </div>
+
+          <a
+            [routerLink]="rutaDetalleProducto('categorias')"
+            class="btn btn-catalog">
+            <span>Ingresar</span>
+            <i class="bi bi-arrow-right"></i>
+          </a>
+
+        </div>
+      </div>
+
+      <div class="col-12 col-md-6 col-xl-3">
+        <div class="catalog-card catalog-card-cyan h-100">
+
+          <div class="catalog-icon">
+            <i class="bi bi-person-badge"></i>
+          </div>
+
+          <div class="catalog-content">
+            <h4>Géneros</h4>
+            <p>Gestiona géneros reutilizables del catálogo.</p>
+          </div>
+
+          <a
+            [routerLink]="rutaDetalleProducto('generos')"
+            class="btn btn-catalog">
+            <span>Ingresar</span>
+            <i class="bi bi-arrow-right"></i>
+          </a>
+
+        </div>
+      </div>
+
+      <div class="col-12 col-md-6 col-xl-3">
+        <div class="catalog-card catalog-card-yellow h-100">
+
+          <div class="catalog-icon">
+            <i class="bi bi-rulers"></i>
+          </div>
+
+          <div class="catalog-content">
+            <h4>Tallas</h4>
+            <p>Gestiona tallas reutilizables del catálogo.</p>
+          </div>
+
+          <a
+            [routerLink]="rutaDetalleProducto('tallas')"
+            class="btn btn-catalog">
+            <span>Ingresar</span>
+            <i class="bi bi-arrow-right"></i>
+          </a>
+
+        </div>
+      </div>
+
+    </div>
+
+  </section>
+
+  <!-- LISTA PRODUCTOS -->
+  <section class="productos-card">
+
+    <div class="productos-card-header">
+
+      <div>
+        <h3>Lista de productos</h3>
+        <p>
+          Aquí aparecen los productos registrados con sus atributos principales.
+        </p>
+      </div>
+
+      <a
+        [routerLink]="rutaCrearProducto()"
+        class="btn btn-create-secondary">
+        <i class="bi bi-plus-circle me-2"></i>
+        Crear producto
+      </a>
+
+    </div>
+
+    <div class="productos-toolbar">
+
+      <div class="search-wrapper">
+        <i class="bi bi-search"></i>
+
+        <input
+          type="text"
+          placeholder="Buscar producto por código..."
+          [(ngModel)]="codigoBusqueda"
+          (ngModelChange)="onBuscarCodigo()"
+        >
+
+        <button
+          *ngIf="codigoBusqueda"
+          type="button"
+          class="btn-clear-search"
+          (click)="limpiarBusqueda()"
+          title="Limpiar búsqueda">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <div class="toolbar-info">
+        <span>
+          {{ productosFiltrados.length }} producto(s)
+        </span>
+      </div>
+
+    </div>
+
+    <div class="productos-card-body">
+
+      <!-- CARGANDO PRODUCTOS -->
+      <div *ngIf="cargandoProductos" class="loading-inline">
+        <div class="spinner-border text-primary"></div>
+        <p>Cargando productos...</p>
+      </div>
+
+      <!-- SIN PRODUCTOS -->
       <div
         *ngIf="!cargandoProductos && productos.length === 0"
-        class="p-4 text-center"
-      >
+        class="empty-state">
 
-        <i class="bi bi-tags fs-1 text-muted"></i>
+        <div class="empty-icon">
+          <i class="bi bi-tags"></i>
+        </div>
 
-        <h5 class="mt-3">No hay productos registrados</h5>
+        <h4>No hay productos registrados</h4>
 
-        <p class="text-muted mb-3">
+        <p>
           Crea el primer producto del catálogo de esta empresa.
         </p>
 
         <a
-          [routerLink]="['/super-admin/empresas', empresaId, 'productos', 'crear']"
-          class="btn btn-primary"
-        >
-          <i class="bi bi-plus-circle me-1"></i>
+          [routerLink]="rutaCrearProducto()"
+          class="btn btn-empty-primary">
+          <i class="bi bi-plus-circle me-2"></i>
           Crear producto
         </a>
 
       </div>
 
-      <!-- Sin resultados del filtro -->
+      <!-- SIN RESULTADOS -->
       <div
         *ngIf="!cargandoProductos && productos.length > 0 && productosFiltrados.length === 0"
-        class="p-4 text-center"
-      >
+        class="empty-state">
 
-        <i class="bi bi-search fs-1 text-muted"></i>
+        <div class="empty-icon">
+          <i class="bi bi-search"></i>
+        </div>
 
-        <h5 class="mt-3">No se encontraron productos</h5>
+        <h4>No se encontraron productos</h4>
 
-        <p class="text-muted mb-3">
+        <p>
           No hay productos que coincidan con el código buscado.
         </p>
 
         <button
           type="button"
-          class="btn btn-outline-primary"
-          (click)="limpiarBusqueda()"
-        >
-          <i class="bi bi-x-circle me-1"></i>
+          class="btn btn-empty-secondary"
+          (click)="limpiarBusqueda()">
+          <i class="bi bi-x-circle me-2"></i>
           Limpiar búsqueda
         </button>
 
       </div>
 
-      <!-- Tabla -->
+      <!-- TABLA -->
       <div
         *ngIf="!cargandoProductos && productosFiltrados.length > 0"
-        class="table-responsive"
-      >
+        class="table-wrapper">
 
-        <div class="px-4 py-3 border-top border-bottom bg-light-subtle d-flex flex-column flex-md-row justify-content-md-between align-items-md-center gap-2">
+        <div class="table-summary">
 
-          <small class="text-muted">
+          <small>
             Mostrando
             <strong>{{ productosPaginados.length }}</strong>
             de
@@ -295,17 +338,15 @@
             productos
           </small>
 
-          <div class="d-flex align-items-center gap-2">
+          <div class="page-size-control">
 
-            <label class="text-muted small mb-0">
-              Productos por página:
+            <label>
+              Por página:
             </label>
 
             <select
-              class="form-select form-select-sm selector-pagina"
               [(ngModel)]="elementosPorPagina"
-              (ngModelChange)="onCambiarElementosPorPagina()"
-            >
+              (ngModelChange)="onCambiarElementosPorPagina()">
               <option [ngValue]="5">5</option>
               <option [ngValue]="10">10</option>
               <option [ngValue]="20">20</option>
@@ -316,11 +357,11 @@
 
         </div>
 
-        <table class="table table-hover align-middle mb-0">
+        <table class="table app-table align-middle mb-0">
 
-          <thead class="table-light">
+          <thead>
           <tr>
-            <th>Nombre</th>
+            <th>Producto</th>
             <th>Código</th>
             <th>Descripción</th>
             <th>Color</th>
@@ -336,21 +377,29 @@
           <tr *ngFor="let producto of productosPaginados">
 
             <!-- Nombre -->
-            <td class="fw-semibold">
+            <td>
               <ng-container *ngIf="!estaEditando(producto); else editarNombre">
-                {{ producto.nombre }}
+                <div class="product-cell">
+                  <div class="product-avatar">
+                    {{ producto.nombre.charAt(0) || 'P' }}
+                  </div>
+
+                  <div>
+                    <strong>{{ producto.nombre }}</strong>
+                    <span>Producto del catálogo</span>
+                  </div>
+                </div>
               </ng-container>
 
               <ng-template #editarNombre>
                 <input
                   type="text"
                   class="form-control form-control-sm"
-                  [(ngModel)]="productoEditando!.nombre"
-                >
+                  [(ngModel)]="productoEditando!.nombre">
               </ng-template>
             </td>
 
-            <!-- Código inmutable -->
+            <!-- Código -->
             <td>
               <span class="codigo-inmutable">
                 {{ producto.codigo }}
@@ -360,22 +409,23 @@
             <!-- Descripción -->
             <td>
               <ng-container *ngIf="!estaEditando(producto); else editarDescripcion">
-                {{ producto.descripcion }}
+                <span class="description-text">
+                  {{ producto.descripcion }}
+                </span>
               </ng-container>
 
               <ng-template #editarDescripcion>
                 <input
                   type="text"
                   class="form-control form-control-sm descripcion-input"
-                  [(ngModel)]="productoEditando!.descripcion"
-                >
+                  [(ngModel)]="productoEditando!.descripcion">
               </ng-template>
             </td>
 
             <!-- Color -->
             <td>
               <ng-container *ngIf="!estaEditando(producto); else editarColor">
-                <span class="badge bg-primary">
+                <span class="badge badge-color">
                   {{ producto.colorNombre }}
                 </span>
               </ng-container>
@@ -383,12 +433,10 @@
               <ng-template #editarColor>
                 <select
                   class="form-select form-select-sm"
-                  [(ngModel)]="productoEditando!.colorId"
-                >
+                  [(ngModel)]="productoEditando!.colorId">
                   <option
                     *ngFor="let color of colores"
-                    [ngValue]="color.id"
-                  >
+                    [ngValue]="color.id">
                     {{ color.nombre }}
                   </option>
                 </select>
@@ -398,18 +446,18 @@
             <!-- Categoría -->
             <td>
               <ng-container *ngIf="!estaEditando(producto); else editarCategoria">
-                {{ producto.categoriaNombre }}
+                <span class="table-text">
+                  {{ producto.categoriaNombre }}
+                </span>
               </ng-container>
 
               <ng-template #editarCategoria>
                 <select
                   class="form-select form-select-sm"
-                  [(ngModel)]="productoEditando!.categoriaId"
-                >
+                  [(ngModel)]="productoEditando!.categoriaId">
                   <option
                     *ngFor="let categoria of categorias"
-                    [ngValue]="categoria.id"
-                  >
+                    [ngValue]="categoria.id">
                     {{ categoria.nombre }}
                   </option>
                 </select>
@@ -419,18 +467,18 @@
             <!-- Talla -->
             <td>
               <ng-container *ngIf="!estaEditando(producto); else editarTalla">
-                {{ producto.tallaNombre }}
+                <span class="table-text">
+                  {{ producto.tallaNombre }}
+                </span>
               </ng-container>
 
               <ng-template #editarTalla>
                 <select
                   class="form-select form-select-sm"
-                  [(ngModel)]="productoEditando!.tallaId"
-                >
+                  [(ngModel)]="productoEditando!.tallaId">
                   <option
                     *ngFor="let talla of tallas"
-                    [ngValue]="talla.id"
-                  >
+                    [ngValue]="talla.id">
                     {{ talla.nombre }}
                   </option>
                 </select>
@@ -440,18 +488,18 @@
             <!-- Género -->
             <td>
               <ng-container *ngIf="!estaEditando(producto); else editarGenero">
-                {{ producto.generoNombre }}
+                <span class="table-text">
+                  {{ producto.generoNombre }}
+                </span>
               </ng-container>
 
               <ng-template #editarGenero>
                 <select
                   class="form-select form-select-sm"
-                  [(ngModel)]="productoEditando!.generoId"
-                >
+                  [(ngModel)]="productoEditando!.generoId">
                   <option
                     *ngFor="let genero of generos"
-                    [ngValue]="genero.id"
-                  >
+                    [ngValue]="genero.id">
                     {{ genero.nombre }}
                   </option>
                 </select>
@@ -460,7 +508,9 @@
 
             <!-- Fecha creación -->
             <td>
-              {{ producto.fechaCreacion | date:'yyyy-MM-dd HH:mm' }}
+              <span class="date-text">
+                {{ producto.fechaCreacion | date:'yyyy-MM-dd HH:mm' }}
+              </span>
             </td>
 
             <!-- Acciones -->
@@ -470,36 +520,32 @@
 
                 <button
                   type="button"
-                  class="btn btn-sm me-2"
-                  [class.btn-outline-primary]="producto.puedeModificar !== false"
-                  [class.btn-outline-secondary]="producto.puedeModificar === false"
+                  class="btn btn-action-edit me-2"
+                  [class.btn-action-locked]="producto.puedeModificar === false"
                   (click)="iniciarEdicion(producto)"
-                  [title]="producto.puedeModificar === false ? producto.motivoBloqueo : 'Editar producto'"
-                >
+                  [title]="producto.puedeModificar === false ? producto.motivoBloqueo : 'Editar producto'">
 
                   <i
                     class="bi"
                     [class.bi-pencil]="producto.puedeModificar !== false"
-                    [class.bi-lock]="producto.puedeModificar === false"
-                  >
+                    [class.bi-lock]="producto.puedeModificar === false">
                   </i>
+
                 </button>
 
                 <button
                   type="button"
-                  class="btn btn-sm"
-                  [class.btn-outline-danger]="producto.puedeModificar !== false"
-                  [class.btn-outline-secondary]="producto.puedeModificar === false"
+                  class="btn btn-action-delete"
+                  [class.btn-action-locked]="producto.puedeModificar === false"
                   (click)="eliminarProducto(producto)"
-                  [title]="producto.puedeModificar === false ? producto.motivoBloqueo : 'Eliminar producto'"
-                >
+                  [title]="producto.puedeModificar === false ? producto.motivoBloqueo : 'Eliminar producto'">
 
                   <i
                     class="bi"
                     [class.bi-trash]="producto.puedeModificar !== false"
-                    [class.bi-lock]="producto.puedeModificar === false"
-                  >
+                    [class.bi-lock]="producto.puedeModificar === false">
                   </i>
+
                 </button>
 
               </ng-container>
@@ -508,17 +554,15 @@
 
                 <button
                   type="button"
-                  class="btn btn-sm btn-success me-2"
-                  (click)="guardarEdicion(producto)"
-                >
+                  class="btn btn-action-save me-2"
+                  (click)="guardarEdicion(producto)">
                   <i class="bi bi-check-lg"></i>
                 </button>
 
                 <button
                   type="button"
-                  class="btn btn-sm btn-outline-secondary"
-                  (click)="cancelarEdicion()"
-                >
+                  class="btn btn-action-cancel"
+                  (click)="cancelarEdicion()">
                   <i class="bi bi-x-lg"></i>
                 </button>
 
@@ -531,13 +575,12 @@
 
         </table>
 
-        <!-- Paginación -->
+        <!-- PAGINACIÓN -->
         <div
           *ngIf="totalPaginas > 1"
-          class="border-top p-3 d-flex flex-column flex-md-row justify-content-md-between align-items-md-center gap-3"
-        >
+          class="pagination-wrapper">
 
-          <small class="text-muted">
+          <small>
             Página {{ paginaActual }} de {{ totalPaginas }}
           </small>
 
@@ -547,14 +590,12 @@
 
               <li
                 class="page-item"
-                [class.disabled]="paginaActual === 1"
-              >
+                [class.disabled]="paginaActual === 1">
                 <button
                   type="button"
                   class="page-link"
                   (click)="cambiarPagina(paginaActual - 1)"
-                  [disabled]="paginaActual === 1"
-                >
+                  [disabled]="paginaActual === 1">
                   Anterior
                 </button>
               </li>
@@ -562,27 +603,23 @@
               <li
                 *ngFor="let pagina of paginas"
                 class="page-item"
-                [class.active]="pagina === paginaActual"
-              >
+                [class.active]="pagina === paginaActual">
                 <button
                   type="button"
                   class="page-link"
-                  (click)="cambiarPagina(pagina)"
-                >
+                  (click)="cambiarPagina(pagina)">
                   {{ pagina }}
                 </button>
               </li>
 
               <li
                 class="page-item"
-                [class.disabled]="paginaActual === totalPaginas"
-              >
+                [class.disabled]="paginaActual === totalPaginas">
                 <button
                   type="button"
                   class="page-link"
                   (click)="cambiarPagina(paginaActual + 1)"
-                  [disabled]="paginaActual === totalPaginas"
-                >
+                  [disabled]="paginaActual === totalPaginas">
                   Siguiente
                 </button>
               </li>
@@ -596,6 +633,7 @@
       </div>
 
     </div>
-  </div>
+
+  </section>
 
 </div>

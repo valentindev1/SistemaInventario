@@ -2,6 +2,8 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
+import { AuthService } from '../../../../core/services/auth/auth.service';
+
 interface OpcionInventarioEmpleado {
   titulo: string;
   descripcion: string;
@@ -24,6 +26,7 @@ interface OpcionInventarioEmpleado {
 export class PanelInventarioEmpleadoComponent implements OnInit {
 
   sucursalId!: number;
+  empresaId!: number;
 
   opciones: OpcionInventarioEmpleado[] = [];
 
@@ -31,36 +34,117 @@ export class PanelInventarioEmpleadoComponent implements OnInit {
 
   constructor(
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private authService: AuthService
   ) {}
 
   ngOnInit(): void {
 
-    const sucursalIdParam = this.route.snapshot.paramMap.get('sucursalId');
+    const accesoValido = this.validarAccesoEmpleado();
 
-    if (!sucursalIdParam) {
-      this.mensajeError = 'No se pudo identificar la sucursal.';
-      return;
-    }
-
-    this.sucursalId = Number(sucursalIdParam);
-
-    if (!this.sucursalId) {
-      this.mensajeError = 'El identificador de la sucursal no es válido.';
+    if (!accesoValido) {
       return;
     }
 
     this.inicializarOpciones();
   }
 
+  private validarAccesoEmpleado(): boolean {
+
+    this.mensajeError = '';
+
+    if (!this.authService.estaAutenticado()) {
+      this.router.navigate(['/login']);
+      return false;
+    }
+
+    const rol = this.authService.obtenerRol();
+    const empresaIdUsuario = this.authService.obtenerEmpresaId();
+    const sucursalIdUsuario = this.authService.obtenerSucursalId();
+
+    if (!rol) {
+      this.router.navigate(['/login']);
+      return false;
+    }
+
+    if (rol !== 'EMPLEADO') {
+      this.router.navigate(['/acceso-denegado']);
+      return false;
+    }
+
+    if (!empresaIdUsuario || !sucursalIdUsuario) {
+      this.mensajeError = 'No se pudo identificar la empresa o sucursal del empleado.';
+      this.router.navigate(['/login']);
+      return false;
+    }
+
+    const sucursalIdParam = this.obtenerSucursalIdDesdeRuta();
+
+    if (!sucursalIdParam) {
+      this.router.navigate([
+        '/empleado',
+        'sucursal',
+        sucursalIdUsuario,
+        'inventario',
+        'panel'
+      ]);
+
+      return false;
+    }
+
+    const sucursalIdRuta = Number(sucursalIdParam);
+
+    if (
+      Number.isNaN(sucursalIdRuta) ||
+      sucursalIdRuta <= 0
+    ) {
+      this.router.navigate([
+        '/empleado',
+        'sucursal',
+        sucursalIdUsuario,
+        'inventario',
+        'panel'
+      ]);
+
+      return false;
+    }
+
+    if (sucursalIdRuta !== sucursalIdUsuario) {
+      this.router.navigate([
+        '/empleado',
+        'sucursal',
+        sucursalIdUsuario,
+        'inventario',
+        'panel'
+      ]);
+
+      return false;
+    }
+
+    this.empresaId = empresaIdUsuario;
+    this.sucursalId = sucursalIdUsuario;
+
+    return true;
+  }
+
+  private obtenerSucursalIdDesdeRuta(): string | null {
+    return (
+      this.route.snapshot.paramMap.get('sucursalId') ??
+      this.route.parent?.snapshot.paramMap.get('sucursalId') ??
+      this.route.parent?.parent?.snapshot.paramMap.get('sucursalId') ??
+      this.route.parent?.parent?.parent?.snapshot.paramMap.get('sucursalId') ??
+      null
+    );
+  }
+
   private inicializarOpciones(): void {
 
     this.opciones = [
       {
-        titulo: 'Ver inventario actual',
-        descripcion: 'Consulta productos disponibles, stock actual, tallas, colores, categorías y precio de venta.',
+        titulo: 'Inventario actual',
+        descripcion: 'Consulta productos disponibles, precios y stock actual de la sucursal.',
         icono: 'bi bi-box-seam',
-        color: 'opcion-inventario',
+        color: 'opcion-actual',
         ruta: [
           '/empleado',
           'sucursal',
@@ -71,8 +155,8 @@ export class PanelInventarioEmpleadoComponent implements OnInit {
         disponible: true
       },
       {
-        titulo: 'Ver movimientos del inventario',
-        descripcion: 'Consulta entradas, salidas, ventas, devoluciones y ajustes autorizados de la sucursal.',
+        titulo: 'Movimientos',
+        descripcion: 'Consulta entradas, salidas, ventas, devoluciones y ajustes de inventario.',
         icono: 'bi bi-arrow-left-right',
         color: 'opcion-movimientos',
         ruta: [

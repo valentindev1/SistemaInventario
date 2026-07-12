@@ -3,6 +3,7 @@ import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
+import { AuthService } from '../../../../core/services/auth/auth.service';
 import { EmpleadoVentaService } from '../../../../core/services/empleado/empleado-venta.service';
 
 import {
@@ -23,8 +24,7 @@ import {
 export class FacturasEmpleadoComponent implements OnInit {
 
   sucursalId!: number;
-
-
+  empresaId!: number;
 
   @ViewChild('detalleFactura') detalleFacturaRef?: ElementRef<HTMLDivElement>;
 
@@ -32,6 +32,124 @@ export class FacturasEmpleadoComponent implements OnInit {
   registrosPorPagina = 20;
   totalPaginas = 1;
 
+  facturas: VentaHistorialEmpleadoDTO[] = [];
+  facturasFiltradas: VentaHistorialEmpleadoDTO[] = [];
+
+  facturaSeleccionada: FacturaVentaEmpleadoDTO | null = null;
+
+  filtro = '';
+
+  cargando = false;
+  cargandoDetalle = false;
+
+  mensajeError = '';
+  mensajeExito = '';
+
+  constructor(
+    private route: ActivatedRoute,
+    private router: Router,
+    private authService: AuthService,
+    private empleadoVentaService: EmpleadoVentaService
+  ) {}
+
+  ngOnInit(): void {
+
+    const accesoValido = this.validarAccesoEmpleado();
+
+    if (!accesoValido) {
+      return;
+    }
+
+    this.cargarFacturas();
+  }
+
+  private validarAccesoEmpleado(): boolean {
+
+    this.mensajeError = '';
+
+    if (!this.authService.estaAutenticado()) {
+      this.router.navigate(['/login']);
+      return false;
+    }
+
+    const rol = this.authService.obtenerRol();
+    const empresaIdUsuario = this.authService.obtenerEmpresaId();
+    const sucursalIdUsuario = this.authService.obtenerSucursalId();
+
+    if (!rol) {
+      this.router.navigate(['/login']);
+      return false;
+    }
+
+    if (rol !== 'EMPLEADO') {
+      this.router.navigate(['/acceso-denegado']);
+      return false;
+    }
+
+    if (!empresaIdUsuario || !sucursalIdUsuario) {
+      this.mensajeError = 'No se pudo identificar la empresa o sucursal del empleado.';
+      this.router.navigate(['/login']);
+      return false;
+    }
+
+    const sucursalIdParam = this.obtenerSucursalIdDesdeRuta();
+
+    if (!sucursalIdParam) {
+      this.router.navigate([
+        '/empleado',
+        'sucursal',
+        sucursalIdUsuario,
+        'ventas',
+        'facturas'
+      ]);
+
+      return false;
+    }
+
+    const sucursalIdRuta = Number(sucursalIdParam);
+
+    if (
+      Number.isNaN(sucursalIdRuta) ||
+      sucursalIdRuta <= 0
+    ) {
+      this.router.navigate([
+        '/empleado',
+        'sucursal',
+        sucursalIdUsuario,
+        'ventas',
+        'facturas'
+      ]);
+
+      return false;
+    }
+
+    if (sucursalIdRuta !== sucursalIdUsuario) {
+      this.router.navigate([
+        '/empleado',
+        'sucursal',
+        sucursalIdUsuario,
+        'ventas',
+        'facturas'
+      ]);
+
+      return false;
+    }
+
+    this.empresaId = empresaIdUsuario;
+    this.sucursalId = sucursalIdUsuario;
+
+    return true;
+  }
+
+  private obtenerSucursalIdDesdeRuta(): string | null {
+    return (
+      this.route.snapshot.paramMap.get('sucursalId') ??
+      this.route.parent?.snapshot.paramMap.get('sucursalId') ??
+      this.route.parent?.parent?.snapshot.paramMap.get('sucursalId') ??
+      this.route.parent?.parent?.parent?.snapshot.paramMap.get('sucursalId') ??
+      null
+    );
+  }
 
   get facturasPaginadas(): VentaHistorialEmpleadoDTO[] {
     const inicio = (this.paginaActual - 1) * this.registrosPorPagina;
@@ -111,52 +229,11 @@ export class FacturasEmpleadoComponent implements OnInit {
     return paginas;
   }
 
-
   private subirAlListado(): void {
     window.scrollTo({
       top: 0,
       behavior: 'smooth'
     });
-  }
-
-
-
-  facturas: VentaHistorialEmpleadoDTO[] = [];
-  facturasFiltradas: VentaHistorialEmpleadoDTO[] = [];
-
-  facturaSeleccionada: FacturaVentaEmpleadoDTO | null = null;
-
-  filtro = '';
-
-  cargando = false;
-  cargandoDetalle = false;
-
-  mensajeError = '';
-  mensajeExito = '';
-
-  constructor(
-    private route: ActivatedRoute,
-    private router: Router,
-    private empleadoVentaService: EmpleadoVentaService
-  ) {}
-
-  ngOnInit(): void {
-
-    const sucursalIdParam = this.route.snapshot.paramMap.get('sucursalId');
-
-    if (!sucursalIdParam) {
-      this.mensajeError = 'No se pudo identificar la sucursal.';
-      return;
-    }
-
-    this.sucursalId = Number(sucursalIdParam);
-
-    if (!this.sucursalId) {
-      this.mensajeError = 'El identificador de la sucursal no es válido.';
-      return;
-    }
-
-    this.cargarFacturas();
   }
 
   cargarFacturas(): void {
@@ -172,18 +249,21 @@ export class FacturasEmpleadoComponent implements OnInit {
 
           this.facturas = data || [];
           this.facturasFiltradas = [...this.facturas];
+
           this.paginaActual = 1;
           this.actualizarTotalPaginas();
-          this.cargando = false;
 
+          this.cargando = false;
         },
         error: (error) => {
           this.cargando = false;
 
-          this.mensajeError =
-            error?.error?.message ||
-            error?.error ||
-            'No se pudieron cargar las facturas de la sucursal.';
+          this.mensajeError = this.obtenerMensajeError(
+            error,
+            'No se pudieron cargar las facturas de la sucursal.'
+          );
+
+          console.error(error);
         }
       });
   }
@@ -226,6 +306,13 @@ export class FacturasEmpleadoComponent implements OnInit {
     this.empleadoVentaService.obtenerPorId(ventaId)
       .subscribe({
         next: (factura) => {
+
+          if (factura.sucursalId !== this.sucursalId) {
+            this.cargandoDetalle = false;
+            this.mensajeError = 'La factura no pertenece a esta sucursal.';
+            return;
+          }
+
           this.facturaSeleccionada = factura;
           this.cargandoDetalle = false;
 
@@ -239,10 +326,12 @@ export class FacturasEmpleadoComponent implements OnInit {
         error: (error) => {
           this.cargandoDetalle = false;
 
-          this.mensajeError =
-            error?.error?.message ||
-            error?.error ||
-            'No se pudo cargar el detalle de la factura.';
+          this.mensajeError = this.obtenerMensajeError(
+            error,
+            'No se pudo cargar el detalle de la factura.'
+          );
+
+          console.error(error);
         }
       });
   }
@@ -315,5 +404,26 @@ export class FacturasEmpleadoComponent implements OnInit {
       default:
         return 'estado-default';
     }
+  }
+
+  private obtenerMensajeError(error: any, mensajeDefecto: string): string {
+
+    if (Array.isArray(error?.error?.errores)) {
+      return error.error.errores.join(', ');
+    }
+
+    if (typeof error?.error === 'string') {
+      return error.error;
+    }
+
+    if (error?.error?.message) {
+      return error.error.message;
+    }
+
+    if (error?.error?.error) {
+      return error.error.error;
+    }
+
+    return mensajeDefecto;
   }
 }

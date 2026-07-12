@@ -1,5 +1,10 @@
 import { Routes } from '@angular/router';
 
+import { roleGuard } from './core/guards/role.guard';
+import { empresaAccessGuard } from './core/guards/empresa-access.guard';
+import { sucursalAccessGuard } from './core/guards/sucursal-access.guard';
+import { empleadoSucursalAccessGuard } from './core/guards/empleado-sucursal-access.guard';
+
 import { DashboardLayoutComponent } from './layouts/super-admin-layout/dashboard-layout/dashboard-layout.component';
 
 import { DashboardComponent } from './features/super-admin/dashboard/dashboard.component';
@@ -36,6 +41,10 @@ import {
 import {
   CrearUsuarioSucursalComponent
 } from './features/super-admin/empresas/sucursales/usuarios/crear-usuario-sucursal/crear-usuario-sucursal.component';
+
+import {
+  EditarUsuarioSucursalComponent
+} from './features/super-admin/empresas/sucursales/usuarios/editar-usuario-sucursal/editar-usuario-sucursal.component';
 
 import {
   PanelProductosEmpresaComponent
@@ -107,288 +116,444 @@ import {
 
 export const routes: Routes = [
 
+  // ==========================
+  // LOGIN
+  // ==========================
+  {
+    path: 'login',
+    loadComponent: () =>
+      import('./features/auth/login/login.component')
+        .then(m => m.LoginComponent)
+  },
+
   {
     path: '',
-    redirectTo: 'super-admin/dashboard',
+    redirectTo: 'login',
     pathMatch: 'full'
+  },
+
+  // ==========================
+  // ACCESO DENEGADO
+  // ==========================
+  {
+    path: 'acceso-denegado',
+    loadComponent: () =>
+      import('./features/auth/acceso-denegado/acceso-denegado.component')
+        .then(m => m.AccesoDenegadoComponent)
   },
 
   // ==========================
   // EMPLEADO
   // ==========================
-
   {
-    path: 'empleado/sucursal/:sucursalId/dashboard',
+    path: 'empleado/sucursal/:sucursalId',
     loadComponent: () =>
-      import('./features/empleado/dashboard/dashboard.component')
-        .then(m => m.DashboardComponent)
-  },
-
-  {
-    path: 'empleado/sucursal/:sucursalId/ventas/panel',
-    loadComponent: () =>
-      import('./features/empleado/ventas/panel-ventas-empleado/panel-ventas-empleado.component')
-        .then(m => m.PanelVentasEmpleadoComponent)
-  },
-
-  {
-    path: 'empleado/sucursal/:sucursalId/ventas/generar',
-    loadComponent: () =>
-      import('./features/empleado/ventas/ventas-empleado/ventas-empleado.component')
-        .then(m => m.VentasEmpleadoComponent)
-  },
-
-  {
-    path: 'empleado/sucursal/:sucursalId/ventas/facturas',
-    loadComponent: () =>
-      import('./features/empleado/ventas/facturas-empleado/facturas-empleado.component')
-        .then(m => m.FacturasEmpleadoComponent)
-  },
-
-  {
-    path: 'empleado/sucursal/:sucursalId/ventas/devolucion',
-    loadComponent: () =>
-      import('./features/empleado/ventas/devolucion-venta-empleado/devolucion-venta-empleado.component')
-        .then(m => m.DevolucionVentaEmpleadoComponent)
-  },
-
-  {
-    path: 'empleado/sucursal/:sucursalId/ventas/historico',
-    loadComponent: () =>
-      import('./features/empleado/ventas/historico-ventas-empleado/historico-ventas-empleado.component')
-        .then(m => m.HistoricoVentasEmpleadoComponent)
-  },
-
-  {
-    path: 'empleado/sucursal/:sucursalId/inventario/panel',
-    loadComponent: () =>
-      import('./features/empleado/inventario/panel-inventario-empleado/panel-inventario-empleado.component')
-        .then(m => m.PanelInventarioEmpleadoComponent)
-  },
-
-  {
-    path: 'empleado/sucursal/:sucursalId/inventario/actual',
-    loadComponent: () =>
-      import('./features/empleado/inventario/inventario-actual-empleado/inventario-actual-empleado.component')
-        .then(m => m.InventarioActualEmpleadoComponent)
-  },
-
-  {
-    path: 'empleado/sucursal/:sucursalId/inventario/movimientos',
-    loadComponent: () =>
-      import('./features/empleado/inventario/movimientos-inventario-empleado/movimientos-inventario-empleado.component')
-        .then(m => m.MovimientosInventarioEmpleadoComponent)
-  },
-
-  {
-    path: 'empleado/sucursal/:sucursalId/clientes/panel',
-    loadComponent: () =>
-      import('./features/empleado/clientes/panel-clientes-empleado/panel-clientes-empleado.component')
-        .then(m => m.PanelClientesEmpleadoComponent)
-  },
-
-  // ==========================
-  // SUPER ADMIN
-  // ==========================
-
-  {
-    path: 'super-admin',
-    component: DashboardLayoutComponent,
+      import('./layouts/empleado-layout/empleado-layout.component')
+        .then(m => m.EmpleadoLayoutComponent),
+    canActivate: [
+      roleGuard,
+      empleadoSucursalAccessGuard
+    ],
+    runGuardsAndResolvers: 'always',
+    data: {
+      roles: ['EMPLEADO']
+    },
     children: [
+      {
+        path: '',
+        redirectTo: 'dashboard',
+        pathMatch: 'full'
+      },
+      {
+        path: 'dashboard',
+        loadComponent: () =>
+          import('./features/empleado/dashboard/dashboard.component')
+            .then(m => m.DashboardComponent)
+      },
+      {
+        path: 'ventas/panel',
+        loadComponent: () =>
+          import('./features/empleado/ventas/panel-ventas-empleado/panel-ventas-empleado.component')
+            .then(m => m.PanelVentasEmpleadoComponent)
+      },
+      {
+        path: 'ventas/generar',
+        loadComponent: () =>
+          import('./features/empleado/ventas/ventas-empleado/ventas-empleado.component')
+            .then(m => m.VentasEmpleadoComponent)
+      },
+      {
+        path: 'ventas/facturas',
+        loadComponent: () =>
+          import('./features/empleado/ventas/facturas-empleado/facturas-empleado.component')
+            .then(m => m.FacturasEmpleadoComponent)
+      },
+      {
+        path: 'ventas/devolucion',
+        loadComponent: () =>
+          import('./features/empleado/ventas/devolucion-venta-empleado/devolucion-venta-empleado.component')
+            .then(m => m.DevolucionVentaEmpleadoComponent)
+      },
+      {
+        path: 'ventas/historico',
+        loadComponent: () =>
+          import('./features/empleado/ventas/historico-ventas-empleado/historico-ventas-empleado.component')
+            .then(m => m.HistoricoVentasEmpleadoComponent)
+      },
+      {
+        path: 'inventario/panel',
+        loadComponent: () =>
+          import('./features/empleado/inventario/panel-inventario-empleado/panel-inventario-empleado.component')
+            .then(m => m.PanelInventarioEmpleadoComponent)
+      },
+      {
+        path: 'inventario/actual',
+        loadComponent: () =>
+          import('./features/empleado/inventario/inventario-actual-empleado/inventario-actual-empleado.component')
+            .then(m => m.InventarioActualEmpleadoComponent)
+      },
+      {
+        path: 'inventario/movimientos',
+        loadComponent: () =>
+          import('./features/empleado/inventario/movimientos-inventario-empleado/movimientos-inventario-empleado.component')
+            .then(m => m.MovimientosInventarioEmpleadoComponent)
+      },
+      {
+        path: 'clientes/panel',
+        loadComponent: () =>
+          import('./features/empleado/clientes/panel-clientes-empleado/panel-clientes-empleado.component')
+            .then(m => m.PanelClientesEmpleadoComponent)
+      }
+    ]
+  },
 
+  // ==========================
+  // ADMIN
+  // ==========================
+  {
+    path: 'admin/empresa/:empresaId',
+    loadComponent: () =>
+      import('./layouts/admin-layout/admin-layout.component')
+        .then(m => m.AdminLayoutComponent),
+    canActivate: [
+      roleGuard,
+      empresaAccessGuard
+    ],
+    runGuardsAndResolvers: 'always',
+    data: {
+      roles: ['SUPER_ADMIN', 'ADMIN']
+    },
+    children: [
       {
         path: '',
         redirectTo: 'dashboard',
         pathMatch: 'full'
       },
 
-      // ==========================
-      // DASHBOARD
-      // ==========================
+      {
+        path: 'dashboard',
+        component: DetalleEmpresaComponent
+      },
+      {
+        path: 'editar',
+        component: EditarEmpresaComponent
+      },
+      {
+        path: 'dashboard/estadisticas',
+        component: DashboardEmpresaComponent
+      },
+
+      // Usuarios de empresa
+      {
+        path: 'usuarios/crear',
+        component: CrearUsuarioEmpresaComponent
+      },
+      {
+        path: 'usuarios/:usuarioId/editar-password',
+        component: EditarPasswordAdminComponent
+      },
+
+      // Sucursales
+      {
+        path: 'sucursales/crear',
+        component: CrearSucursalEmpresaComponent
+      },
+      {
+        path: 'sucursales/detalle/:sucursalId',
+        component: DetalleSucursalEmpresaComponent,
+        canActivate: [sucursalAccessGuard]
+      },
+      {
+        path: 'sucursales/editar/:sucursalId',
+        component: EditarSucursalEmpresaComponent,
+        canActivate: [sucursalAccessGuard]
+      },
+
+      // Usuarios de sucursal
+      {
+        path: 'sucursales/:sucursalId/usuarios/crear',
+        component: CrearUsuarioSucursalComponent,
+        canActivate: [sucursalAccessGuard]
+      },
+      {
+        path: 'sucursales/:sucursalId/usuarios/:usuarioId/editar-password',
+        component: EditarUsuarioSucursalComponent,
+        canActivate: [sucursalAccessGuard]
+      },
+
+      // Productos
+      {
+        path: 'productos',
+        component: PanelProductosEmpresaComponent
+      },
+      {
+        path: 'productos/crear',
+        component: CrearProductoComponent
+      },
+      {
+        path: 'productos/detalles/:tipo',
+        component: PanelDetalleProductoComponent
+      },
+
+      // Inventario
+      {
+        path: 'sucursales/:sucursalId/inventario',
+        component: InventarioSucursalComponent,
+        canActivate: [sucursalAccessGuard]
+      },
+      {
+        path: 'sucursales/:sucursalId/inventario/panel',
+        component: PanelInventarioSucursalComponent,
+        canActivate: [sucursalAccessGuard]
+      },
+      {
+        path: 'sucursales/:sucursalId/inventario/ingresar',
+        component: IngresarInventarioComponent,
+        canActivate: [sucursalAccessGuard]
+      },
+      {
+        path: 'sucursales/:sucursalId/inventario/ajustar',
+        component: AjustarInventarioComponent,
+        canActivate: [sucursalAccessGuard]
+      },
+      {
+        path: 'sucursales/:sucursalId/inventario/resumen',
+        component: ResumenInventarioComponent,
+        canActivate: [sucursalAccessGuard]
+      },
+      {
+        path: 'sucursales/:sucursalId/inventario/movimientos',
+        component: MovimientosInventarioComponent,
+        canActivate: [sucursalAccessGuard]
+      },
+
+      // Ventas
+      {
+        path: 'sucursales/:sucursalId/ventas/panel',
+        component: PanelVentasSucursalComponent,
+        canActivate: [sucursalAccessGuard]
+      },
+      {
+        path: 'sucursales/:sucursalId/ventas/generar',
+        component: GenerarVentaComponent,
+        canActivate: [sucursalAccessGuard]
+      },
+      {
+        path: 'sucursales/:sucursalId/ventas/consultar',
+        component: ConsultarFacturaComponent,
+        canActivate: [sucursalAccessGuard]
+      },
+      {
+        path: 'sucursales/:sucursalId/ventas/devolucion',
+        component: DevolucionVentaComponent,
+        canActivate: [sucursalAccessGuard]
+      },
+      {
+        path: 'sucursales/:sucursalId/ventas/informe',
+        component: InformeVentasComponent,
+        canActivate: [sucursalAccessGuard]
+      },
+
+      // Clientes
+      {
+        path: 'sucursales/:sucursalId/clientes/panel',
+        component: PanelClientesSucursalComponent,
+        canActivate: [sucursalAccessGuard]
+      },
+      {
+        path: 'sucursales/:sucursalId/clientes/crear',
+        component: CrearClienteComponent,
+        canActivate: [sucursalAccessGuard]
+      },
+      {
+        path: 'sucursales/:sucursalId/clientes/editar/:clienteId',
+        component: EditarClienteComponent,
+        canActivate: [sucursalAccessGuard]
+      }
+    ]
+  },
+
+  // ==========================
+  // SUPER ADMIN
+  // ==========================
+  {
+    path: 'super-admin',
+    component: DashboardLayoutComponent,
+    canActivate: [roleGuard],
+    data: {
+      roles: ['SUPER_ADMIN']
+    },
+    children: [
+      {
+        path: '',
+        redirectTo: 'dashboard',
+        pathMatch: 'full'
+      },
 
       {
         path: 'dashboard',
         component: DashboardComponent
       },
 
-      // ==========================
-      // EMPRESAS
-      // ==========================
-
+      // Empresas
       {
         path: 'empresas',
         component: ListarEmpresasComponent
       },
-
       {
         path: 'empresas/crear',
         component: CrearEmpresaComponent
       },
-
       {
         path: 'empresas/editar/:id',
         component: EditarEmpresaComponent
       },
-
       {
         path: 'empresas/detalle/:id',
         component: DetalleEmpresaComponent
       },
-
       {
         path: 'empresas/:empresaId/dashboard',
         component: DashboardEmpresaComponent
       },
 
-      // ==========================
-      // USUARIOS DE EMPRESA
-      // ==========================
-
+      // Usuarios de empresa
       {
         path: 'empresas/:empresaId/usuarios/crear',
         component: CrearUsuarioEmpresaComponent
       },
-
       {
         path: 'empresas/:empresaId/usuarios/:usuarioId/editar-password',
         component: EditarPasswordAdminComponent
       },
 
-      // ==========================
-      // SUCURSALES DE EMPRESA
-      // ==========================
-
+      // Sucursales
       {
         path: 'empresas/:empresaId/sucursales/crear',
         component: CrearSucursalEmpresaComponent
       },
-
       {
         path: 'empresas/:empresaId/sucursales/detalle/:sucursalId',
         component: DetalleSucursalEmpresaComponent
       },
-
       {
         path: 'empresas/:empresaId/sucursales/editar/:sucursalId',
         component: EditarSucursalEmpresaComponent
       },
 
-      // ==========================
-      // USUARIOS DE SUCURSAL
-      // ==========================
-
+      // Usuarios de sucursal
       {
         path: 'empresas/:empresaId/sucursales/:sucursalId/usuarios/crear',
         component: CrearUsuarioSucursalComponent
       },
+      {
+        path: 'empresas/:empresaId/sucursales/:sucursalId/usuarios/:usuarioId/editar-password',
+        component: EditarUsuarioSucursalComponent
+      },
 
-      // ==========================
-      // PRODUCTOS DE EMPRESA
-      // ==========================
-
+      // Productos
       {
         path: 'empresas/:empresaId/productos',
         component: PanelProductosEmpresaComponent
       },
-
       {
         path: 'empresas/:empresaId/productos/crear',
         component: CrearProductoComponent
       },
-
       {
         path: 'empresas/:empresaId/productos/detalles/:tipo',
         component: PanelDetalleProductoComponent
       },
 
-      // ==========================
-      // INVENTARIO DE SUCURSAL
-      // ==========================
-
+      // Inventario
       {
         path: 'empresas/:empresaId/sucursales/:sucursalId/inventario',
         component: InventarioSucursalComponent
       },
-
       {
         path: 'empresas/:empresaId/sucursales/:sucursalId/inventario/ingresar',
         component: IngresarInventarioComponent
       },
-
       {
         path: 'empresas/:empresaId/sucursales/:sucursalId/inventario/ajustar',
         component: AjustarInventarioComponent
       },
-
       {
         path: 'empresas/:empresaId/sucursales/:sucursalId/inventario/resumen',
         component: ResumenInventarioComponent
       },
-
       {
         path: 'empresas/:empresaId/sucursales/:sucursalId/inventario/movimientos',
         component: MovimientosInventarioComponent
       },
-
       {
         path: 'empresas/:empresaId/sucursales/:sucursalId/inventario/panel',
         component: PanelInventarioSucursalComponent
       },
 
-      // ==========================
-      // VENTAS DE SUCURSAL
-      // ==========================
-
+      // Ventas
       {
         path: 'empresas/:empresaId/sucursales/:sucursalId/ventas/panel',
         component: PanelVentasSucursalComponent
       },
-
       {
         path: 'empresas/:empresaId/sucursales/:sucursalId/ventas/generar',
         component: GenerarVentaComponent
       },
-
       {
         path: 'empresas/:empresaId/sucursales/:sucursalId/ventas/consultar',
         component: ConsultarFacturaComponent
       },
-
       {
         path: 'empresas/:empresaId/sucursales/:sucursalId/ventas/devolucion',
         component: DevolucionVentaComponent
       },
-
       {
         path: 'empresas/:empresaId/sucursales/:sucursalId/ventas/informe',
         component: InformeVentasComponent
       },
 
-      // ==========================
-      // CLIENTES DE SUCURSAL
-      // ==========================
-
+      // Clientes
       {
         path: 'empresas/:empresaId/sucursales/:sucursalId/clientes/panel',
         component: PanelClientesSucursalComponent
       },
-
       {
         path: 'empresas/:empresaId/sucursales/:sucursalId/clientes/crear',
         component: CrearClienteComponent
       },
-
       {
         path: 'empresas/:empresaId/sucursales/:sucursalId/clientes/editar/:clienteId',
         component: EditarClienteComponent
       }
-
     ]
   },
 
+  // ==========================
+  // RUTA NO ENCONTRADA
+  // ==========================
   {
     path: '**',
-    redirectTo: 'super-admin/dashboard'
+    redirectTo: 'login'
   }
-
 ];

@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 
 import { environment } from '../../../../environments/environment';
 
-import { AuthTemporalService } from '../auth/auth-temporal.service';
+import { AuthService } from '../auth/auth.service';
 
 import {
   FacturaVentaEmpleadoDTO,
@@ -25,7 +25,7 @@ export class EmpleadoVentaService {
 
   constructor(
     private http: HttpClient,
-    private authTemporalService: AuthTemporalService
+    private authService: AuthService
   ) {}
 
   crearVenta(dto: CrearVentaDTO): Observable<FacturaVentaEmpleadoDTO> {
@@ -47,7 +47,18 @@ export class EmpleadoVentaService {
     );
   }
 
-  listarPorSucursal(sucursalId: number): Observable<VentaHistorialEmpleadoDTO[]> {
+  obtenerPorNumero(numeroVenta: string): Observable<FacturaVentaEmpleadoDTO> {
+    const params = this.obtenerUsuarioIdComoParam();
+
+    return this.http.get<FacturaVentaEmpleadoDTO>(
+      `${this.apiUrl}/numero/${numeroVenta}`,
+      { params }
+    );
+  }
+
+  listarPorSucursal(
+    sucursalId: number
+  ): Observable<VentaHistorialEmpleadoDTO[]> {
     const params = this.obtenerUsuarioIdComoParam();
 
     return this.http.get<VentaHistorialEmpleadoDTO[]>(
@@ -70,19 +81,15 @@ export class EmpleadoVentaService {
   }
 
   private obtenerUsuarioIdComoParam(): HttpParams {
+    const usuarioId = this.authService.obtenerUsuarioId();
+
+    if (!usuarioId) {
+      throw new Error('No se pudo identificar el usuario autenticado.');
+    }
+
     return new HttpParams().set(
       'usuarioId',
-      this.authTemporalService.obtenerUsuarioId()
-    );
-  }
-
-
-  obtenerPorNumero(numeroVenta: string): Observable<FacturaVentaEmpleadoDTO> {
-    const params = this.obtenerUsuarioIdComoParam();
-
-    return this.http.get<FacturaVentaEmpleadoDTO>(
-      `${this.apiUrl}/numero/${numeroVenta}`,
-      { params }
+      usuarioId.toString()
     );
   }
 }

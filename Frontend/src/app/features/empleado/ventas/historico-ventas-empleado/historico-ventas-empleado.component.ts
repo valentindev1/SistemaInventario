@@ -3,6 +3,7 @@ import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
+import { AuthService } from '../../../../core/services/auth/auth.service';
 import { EmpleadoVentaService } from '../../../../core/services/empleado/empleado-venta.service';
 
 import {
@@ -22,19 +23,15 @@ import {
 })
 export class HistoricoVentasEmpleadoComponent implements OnInit {
 
-
-
-
-
   tipoFiltroFecha: 'TODOS' | 'DIA' | 'MES' = 'TODOS';
 
   fechaDia = '';
   mesSeleccionado = '';
 
-
   @ViewChild('detalleVenta') detalleVentaRef?: ElementRef<HTMLDivElement>;
 
   sucursalId!: number;
+  empresaId!: number;
 
   ventas: VentaHistorialEmpleadoDTO[] = [];
   ventasFiltradas: VentaHistorialEmpleadoDTO[] = [];
@@ -57,26 +54,107 @@ export class HistoricoVentasEmpleadoComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
+    private authService: AuthService,
     private empleadoVentaService: EmpleadoVentaService
   ) {}
 
   ngOnInit(): void {
 
-    const sucursalIdParam = this.route.snapshot.paramMap.get('sucursalId');
+    const accesoValido = this.validarAccesoEmpleado();
 
-    if (!sucursalIdParam) {
-      this.mensajeError = 'No se pudo identificar la sucursal.';
-      return;
-    }
-
-    this.sucursalId = Number(sucursalIdParam);
-
-    if (!this.sucursalId) {
-      this.mensajeError = 'El identificador de la sucursal no es válido.';
+    if (!accesoValido) {
       return;
     }
 
     this.cargarHistorico();
+  }
+
+  private validarAccesoEmpleado(): boolean {
+
+    this.mensajeError = '';
+
+    if (!this.authService.estaAutenticado()) {
+      this.router.navigate(['/login']);
+      return false;
+    }
+
+    const rol = this.authService.obtenerRol();
+    const empresaIdUsuario = this.authService.obtenerEmpresaId();
+    const sucursalIdUsuario = this.authService.obtenerSucursalId();
+
+    if (!rol) {
+      this.router.navigate(['/login']);
+      return false;
+    }
+
+    if (rol !== 'EMPLEADO') {
+      this.router.navigate(['/acceso-denegado']);
+      return false;
+    }
+
+    if (!empresaIdUsuario || !sucursalIdUsuario) {
+      this.mensajeError = 'No se pudo identificar la empresa o sucursal del empleado.';
+      this.router.navigate(['/login']);
+      return false;
+    }
+
+    const sucursalIdParam = this.obtenerSucursalIdDesdeRuta();
+
+    if (!sucursalIdParam) {
+      this.router.navigate([
+        '/empleado',
+        'sucursal',
+        sucursalIdUsuario,
+        'ventas',
+        'historico'
+      ]);
+
+      return false;
+    }
+
+    const sucursalIdRuta = Number(sucursalIdParam);
+
+    if (
+      Number.isNaN(sucursalIdRuta) ||
+      sucursalIdRuta <= 0
+    ) {
+      this.router.navigate([
+        '/empleado',
+        'sucursal',
+        sucursalIdUsuario,
+        'ventas',
+        'historico'
+      ]);
+
+      return false;
+    }
+
+    if (sucursalIdRuta !== sucursalIdUsuario) {
+      this.router.navigate([
+        '/empleado',
+        'sucursal',
+        sucursalIdUsuario,
+        'ventas',
+        'historico'
+      ]);
+
+      return false;
+    }
+
+    this.empresaId = empresaIdUsuario;
+    this.sucursalId = sucursalIdUsuario;
+
+    return true;
+  }
+
+  private obtenerSucursalIdDesdeRuta(): string | null {
+    return (
+      this.route.snapshot.paramMap.get('sucursalId') ??
+      this.route.parent?.snapshot.paramMap.get('sucursalId') ??
+      this.route.parent?.parent?.snapshot.paramMap.get('sucursalId') ??
+      this.route.parent?.parent?.parent?.snapshot.paramMap.get('sucursalId') ??
+      null
+    );
   }
 
   cargarHistorico(): void {
@@ -100,10 +178,12 @@ export class HistoricoVentasEmpleadoComponent implements OnInit {
         error: (error) => {
           this.cargando = false;
 
-          this.mensajeError =
-            error?.error?.message ||
-            error?.error ||
-            'No se pudo cargar el histórico de ventas.';
+          this.mensajeError = this.obtenerMensajeError(
+            error,
+            'No se pudo cargar el historico de ventas.'
+          );
+
+          console.error(error);
         }
       });
   }
@@ -135,7 +215,6 @@ export class HistoricoVentasEmpleadoComponent implements OnInit {
     this.paginaActual = 1;
     this.actualizarTotalPaginas();
   }
-
 
   private validarFiltroFecha(fechaVenta: string): boolean {
 
@@ -180,8 +259,6 @@ export class HistoricoVentasEmpleadoComponent implements OnInit {
     return true;
   }
 
-
-
   limpiarFiltros(): void {
     this.filtro = '';
     this.estadoFiltro = '';
@@ -191,7 +268,6 @@ export class HistoricoVentasEmpleadoComponent implements OnInit {
 
     this.filtrarVentas();
   }
-
 
   cambiarTipoFiltroFecha(): void {
 
@@ -214,8 +290,8 @@ export class HistoricoVentasEmpleadoComponent implements OnInit {
 
     if (this.tipoFiltroFecha === 'DIA') {
       return this.fechaDia
-        ? `Día seleccionado: ${this.fechaDia}`
-        : 'Filtrando por día';
+        ? `Dia seleccionado: ${this.fechaDia}`
+        : 'Filtrando por dia';
     }
 
     if (this.tipoFiltroFecha === 'MES') {
@@ -227,9 +303,6 @@ export class HistoricoVentasEmpleadoComponent implements OnInit {
     return 'Todas las fechas';
   }
 
-
-
-
   verDetalleVenta(ventaId: number): void {
 
     this.cargandoDetalle = true;
@@ -239,6 +312,13 @@ export class HistoricoVentasEmpleadoComponent implements OnInit {
     this.empleadoVentaService.obtenerPorId(ventaId)
       .subscribe({
         next: (venta) => {
+
+          if (venta.sucursalId !== this.sucursalId) {
+            this.cargandoDetalle = false;
+            this.mensajeError = 'La venta no pertenece a esta sucursal.';
+            return;
+          }
+
           this.ventaSeleccionada = venta;
           this.cargandoDetalle = false;
 
@@ -252,10 +332,12 @@ export class HistoricoVentasEmpleadoComponent implements OnInit {
         error: (error) => {
           this.cargandoDetalle = false;
 
-          this.mensajeError =
-            error?.error?.message ||
-            error?.error ||
-            'No se pudo cargar el detalle de la venta.';
+          this.mensajeError = this.obtenerMensajeError(
+            error,
+            'No se pudo cargar el detalle de la venta.'
+          );
+
+          console.error(error);
         }
       });
   }
@@ -446,5 +528,26 @@ export class HistoricoVentasEmpleadoComponent implements OnInit {
       top: 0,
       behavior: 'smooth'
     });
+  }
+
+  private obtenerMensajeError(error: any, mensajeDefecto: string): string {
+
+    if (Array.isArray(error?.error?.errores)) {
+      return error.error.errores.join(', ');
+    }
+
+    if (typeof error?.error === 'string') {
+      return error.error;
+    }
+
+    if (error?.error?.message) {
+      return error.error.message;
+    }
+
+    if (error?.error?.error) {
+      return error.error.error;
+    }
+
+    return mensajeDefecto;
   }
 }

@@ -3,6 +3,7 @@ package com.vhela.inventario.controlador;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import com.vhela.inventario.dto.inventario.AjusteInventarioDTO;
@@ -17,9 +18,11 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("/api/inventario")
 @RequiredArgsConstructor
+@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
 public class InventarioControlador {
 
     private final InventarioServicio inventarioServicio;
+
 
     @PostMapping("/ingresos")
     public ResponseEntity<Void> ingresarMercancia(
@@ -50,6 +53,8 @@ public class InventarioControlador {
                 inventarioServicio.listarPorSucursal(usuarioId, sucursalId)
         );
     }
+
+
 
     @GetMapping("/sucursal/{sucursalId}/resumen")
     public ResponseEntity<ResumenInventarioSucursalDTO> obtenerResumenSucursal(

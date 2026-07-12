@@ -5,7 +5,7 @@
     <div class="sucursal-hero-content">
 
       <a
-        [routerLink]="['/super-admin/empresas/detalle', empresaId]"
+        [routerLink]="rutaDetalleEmpresa()"
         class="btn btn-back mb-3">
         <i class="bi bi-arrow-left me-2"></i>
         Volver al detalle de empresa
@@ -30,14 +30,14 @@
         <div class="hero-actions">
 
           <a
-            [routerLink]="['/super-admin/empresas', empresaId, 'sucursales', 'editar', sucursalId]"
+            [routerLink]="rutaEditarSucursal()"
             class="btn btn-hero-light">
             <i class="bi bi-pencil me-2"></i>
             Editar sucursal
           </a>
 
           <a
-            [routerLink]="['/super-admin/empresas', empresaId, 'sucursales', sucursalId, 'usuarios', 'crear']"
+            [routerLink]="rutaCrearEmpleado()"
             class="btn btn-hero-primary">
             <i class="bi bi-person-plus me-2"></i>
             Crear empleado
@@ -54,6 +54,12 @@
   <div *ngIf="mensajeError" class="alert alert-danger app-alert">
     <i class="bi bi-exclamation-triangle me-2"></i>
     {{ mensajeError }}
+  </div>
+
+  <!-- Exito -->
+  <div *ngIf="mensajeExito" class="alert alert-success app-alert">
+    <i class="bi bi-check-circle me-2"></i>
+    {{ mensajeExito }}
   </div>
 
   <!-- Cargando -->
@@ -224,7 +230,7 @@
             </div>
 
             <a
-              [routerLink]="['/super-admin/empresas', empresaId, 'sucursales', sucursalId, 'usuarios', 'crear']"
+              [routerLink]="rutaCrearEmpleado()"
               class="btn btn-option btn-option-primary w-100">
               <i class="bi bi-person-plus me-2"></i>
               Ingresar
@@ -253,14 +259,7 @@
 
             <a
               class="btn btn-option btn-option-success w-100"
-              [routerLink]="[
-                '/super-admin/empresas',
-                empresaId,
-                'sucursales',
-                sucursalId,
-                'inventario',
-                'panel'
-              ]">
+              [routerLink]="rutaInventario()">
               <i class="bi bi-box-arrow-in-right me-2"></i>
               Ingresar
             </a>
@@ -288,14 +287,7 @@
 
             <a
               class="btn btn-option btn-option-warning w-100"
-              [routerLink]="[
-                '/super-admin/empresas',
-                empresaId,
-                'sucursales',
-                sucursalId,
-                'ventas',
-                'panel'
-              ]">
+              [routerLink]="rutaVentas()">
               <i class="bi bi-cart-check me-2"></i>
               Ingresar
             </a>
@@ -323,14 +315,7 @@
 
             <a
               class="btn btn-option btn-option-info w-100"
-              [routerLink]="[
-                '/super-admin/empresas',
-                empresaId,
-                'sucursales',
-                sucursalId,
-                'clientes',
-                'panel'
-              ]">
+              [routerLink]="rutaClientes()">
               <i class="bi bi-people me-2"></i>
               Ingresar
             </a>

@@ -4,9 +4,10 @@ import { Observable } from 'rxjs';
 
 import { environment } from '../../../../environments/environment';
 
-import { AuthTemporalService } from '../auth/auth-temporal.service';
+import { AuthService } from '../auth/auth.service';
 
 import {
+  InventarioEmpleadoDTO,
   MovimientoInventarioEmpleadoDTO
 } from '../../models/inventario/inventario.model';
 
@@ -19,8 +20,19 @@ export class EmpleadoInventarioService {
 
   constructor(
     private http: HttpClient,
-    private authTemporalService: AuthTemporalService
+    private authService: AuthService
   ) {}
+
+  listarInventarioPorSucursal(
+    sucursalId: number
+  ): Observable<InventarioEmpleadoDTO[]> {
+    const params = this.obtenerUsuarioIdComoParam();
+
+    return this.http.get<InventarioEmpleadoDTO[]>(
+      `${this.apiUrl}/sucursal/${sucursalId}`,
+      { params }
+    );
+  }
 
   listarMovimientosPorSucursal(
     sucursalId: number
@@ -34,9 +46,15 @@ export class EmpleadoInventarioService {
   }
 
   private obtenerUsuarioIdComoParam(): HttpParams {
+    const usuarioId = this.authService.obtenerUsuarioId();
+
+    if (!usuarioId) {
+      throw new Error('No se pudo identificar el usuario autenticado.');
+    }
+
     return new HttpParams().set(
       'usuarioId',
-      this.authTemporalService.obtenerUsuarioId()
+      usuarioId.toString()
     );
   }
 }

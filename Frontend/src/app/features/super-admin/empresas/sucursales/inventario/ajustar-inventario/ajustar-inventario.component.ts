@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { InventarioService } from '../../../../../../core/services/inventario/inventario.service';
+import { AuthService } from '../../../../../../core/services/auth/auth.service';
 
 import {
   AjusteInventarioDTO,
@@ -38,7 +39,6 @@ export class AjustarInventarioComponent implements OnInit {
   mensajeExito = '';
   mensajeError = '';
 
-  // PAGINACIÓN
   paginaActual = 1;
   registrosPorPagina = 20;
 
@@ -47,37 +47,114 @@ export class AjustarInventarioComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private inventarioService: InventarioService
+    private inventarioService: InventarioService,
+    private authService: AuthService
   ) {}
 
   ngOnInit(): void {
-
-    const empresaIdParam =
-      this.route.snapshot.paramMap.get('empresaId');
-
-    const sucursalIdParam =
-      this.route.snapshot.paramMap.get('sucursalId');
+    const empresaIdParam = this.obtenerEmpresaIdDesdeRuta();
+    const sucursalIdParam = this.obtenerSucursalIdDesdeRuta();
 
     if (!empresaIdParam || !sucursalIdParam) {
-      this.mensajeError =
-        'No se pudo identificar la empresa o la sucursal.';
+      this.mensajeError = 'No se pudo identificar la empresa o la sucursal.';
       return;
     }
 
     this.empresaId = Number(empresaIdParam);
     this.sucursalId = Number(sucursalIdParam);
 
-    if (!this.empresaId || !this.sucursalId) {
-      this.mensajeError =
-        'Los identificadores de empresa o sucursal no son válidos.';
+    if (
+      Number.isNaN(this.empresaId) ||
+      Number.isNaN(this.sucursalId) ||
+      this.empresaId <= 0 ||
+      this.sucursalId <= 0
+    ) {
+      this.mensajeError = 'Los identificadores de empresa o sucursal no son válidos.';
+      return;
+    }
+
+    if (!this.validarAccesoLocal()) {
       return;
     }
 
     this.cargarInventario();
   }
 
-  cargarInventario(): void {
+  private obtenerEmpresaIdDesdeRuta(): string | null {
+    return (
+      this.route.snapshot.paramMap.get('empresaId') ??
+      this.route.parent?.snapshot.paramMap.get('empresaId') ??
+      this.route.parent?.parent?.snapshot.paramMap.get('empresaId') ??
+      null
+    );
+  }
 
+  private obtenerSucursalIdDesdeRuta(): string | null {
+    return (
+      this.route.snapshot.paramMap.get('sucursalId') ??
+      this.route.parent?.snapshot.paramMap.get('sucursalId') ??
+      this.route.parent?.parent?.snapshot.paramMap.get('sucursalId') ??
+      null
+    );
+  }
+
+  private obtenerRolNormalizado(): string | null {
+    const rol = this.authService.obtenerRol();
+
+    if (!rol) {
+      return null;
+    }
+
+    return rol.replace('ROLE_', '');
+  }
+
+  private validarAccesoLocal(): boolean {
+    const rol = this.obtenerRolNormalizado();
+    const empresaIdUsuario = this.authService.obtenerEmpresaId();
+
+    if (rol === 'SUPER_ADMIN') {
+      return true;
+    }
+
+    if (rol === 'ADMIN' && empresaIdUsuario === this.empresaId) {
+      return true;
+    }
+
+    this.router.navigate(['/acceso-denegado']);
+    return false;
+  }
+
+  esSuperAdmin(): boolean {
+    return this.obtenerRolNormalizado() === 'SUPER_ADMIN';
+  }
+
+  esAdmin(): boolean {
+    return this.obtenerRolNormalizado() === 'ADMIN';
+  }
+
+  rutaPanelInventario(): any[] {
+    if (this.esSuperAdmin()) {
+      return [
+        '/super-admin/empresas',
+        this.empresaId,
+        'sucursales',
+        this.sucursalId,
+        'inventario',
+        'panel'
+      ];
+    }
+
+    return [
+      '/admin/empresa',
+      this.empresaId,
+      'sucursales',
+      this.sucursalId,
+      'inventario',
+      'panel'
+    ];
+  }
+
+  cargarInventario(): void {
     this.cargandoInventario = true;
     this.mensajeError = '';
 
@@ -85,28 +162,24 @@ export class AjustarInventarioComponent implements OnInit {
       .listarPorSucursal(this.sucursalId)
       .subscribe({
         next: (data) => {
-
           this.inventario = data || [];
-
-          // Reiniciar a la primera página cada vez que se recarga el inventario
           this.paginaActual = 1;
-
           this.cargandoInventario = false;
         },
         error: (error) => {
-
           this.cargandoInventario = false;
 
           this.mensajeError =
             error?.error?.message ||
             error?.error ||
             'No se pudo cargar el inventario de la sucursal.';
+
+          console.error(error);
         }
       });
   }
 
   get inventarioPaginado(): InventarioAdminDTO[] {
-
     const inicio =
       (this.paginaActual - 1) * this.registrosPorPagina;
 
@@ -117,14 +190,14 @@ export class AjustarInventarioComponent implements OnInit {
   }
 
   get totalPaginas(): number {
-
-    return Math.ceil(
+    const total = Math.ceil(
       this.inventario.length / this.registrosPorPagina
     );
+
+    return total > 0 ? total : 1;
   }
 
   cambiarPagina(pagina: number): void {
-
     if (
       pagina < 1 ||
       pagina > this.totalPaginas
@@ -136,7 +209,6 @@ export class AjustarInventarioComponent implements OnInit {
   }
 
   obtenerProductoSeleccionado(): InventarioAdminDTO | undefined {
-
     if (!this.productoSeleccionadoId) {
       return undefined;
     }
@@ -148,7 +220,6 @@ export class AjustarInventarioComponent implements OnInit {
   }
 
   calcularStockResultado(): number | null {
-
     const producto = this.obtenerProductoSeleccionado();
 
     if (!producto) {
@@ -160,7 +231,6 @@ export class AjustarInventarioComponent implements OnInit {
   }
 
   obtenerTipoAjuste(): string {
-
     if (this.cantidadAjuste > 0) {
       return 'Ajuste positivo';
     }
@@ -173,7 +243,6 @@ export class AjustarInventarioComponent implements OnInit {
   }
 
   obtenerClaseTipoAjuste(): string {
-
     if (this.cantidadAjuste > 0) {
       return 'badge bg-success';
     }
@@ -186,21 +255,18 @@ export class AjustarInventarioComponent implements OnInit {
   }
 
   realizarAjuste(): void {
-
     this.mensajeError = '';
     this.mensajeExito = '';
 
     const producto = this.obtenerProductoSeleccionado();
 
     if (!producto) {
-      this.mensajeError =
-        'Debe seleccionar un producto.';
+      this.mensajeError = 'Debe seleccionar un producto.';
       return;
     }
 
-    if (this.cantidadAjuste === 0) {
-      this.mensajeError =
-        'La cantidad del ajuste no puede ser cero.';
+    if (Number(this.cantidadAjuste) === 0) {
+      this.mensajeError = 'La cantidad del ajuste no puede ser cero.';
       return;
     }
 
@@ -215,8 +281,7 @@ export class AjustarInventarioComponent implements OnInit {
     }
 
     if (!this.motivo || !this.motivo.trim()) {
-      this.mensajeError =
-        'Debe ingresar un motivo para el ajuste.';
+      this.mensajeError = 'Debe ingresar un motivo para el ajuste.';
       return;
     }
 
@@ -233,7 +298,6 @@ export class AjustarInventarioComponent implements OnInit {
       .ajustarInventario(dto)
       .subscribe({
         next: () => {
-
           this.guardando = false;
 
           this.mensajeExito =
@@ -244,33 +308,25 @@ export class AjustarInventarioComponent implements OnInit {
           this.cargarInventario();
         },
         error: (error) => {
-
           this.guardando = false;
 
           this.mensajeError =
             error?.error?.message ||
             error?.error ||
             'No se pudo registrar el ajuste de inventario.';
+
+          console.error(error);
         }
       });
   }
 
   limpiarFormulario(): void {
-
     this.productoSeleccionadoId = '';
     this.cantidadAjuste = 0;
     this.motivo = '';
   }
 
   volverAlPanel(): void {
-
-    this.router.navigate([
-      '/super-admin/empresas',
-      this.empresaId,
-      'sucursales',
-      this.sucursalId,
-      'inventario',
-      'panel'
-    ]);
+    this.router.navigate(this.rutaPanelInventario());
   }
 }

@@ -2,9 +2,12 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+
 import Swal from 'sweetalert2';
 
 import { ClienteService } from '../../../../../../core/services/cliente/cliente.service';
+import { AuthService } from '../../../../../../core/services/auth/auth.service';
+
 import { ClienteObtenerDTO } from '../../../../../../core/models/cliente/cliente.model';
 
 @Component({
@@ -34,7 +37,6 @@ export class PanelClientesSucursalComponent implements OnInit {
   mensajeError = '';
   mensajeExito = '';
 
-  // PAGINACIÓN
   paginaActual = 1;
   registrosPorPagina = 20;
 
@@ -43,13 +45,13 @@ export class PanelClientesSucursalComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private clienteService: ClienteService
+    private clienteService: ClienteService,
+    private authService: AuthService
   ) {}
 
   ngOnInit(): void {
-
-    const empresaIdParam = this.route.snapshot.paramMap.get('empresaId');
-    const sucursalIdParam = this.route.snapshot.paramMap.get('sucursalId');
+    const empresaIdParam = this.obtenerEmpresaIdDesdeRuta();
+    const sucursalIdParam = this.obtenerSucursalIdDesdeRuta();
 
     if (!empresaIdParam || !sucursalIdParam) {
       this.mensajeError = 'Parámetros no válidos';
@@ -59,18 +61,138 @@ export class PanelClientesSucursalComponent implements OnInit {
     this.empresaId = Number(empresaIdParam);
     this.sucursalId = Number(sucursalIdParam);
 
+    if (
+      Number.isNaN(this.empresaId) ||
+      Number.isNaN(this.sucursalId) ||
+      this.empresaId <= 0 ||
+      this.sucursalId <= 0
+    ) {
+      this.mensajeError = 'Parámetros no válidos';
+      return;
+    }
+
+    if (!this.validarAccesoLocal()) {
+      return;
+    }
+
     this.cargarClientes();
   }
 
-  cargarClientes(): void {
+  private obtenerEmpresaIdDesdeRuta(): string | null {
+    return (
+      this.route.snapshot.paramMap.get('empresaId') ??
+      this.route.parent?.snapshot.paramMap.get('empresaId') ??
+      this.route.parent?.parent?.snapshot.paramMap.get('empresaId') ??
+      null
+    );
+  }
 
+  private obtenerSucursalIdDesdeRuta(): string | null {
+    return (
+      this.route.snapshot.paramMap.get('sucursalId') ??
+      this.route.parent?.snapshot.paramMap.get('sucursalId') ??
+      this.route.parent?.parent?.snapshot.paramMap.get('sucursalId') ??
+      null
+    );
+  }
+
+  private validarAccesoLocal(): boolean {
+    const rol = this.authService.obtenerRol();
+    const empresaIdUsuario = this.authService.obtenerEmpresaId();
+
+    if (rol === 'SUPER_ADMIN') {
+      return true;
+    }
+
+    if (rol === 'ADMIN' && empresaIdUsuario === this.empresaId) {
+      return true;
+    }
+
+    this.router.navigate(['/acceso-denegado']);
+    return false;
+  }
+
+  esSuperAdmin(): boolean {
+    return this.authService.obtenerRol() === 'SUPER_ADMIN';
+  }
+
+  esAdmin(): boolean {
+    return this.authService.obtenerRol() === 'ADMIN';
+  }
+
+  rutaDetalleSucursal(): any[] {
+    if (this.esSuperAdmin()) {
+      return [
+        '/super-admin/empresas',
+        this.empresaId,
+        'sucursales',
+        'detalle',
+        this.sucursalId
+      ];
+    }
+
+    return [
+      '/admin/empresa',
+      this.empresaId,
+      'sucursales',
+      'detalle',
+      this.sucursalId
+    ];
+  }
+
+  rutaCrearCliente(): any[] {
+    if (this.esSuperAdmin()) {
+      return [
+        '/super-admin/empresas',
+        this.empresaId,
+        'sucursales',
+        this.sucursalId,
+        'clientes',
+        'crear'
+      ];
+    }
+
+    return [
+      '/admin/empresa',
+      this.empresaId,
+      'sucursales',
+      this.sucursalId,
+      'clientes',
+      'crear'
+    ];
+  }
+
+  rutaEditarCliente(clienteId: number): any[] {
+    if (this.esSuperAdmin()) {
+      return [
+        '/super-admin/empresas',
+        this.empresaId,
+        'sucursales',
+        this.sucursalId,
+        'clientes',
+        'editar',
+        clienteId
+      ];
+    }
+
+    return [
+      '/admin/empresa',
+      this.empresaId,
+      'sucursales',
+      this.sucursalId,
+      'clientes',
+      'editar',
+      clienteId
+    ];
+  }
+
+  cargarClientes(): void {
     this.cargando = true;
     this.mensajeError = '';
     this.mensajeExito = '';
 
     this.clienteService.listar().subscribe({
       next: (clientes) => {
-
         this.clientes = clientes || [];
         this.clientesFiltrados = clientes || [];
 
@@ -78,7 +200,6 @@ export class PanelClientesSucursalComponent implements OnInit {
         this.cargando = false;
       },
       error: (error) => {
-
         this.cargando = false;
         this.mensajeError = 'No se pudieron cargar los clientes';
 
@@ -88,29 +209,20 @@ export class PanelClientesSucursalComponent implements OnInit {
   }
 
   get clientesPaginados(): ClienteObtenerDTO[] {
-
-    const inicio =
-      (this.paginaActual - 1) * this.registrosPorPagina;
-
-    const fin =
-      inicio + this.registrosPorPagina;
+    const inicio = (this.paginaActual - 1) * this.registrosPorPagina;
+    const fin = inicio + this.registrosPorPagina;
 
     return this.clientesFiltrados.slice(inicio, fin);
   }
 
   get totalPaginas(): number {
-
     return Math.ceil(
       this.clientesFiltrados.length / this.registrosPorPagina
     );
   }
 
   cambiarPagina(pagina: number): void {
-
-    if (
-      pagina < 1 ||
-      pagina > this.totalPaginas
-    ) {
+    if (pagina < 1 || pagina > this.totalPaginas) {
       return;
     }
 
@@ -118,7 +230,6 @@ export class PanelClientesSucursalComponent implements OnInit {
   }
 
   buscarPorDocumento(): void {
-
     const documento = this.numeroDocumentoBusqueda.trim();
 
     this.mensajeError = '';
@@ -134,13 +245,11 @@ export class PanelClientesSucursalComponent implements OnInit {
 
     this.clienteService.obtenerPorDocumento(documento).subscribe({
       next: (cliente) => {
-
         this.clientesFiltrados = [cliente];
         this.paginaActual = 1;
         this.buscando = false;
       },
       error: (error) => {
-
         this.clientesFiltrados = [];
         this.paginaActual = 1;
         this.buscando = false;
@@ -152,7 +261,6 @@ export class PanelClientesSucursalComponent implements OnInit {
   }
 
   limpiarBusqueda(): void {
-
     this.numeroDocumentoBusqueda = '';
     this.mensajeError = '';
     this.mensajeExito = '';
@@ -161,7 +269,6 @@ export class PanelClientesSucursalComponent implements OnInit {
   }
 
   editarCliente(cliente: ClienteObtenerDTO): void {
-
     if (cliente.puedeModificar === false) {
       Swal.fire({
         icon: 'warning',
@@ -174,19 +281,12 @@ export class PanelClientesSucursalComponent implements OnInit {
       return;
     }
 
-    this.router.navigate([
-      '/super-admin/empresas',
-      this.empresaId,
-      'sucursales',
-      this.sucursalId,
-      'clientes',
-      'editar',
-      cliente.id
-    ]);
+    this.router.navigate(
+      this.rutaEditarCliente(cliente.id)
+    );
   }
 
   eliminarCliente(cliente: ClienteObtenerDTO): void {
-
     if (cliente.puedeModificar === false) {
       Swal.fire({
         icon: 'warning',
@@ -208,20 +308,19 @@ export class PanelClientesSucursalComponent implements OnInit {
       cancelButtonText: 'Cancelar',
       confirmButtonColor: '#dc3545'
     }).then((result) => {
-
       if (result.isConfirmed) {
-
         this.mensajeError = '';
         this.mensajeExito = '';
 
         this.clienteService.eliminar(cliente.id).subscribe({
           next: () => {
+            this.clientes = this.clientes.filter(
+              item => item.id !== cliente.id
+            );
 
-            this.clientes =
-              this.clientes.filter(item => item.id !== cliente.id);
-
-            this.clientesFiltrados =
-              this.clientesFiltrados.filter(item => item.id !== cliente.id);
+            this.clientesFiltrados = this.clientesFiltrados.filter(
+              item => item.id !== cliente.id
+            );
 
             if (
               this.paginaActual > this.totalPaginas &&
@@ -243,7 +342,6 @@ export class PanelClientesSucursalComponent implements OnInit {
             });
           },
           error: (error) => {
-
             this.mensajeError =
               error?.error?.message ||
               error?.error ||

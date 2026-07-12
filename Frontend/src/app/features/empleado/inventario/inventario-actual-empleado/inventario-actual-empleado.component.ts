@@ -3,7 +3,9 @@ import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
-import { InventarioService } from '../../../../core/services/inventario/inventario.service';
+import { AuthService } from '../../../../core/services/auth/auth.service';
+import { EmpleadoInventarioService } from '../../../../core/services/empleado/empleado-inventario.service';
+
 import { InventarioEmpleadoDTO } from '../../../../core/models/inventario/inventario.model';
 
 @Component({
@@ -19,6 +21,7 @@ import { InventarioEmpleadoDTO } from '../../../../core/models/inventario/invent
 export class InventarioActualEmpleadoComponent implements OnInit {
 
   sucursalId!: number;
+  empresaId!: number;
 
   inventario: InventarioEmpleadoDTO[] = [];
   inventarioFiltrado: InventarioEmpleadoDTO[] = [];
@@ -38,26 +41,107 @@ export class InventarioActualEmpleadoComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private inventarioService: InventarioService
+    private authService: AuthService,
+    private empleadoInventarioService: EmpleadoInventarioService
   ) {}
 
   ngOnInit(): void {
 
-    const sucursalIdParam = this.route.snapshot.paramMap.get('sucursalId');
+    const accesoValido = this.validarAccesoEmpleado();
 
-    if (!sucursalIdParam) {
-      this.mensajeError = 'No se pudo identificar la sucursal.';
-      return;
-    }
-
-    this.sucursalId = Number(sucursalIdParam);
-
-    if (!this.sucursalId) {
-      this.mensajeError = 'El identificador de la sucursal no es válido.';
+    if (!accesoValido) {
       return;
     }
 
     this.cargarInventario();
+  }
+
+  private validarAccesoEmpleado(): boolean {
+
+    this.mensajeError = '';
+
+    if (!this.authService.estaAutenticado()) {
+      this.router.navigate(['/login']);
+      return false;
+    }
+
+    const rol = this.authService.obtenerRol();
+    const empresaIdUsuario = this.authService.obtenerEmpresaId();
+    const sucursalIdUsuario = this.authService.obtenerSucursalId();
+
+    if (!rol) {
+      this.router.navigate(['/login']);
+      return false;
+    }
+
+    if (rol !== 'EMPLEADO') {
+      this.router.navigate(['/acceso-denegado']);
+      return false;
+    }
+
+    if (!empresaIdUsuario || !sucursalIdUsuario) {
+      this.mensajeError = 'No se pudo identificar la empresa o sucursal del empleado.';
+      this.router.navigate(['/login']);
+      return false;
+    }
+
+    const sucursalIdParam = this.obtenerSucursalIdDesdeRuta();
+
+    if (!sucursalIdParam) {
+      this.router.navigate([
+        '/empleado',
+        'sucursal',
+        sucursalIdUsuario,
+        'inventario',
+        'actual'
+      ]);
+
+      return false;
+    }
+
+    const sucursalIdRuta = Number(sucursalIdParam);
+
+    if (
+      Number.isNaN(sucursalIdRuta) ||
+      sucursalIdRuta <= 0
+    ) {
+      this.router.navigate([
+        '/empleado',
+        'sucursal',
+        sucursalIdUsuario,
+        'inventario',
+        'actual'
+      ]);
+
+      return false;
+    }
+
+    if (sucursalIdRuta !== sucursalIdUsuario) {
+      this.router.navigate([
+        '/empleado',
+        'sucursal',
+        sucursalIdUsuario,
+        'inventario',
+        'actual'
+      ]);
+
+      return false;
+    }
+
+    this.empresaId = empresaIdUsuario;
+    this.sucursalId = sucursalIdUsuario;
+
+    return true;
+  }
+
+  private obtenerSucursalIdDesdeRuta(): string | null {
+    return (
+      this.route.snapshot.paramMap.get('sucursalId') ??
+      this.route.parent?.snapshot.paramMap.get('sucursalId') ??
+      this.route.parent?.parent?.snapshot.paramMap.get('sucursalId') ??
+      this.route.parent?.parent?.parent?.snapshot.paramMap.get('sucursalId') ??
+      null
+    );
   }
 
   cargarInventario(): void {
@@ -66,10 +150,10 @@ export class InventarioActualEmpleadoComponent implements OnInit {
     this.mensajeError = '';
     this.mensajeExito = '';
 
-    this.inventarioService.listarPorSucursal(this.sucursalId)
+    this.empleadoInventarioService.listarInventarioPorSucursal(this.sucursalId)
       .subscribe({
         next: (data) => {
-          this.inventario = (data || []) as InventarioEmpleadoDTO[];
+          this.inventario = data || [];
           this.inventarioFiltrado = [...this.inventario];
 
           this.paginaActual = 1;
@@ -80,10 +164,12 @@ export class InventarioActualEmpleadoComponent implements OnInit {
         error: (error) => {
           this.cargando = false;
 
-          this.mensajeError =
-            error?.error?.message ||
-            error?.error ||
-            'No se pudo cargar el inventario de la sucursal.';
+          this.mensajeError = this.obtenerMensajeError(
+            error,
+            'No se pudo cargar el inventario de la sucursal.'
+          );
+
+          console.error(error);
         }
       });
   }
@@ -283,5 +369,26 @@ export class InventarioActualEmpleadoComponent implements OnInit {
       top: 0,
       behavior: 'smooth'
     });
+  }
+
+  private obtenerMensajeError(error: any, mensajeDefecto: string): string {
+
+    if (Array.isArray(error?.error?.errores)) {
+      return error.error.errores.join(', ');
+    }
+
+    if (typeof error?.error === 'string') {
+      return error.error;
+    }
+
+    if (error?.error?.message) {
+      return error.error.message;
+    }
+
+    if (error?.error?.error) {
+      return error.error.error;
+    }
+
+    return mensajeDefecto;
   }
 }

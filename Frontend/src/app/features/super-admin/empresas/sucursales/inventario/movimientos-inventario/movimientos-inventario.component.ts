@@ -4,6 +4,8 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 
 import { InventarioService } from '../../../../../../core/services/inventario/inventario.service';
+import { AuthService } from '../../../../../../core/services/auth/auth.service';
+
 import { MovimientoInventarioDTO } from '../../../../../../core/models/inventario/inventario.model';
 
 type TipoFiltroFecha = 'TODOS' | 'DIA' | 'MES' | 'RANGO';
@@ -50,19 +52,115 @@ export class MovimientosInventarioComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private inventarioService: InventarioService
+    private inventarioService: InventarioService,
+    private authService: AuthService
   ) {}
 
   ngOnInit(): void {
-    this.empresaId = Number(this.route.snapshot.paramMap.get('empresaId'));
-    this.sucursalId = Number(this.route.snapshot.paramMap.get('sucursalId'));
+    const empresaIdParam = this.obtenerEmpresaIdDesdeRuta();
+    const sucursalIdParam = this.obtenerSucursalIdDesdeRuta();
 
-    if (!this.empresaId || !this.sucursalId) {
+    if (!empresaIdParam || !sucursalIdParam) {
       this.mensajeError = 'No se pudo identificar la empresa o la sucursal.';
       return;
     }
 
+    this.empresaId = Number(empresaIdParam);
+    this.sucursalId = Number(sucursalIdParam);
+
+    if (
+      Number.isNaN(this.empresaId) ||
+      Number.isNaN(this.sucursalId) ||
+      this.empresaId <= 0 ||
+      this.sucursalId <= 0
+    ) {
+      this.mensajeError = 'Los identificadores de empresa o sucursal no son válidos.';
+      return;
+    }
+
+    if (!this.validarAccesoLocal()) {
+      return;
+    }
+
     this.cargarMovimientos();
+  }
+
+  private obtenerEmpresaIdDesdeRuta(): string | null {
+    return (
+      this.route.snapshot.paramMap.get('empresaId') ??
+      this.route.parent?.snapshot.paramMap.get('empresaId') ??
+      this.route.parent?.parent?.snapshot.paramMap.get('empresaId') ??
+      null
+    );
+  }
+
+  private obtenerSucursalIdDesdeRuta(): string | null {
+    return (
+      this.route.snapshot.paramMap.get('sucursalId') ??
+      this.route.parent?.snapshot.paramMap.get('sucursalId') ??
+      this.route.parent?.parent?.snapshot.paramMap.get('sucursalId') ??
+      null
+    );
+  }
+
+  private obtenerRolNormalizado(): string | null {
+    const rol = this.authService.obtenerRol();
+
+    if (!rol) {
+      return null;
+    }
+
+    return rol.replace('ROLE_', '');
+  }
+
+  private validarAccesoLocal(): boolean {
+    const rol = this.obtenerRolNormalizado();
+    const empresaIdUsuario = this.authService.obtenerEmpresaId();
+
+    if (rol === 'SUPER_ADMIN') {
+      return true;
+    }
+
+    if (rol === 'ADMIN' && empresaIdUsuario === this.empresaId) {
+      return true;
+    }
+
+    this.router.navigate(['/acceso-denegado']);
+    return false;
+  }
+
+  esSuperAdmin(): boolean {
+    return this.obtenerRolNormalizado() === 'SUPER_ADMIN';
+  }
+
+  esAdmin(): boolean {
+    return this.obtenerRolNormalizado() === 'ADMIN';
+  }
+
+  rutaPanelInventario(): any[] {
+    if (this.esSuperAdmin()) {
+      return [
+        '/super-admin/empresas',
+        this.empresaId,
+        'sucursales',
+        this.sucursalId,
+        'inventario',
+        'panel'
+      ];
+    }
+
+    return [
+      '/admin/empresa',
+      this.empresaId,
+      'sucursales',
+      this.sucursalId,
+      'inventario',
+      'panel'
+    ];
+  }
+
+  volverAlPanel(): void {
+    this.router.navigate(this.rutaPanelInventario());
   }
 
   cargarMovimientos(): void {
@@ -72,7 +170,7 @@ export class MovimientosInventarioComponent implements OnInit {
     this.inventarioService.listarMovimientosPorSucursal(this.sucursalId)
       .subscribe({
         next: (data) => {
-          this.movimientos = data.sort((a, b) => {
+          this.movimientos = (data || []).sort((a, b) => {
             const fechaA = new Date(a.fecha).getTime();
             const fechaB = new Date(b.fecha).getTime();
 
@@ -91,6 +189,8 @@ export class MovimientosInventarioComponent implements OnInit {
             error?.error?.message ||
             error?.error ||
             'No se pudieron cargar los movimientos del inventario.';
+
+          console.error(error);
         }
       });
   }
@@ -222,7 +322,9 @@ export class MovimientosInventarioComponent implements OnInit {
   }
 
   calcularPaginacion(): void {
-    this.totalPaginas = Math.ceil(this.movimientosFiltrados.length / this.tamanioPagina);
+    this.totalPaginas = Math.ceil(
+      this.movimientosFiltrados.length / this.tamanioPagina
+    );
 
     if (this.totalPaginas === 0) {
       this.totalPaginas = 1;
@@ -241,17 +343,6 @@ export class MovimientosInventarioComponent implements OnInit {
 
     this.paginaActual = pagina;
     this.calcularPaginacion();
-  }
-
-  volverAlPanel(): void {
-    this.router.navigate([
-      '/super-admin/empresas',
-      this.empresaId,
-      'sucursales',
-      this.sucursalId,
-      'inventario',
-      'panel'
-    ]);
   }
 
   obtenerTextoTipo(tipo: string): string {
@@ -317,19 +408,27 @@ export class MovimientosInventarioComponent implements OnInit {
   }
 
   contarIngresos(): number {
-    return this.movimientosFiltrados.filter(m => m.tipo === 'INGRESO_MERCANCIA').length;
+    return this.movimientosFiltrados.filter(
+      movimiento => movimiento.tipo === 'INGRESO_MERCANCIA'
+    ).length;
   }
 
   contarAjustesPositivos(): number {
-    return this.movimientosFiltrados.filter(m => m.tipo === 'AJUSTE_POSITIVO').length;
+    return this.movimientosFiltrados.filter(
+      movimiento => movimiento.tipo === 'AJUSTE_POSITIVO'
+    ).length;
   }
 
   contarAjustesNegativos(): number {
-    return this.movimientosFiltrados.filter(m => m.tipo === 'AJUSTE_NEGATIVO').length;
+    return this.movimientosFiltrados.filter(
+      movimiento => movimiento.tipo === 'AJUSTE_NEGATIVO'
+    ).length;
   }
 
   contarVentas(): number {
-    return this.movimientosFiltrados.filter(m => m.tipo === 'VENTA').length;
+    return this.movimientosFiltrados.filter(
+      movimiento => movimiento.tipo === 'VENTA'
+    ).length;
   }
 
   private obtenerUsuariosUnicos(movimientos: MovimientoInventarioDTO[]): string[] {

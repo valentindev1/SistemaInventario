@@ -3,8 +3,11 @@ import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
-import { VentaService } from '../../../../../../core/services/venta/venta.service';
 import Swal from 'sweetalert2';
+
+import { VentaService } from '../../../../../../core/services/venta/venta.service';
+import { AuthService } from '../../../../../../core/services/auth/auth.service';
+
 import {
   EstadoFactura,
   FacturaVentaDTO
@@ -44,16 +47,19 @@ export class ConsultarFacturaComponent implements OnInit {
   paginaActual = 1;
   tamanioPagina = 20;
   totalPaginas = 0;
+
   cancelando = false;
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private ventaService: VentaService
+    private ventaService: VentaService,
+    private authService: AuthService
   ) {}
 
   ngOnInit(): void {
-    const empresaIdParam = this.route.snapshot.paramMap.get('empresaId');
-    const sucursalIdParam = this.route.snapshot.paramMap.get('sucursalId');
+    const empresaIdParam = this.obtenerEmpresaIdDesdeRuta();
+    const sucursalIdParam = this.obtenerSucursalIdDesdeRuta();
 
     if (!empresaIdParam || !sucursalIdParam) {
       this.mensajeError = 'No se pudo identificar la empresa o la sucursal.';
@@ -63,12 +69,95 @@ export class ConsultarFacturaComponent implements OnInit {
     this.empresaId = Number(empresaIdParam);
     this.sucursalId = Number(sucursalIdParam);
 
-    if (!this.empresaId || !this.sucursalId) {
+    if (
+      Number.isNaN(this.empresaId) ||
+      Number.isNaN(this.sucursalId) ||
+      this.empresaId <= 0 ||
+      this.sucursalId <= 0
+    ) {
       this.mensajeError = 'Los identificadores de empresa o sucursal no son válidos.';
       return;
     }
 
+    if (!this.validarAccesoLocal()) {
+      return;
+    }
+
     this.cargarFacturasSucursal();
+  }
+
+  private obtenerEmpresaIdDesdeRuta(): string | null {
+    return (
+      this.route.snapshot.paramMap.get('empresaId') ??
+      this.route.parent?.snapshot.paramMap.get('empresaId') ??
+      this.route.parent?.parent?.snapshot.paramMap.get('empresaId') ??
+      null
+    );
+  }
+
+  private obtenerSucursalIdDesdeRuta(): string | null {
+    return (
+      this.route.snapshot.paramMap.get('sucursalId') ??
+      this.route.parent?.snapshot.paramMap.get('sucursalId') ??
+      this.route.parent?.parent?.snapshot.paramMap.get('sucursalId') ??
+      null
+    );
+  }
+
+  private obtenerRolNormalizado(): string | null {
+    const rol = this.authService.obtenerRol();
+
+    if (!rol) {
+      return null;
+    }
+
+    return rol.replace('ROLE_', '');
+  }
+
+  private validarAccesoLocal(): boolean {
+    const rol = this.obtenerRolNormalizado();
+    const empresaIdUsuario = this.authService.obtenerEmpresaId();
+
+    if (rol === 'SUPER_ADMIN') {
+      return true;
+    }
+
+    if (rol === 'ADMIN' && empresaIdUsuario === this.empresaId) {
+      return true;
+    }
+
+    this.router.navigate(['/acceso-denegado']);
+    return false;
+  }
+
+  esSuperAdmin(): boolean {
+    return this.obtenerRolNormalizado() === 'SUPER_ADMIN';
+  }
+
+  esAdmin(): boolean {
+    return this.obtenerRolNormalizado() === 'ADMIN';
+  }
+
+  rutaPanelVentas(): any[] {
+    if (this.esSuperAdmin()) {
+      return [
+        '/super-admin/empresas',
+        this.empresaId,
+        'sucursales',
+        this.sucursalId,
+        'ventas',
+        'panel'
+      ];
+    }
+
+    return [
+      '/admin/empresa',
+      this.empresaId,
+      'sucursales',
+      this.sucursalId,
+      'ventas',
+      'panel'
+    ];
   }
 
   cargarFacturasSucursal(): void {
@@ -79,7 +168,7 @@ export class ConsultarFacturaComponent implements OnInit {
 
     this.ventaService.listarPorSucursal(this.sucursalId).subscribe({
       next: (ventas) => {
-        const ventasOrdenadas = ventas.sort((a, b) => {
+        const ventasOrdenadas = (ventas || []).sort((a, b) => {
           const fechaA = new Date(a.fechaVenta).getTime();
           const fechaB = new Date(b.fechaVenta).getTime();
 
@@ -124,6 +213,13 @@ export class ConsultarFacturaComponent implements OnInit {
     if (this.tipoBusqueda === 'NUMERO') {
       this.ventaService.obtenerPorNumero(valor).subscribe({
         next: (factura) => {
+          if (Number(factura.sucursalId) !== this.sucursalId) {
+            this.facturaSeleccionada = null;
+            this.cargando = false;
+            this.mensajeError = 'La factura consultada no pertenece a esta sucursal.';
+            return;
+          }
+
           this.facturaSeleccionada = factura;
           this.cargando = false;
         },
@@ -139,7 +235,7 @@ export class ConsultarFacturaComponent implements OnInit {
 
     const ventaId = Number(valor);
 
-    if (!ventaId) {
+    if (Number.isNaN(ventaId) || ventaId <= 0) {
       this.cargando = false;
       this.mensajeError = 'El ID de la factura no es válido.';
       return;
@@ -147,6 +243,13 @@ export class ConsultarFacturaComponent implements OnInit {
 
     this.ventaService.obtenerPorId(ventaId).subscribe({
       next: (factura) => {
+        if (Number(factura.sucursalId) !== this.sucursalId) {
+          this.facturaSeleccionada = null;
+          this.cargando = false;
+          this.mensajeError = 'La factura consultada no pertenece a esta sucursal.';
+          return;
+        }
+
         this.facturaSeleccionada = factura;
         this.cargando = false;
       },
@@ -227,14 +330,7 @@ export class ConsultarFacturaComponent implements OnInit {
   }
 
   volverAlPanel(): void {
-    this.router.navigate([
-      '/super-admin/empresas',
-      this.empresaId,
-      'sucursales',
-      this.sucursalId,
-      'ventas',
-      'panel'
-    ]);
+    this.router.navigate(this.rutaPanelVentas());
   }
 
   contarFacturasRegistradas(): number {
@@ -280,13 +376,13 @@ export class ConsultarFacturaComponent implements OnInit {
       icon: 'warning',
       title: 'Cancelar factura',
       html: `
-      <p class="mb-2">
-        Vas a cancelar la factura <strong>${factura.numeroVenta}</strong>.
-      </p>
-      <p class="mb-0 text-muted">
-        Esta acción reintegrará automáticamente el inventario asociado.
-      </p>
-    `,
+        <p class="mb-2">
+          Vas a cancelar la factura <strong>${factura.numeroVenta}</strong>.
+        </p>
+        <p class="mb-0 text-muted">
+          Esta acción reintegrará automáticamente el inventario asociado.
+        </p>
+      `,
       input: 'textarea',
       inputLabel: 'Motivo de cancelación',
       inputPlaceholder: 'Ej: Error en la venta, cliente desistió, factura generada por equivocación...',
@@ -320,14 +416,14 @@ export class ConsultarFacturaComponent implements OnInit {
         icon: 'question',
         title: 'Confirmar cancelación',
         html: `
-        <p>
-          ¿Está seguro de cancelar la factura
-          <strong>${factura.numeroVenta}</strong>?
-        </p>
-        <p class="text-muted mb-0">
-          El inventario será reintegrado automáticamente y la factura quedará marcada como cancelada.
-        </p>
-      `,
+          <p>
+            ¿Está seguro de cancelar la factura
+            <strong>${factura.numeroVenta}</strong>?
+          </p>
+          <p class="text-muted mb-0">
+            El inventario será reintegrado automáticamente y la factura quedará marcada como cancelada.
+          </p>
+        `,
         showCancelButton: true,
         confirmButtonText: 'Sí, cancelar factura',
         cancelButtonText: 'No, volver',
@@ -342,6 +438,7 @@ export class ConsultarFacturaComponent implements OnInit {
       });
     });
   }
+
   private ejecutarCancelacionFactura(
     factura: FacturaVentaDTO,
     motivo: string
@@ -382,13 +479,13 @@ export class ConsultarFacturaComponent implements OnInit {
           icon: 'success',
           title: 'Factura cancelada',
           html: `
-          <p>
-            La factura <strong>${facturaActualizada.numeroVenta}</strong> fue cancelada correctamente.
-          </p>
-          <p class="text-muted mb-0">
-            El inventario asociado fue reintegrado automáticamente.
-          </p>
-        `,
+            <p>
+              La factura <strong>${facturaActualizada.numeroVenta}</strong> fue cancelada correctamente.
+            </p>
+            <p class="text-muted mb-0">
+              El inventario asociado fue reintegrado automáticamente.
+            </p>
+          `,
           confirmButtonText: 'Entendido',
           confirmButtonColor: '#0d6efd'
         });

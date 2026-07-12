@@ -4,7 +4,6 @@
   <div class="empresa-hero mb-4">
     <div class="empresa-hero-content">
 
-
       <a
         *ngIf="esSuperAdmin()"
         routerLink="/super-admin/empresas"
@@ -14,7 +13,6 @@
         Volver a empresas
 
       </a>
-
 
       <div class="d-flex flex-column flex-xl-row justify-content-xl-between align-items-xl-end gap-4">
 
@@ -35,22 +33,22 @@
         <div class="hero-actions">
 
           <a
-            *ngIf="empresa"
-            [routerLink]="['/super-admin/empresas/editar', empresa.id]"
+            *ngIf="empresa && esSuperAdmin()"
+            [routerLink]="rutaEditarEmpresa()"
             class="btn btn-hero-light">
             <i class="bi bi-pencil me-2"></i>
             Editar empresa
           </a>
 
           <a
-            [routerLink]="['/super-admin/empresas', empresaId, 'usuarios', 'crear']"
+            [routerLink]="rutaCrearAdministrador()"
             class="btn btn-hero-primary">
             <i class="bi bi-person-plus me-2"></i>
             Crear administrador
           </a>
 
           <a
-            [routerLink]="['/super-admin/empresas', empresaId, 'sucursales', 'crear']"
+            [routerLink]="rutaCrearSucursal()"
             class="btn btn-hero-success">
             <i class="bi bi-building-add me-2"></i>
             Crear sucursal
@@ -164,11 +162,7 @@
 
               <a
                 class="btn btn-option-primary w-100"
-                [routerLink]="[
-                  '/super-admin/empresas',
-                  empresa.id,
-                  'dashboard'
-                ]">
+                [routerLink]="rutaDashboardEmpresa()">
                 <i class="bi bi-bar-chart-line me-2"></i>
                 Ver dashboard
               </a>
@@ -193,7 +187,7 @@
             </div>
 
             <a
-              [routerLink]="['/super-admin/empresas', empresaId, 'productos']"
+              [routerLink]="rutaProductos()"
               class="btn btn-option-info w-100">
               <i class="bi bi-box-arrow-in-right me-2"></i>
               Ingresar
@@ -219,7 +213,7 @@
       </div>
 
       <a
-        [routerLink]="['/super-admin/empresas', empresaId, 'sucursales', 'crear']"
+        [routerLink]="rutaCrearSucursal()"
         class="btn btn-app-success">
         <i class="bi bi-building-add me-2"></i>
         Crear sucursal
@@ -249,7 +243,7 @@
         </p>
 
         <a
-          [routerLink]="['/super-admin/empresas', empresaId, 'sucursales', 'crear']"
+          [routerLink]="rutaCrearSucursal()"
           class="btn btn-app-success">
           <i class="bi bi-building-add me-2"></i>
           Crear sucursal
@@ -301,7 +295,7 @@
             </div>
 
             <a
-              [routerLink]="['/super-admin/empresas', empresaId, 'sucursales', 'detalle', sucursal.id]"
+              [routerLink]="rutaDetalleSucursal(sucursal.id)"
               class="btn btn-sucursal w-100">
               <i class="bi bi-box-arrow-in-right me-2"></i>
               Ingresar a la sucursal
@@ -328,7 +322,7 @@
       </div>
 
       <a
-        [routerLink]="['/super-admin/empresas', empresaId, 'usuarios', 'crear']"
+        [routerLink]="rutaCrearAdministrador()"
         class="btn btn-app-primary">
         <i class="bi bi-person-plus me-2"></i>
         Crear administrador
@@ -358,7 +352,7 @@
         </p>
 
         <a
-          [routerLink]="['/super-admin/empresas', empresaId, 'usuarios', 'crear']"
+          [routerLink]="rutaCrearAdministrador()"
           class="btn btn-app-primary">
           <i class="bi bi-person-plus me-2"></i>
           Crear administrador inicial
@@ -385,9 +379,9 @@
           <tr *ngFor="let usuario of usuarios">
 
             <td>
-                <span class="id-pill">
-                  #{{ usuario.id }}
-                </span>
+              <span class="id-pill">
+                #{{ usuario.id }}
+              </span>
             </td>
 
             <td>
@@ -405,15 +399,15 @@
             </td>
 
             <td>
-                <span class="username-text">
-                  {{ usuario.username }}
-                </span>
+              <span class="username-text">
+                {{ usuario.username }}
+              </span>
             </td>
 
             <td>
-                <span class="role-badge">
-                  {{ usuario.rol }}
-                </span>
+              <span class="role-badge">
+                {{ usuario.rol }}
+              </span>
             </td>
 
             <td>
@@ -436,7 +430,7 @@
                 }
 
                 <button
-                  *ngIf="usuario.rol !== 'ADMIN' || authTemporalService.esSuperAdmin()"
+                  *ngIf="usuario.rol !== 'ADMIN' || esSuperAdmin()"
                   type="button"
                   class="btn btn-action-delete"
                   (click)="eliminarUsuario(usuario.id)">

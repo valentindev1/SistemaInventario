@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { VentaService } from '../../../../../../core/services/venta/venta.service';
+import { AuthService } from '../../../../../../core/services/auth/auth.service';
 
 import {
   InformeConsolidadoVentasDTO,
@@ -44,12 +45,13 @@ export class InformeVentasComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private ventaService: VentaService
+    private ventaService: VentaService,
+    private authService: AuthService
   ) {}
 
   ngOnInit(): void {
-    const empresaIdParam = this.route.snapshot.paramMap.get('empresaId');
-    const sucursalIdParam = this.route.snapshot.paramMap.get('sucursalId');
+    const empresaIdParam = this.obtenerEmpresaIdDesdeRuta();
+    const sucursalIdParam = this.obtenerSucursalIdDesdeRuta();
 
     if (!empresaIdParam || !sucursalIdParam) {
       this.mensajeError = 'No se pudo identificar la empresa o la sucursal.';
@@ -59,13 +61,100 @@ export class InformeVentasComponent implements OnInit {
     this.empresaId = Number(empresaIdParam);
     this.sucursalId = Number(sucursalIdParam);
 
-    if (!this.empresaId || !this.sucursalId) {
+    if (
+      Number.isNaN(this.empresaId) ||
+      Number.isNaN(this.sucursalId) ||
+      this.empresaId <= 0 ||
+      this.sucursalId <= 0
+    ) {
       this.mensajeError = 'Los identificadores de empresa o sucursal no son válidos.';
+      return;
+    }
+
+    if (!this.validarAccesoLocal()) {
       return;
     }
 
     this.inicializarFechas();
     this.generarInforme();
+  }
+
+  private obtenerEmpresaIdDesdeRuta(): string | null {
+    return (
+      this.route.snapshot.paramMap.get('empresaId') ??
+      this.route.parent?.snapshot.paramMap.get('empresaId') ??
+      this.route.parent?.parent?.snapshot.paramMap.get('empresaId') ??
+      null
+    );
+  }
+
+  private obtenerSucursalIdDesdeRuta(): string | null {
+    return (
+      this.route.snapshot.paramMap.get('sucursalId') ??
+      this.route.parent?.snapshot.paramMap.get('sucursalId') ??
+      this.route.parent?.parent?.snapshot.paramMap.get('sucursalId') ??
+      null
+    );
+  }
+
+  private obtenerRolNormalizado(): string | null {
+    const rol = this.authService.obtenerRol();
+
+    if (!rol) {
+      return null;
+    }
+
+    return rol.replace('ROLE_', '');
+  }
+
+  private validarAccesoLocal(): boolean {
+    const rol = this.obtenerRolNormalizado();
+    const empresaIdUsuario = this.authService.obtenerEmpresaId();
+
+    if (rol === 'SUPER_ADMIN') {
+      return true;
+    }
+
+    if (rol === 'ADMIN' && empresaIdUsuario === this.empresaId) {
+      return true;
+    }
+
+    this.router.navigate(['/acceso-denegado']);
+    return false;
+  }
+
+  esSuperAdmin(): boolean {
+    return this.obtenerRolNormalizado() === 'SUPER_ADMIN';
+  }
+
+  esAdmin(): boolean {
+    return this.obtenerRolNormalizado() === 'ADMIN';
+  }
+
+  rutaPanelVentas(): any[] {
+    if (this.esSuperAdmin()) {
+      return [
+        '/super-admin/empresas',
+        this.empresaId,
+        'sucursales',
+        this.sucursalId,
+        'ventas',
+        'panel'
+      ];
+    }
+
+    return [
+      '/admin/empresa',
+      this.empresaId,
+      'sucursales',
+      this.sucursalId,
+      'ventas',
+      'panel'
+    ];
+  }
+
+  volverAlPanel(): void {
+    this.router.navigate(this.rutaPanelVentas());
   }
 
   inicializarFechas(): void {
@@ -98,6 +187,7 @@ export class InformeVentasComponent implements OnInit {
     if (this.tipoFiltro === 'MES') {
       const year = hoy.getFullYear();
       const month = String(hoy.getMonth() + 1).padStart(2, '0');
+
       this.fechaMes = `${year}-${month}`;
     }
 
@@ -211,19 +301,6 @@ export class InformeVentasComponent implements OnInit {
 
     return true;
   }
-
-  volverAlPanel(): void {
-    this.router.navigate([
-      '/super-admin/empresas',
-      this.empresaId,
-      'sucursales',
-      this.sucursalId,
-      'ventas',
-      'panel'
-    ]);
-  }
-
-
 
   async descargarExcel(): Promise<void> {
     if (!this.informe) {
@@ -380,6 +457,7 @@ export class InformeVentasComponent implements OnInit {
 
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
+
     doc.text(
       `Sucursal: ${informe.sucursalNombre}`,
       14,
@@ -508,7 +586,6 @@ export class InformeVentasComponent implements OnInit {
     );
   }
 
-
   private formatearMoneda(valor: number | null | undefined): string {
     return new Intl.NumberFormat('es-CO', {
       style: 'currency',
@@ -528,6 +605,7 @@ export class InformeVentasComponent implements OnInit {
 
     return `${nombreBase}-${year}${month}${day}-${hour}${minute}.${extension}`;
   }
+
   calcularMargenUtilidad(): number {
     if (!this.informe || !this.informe.ventasNetas || this.informe.ventasNetas <= 0) {
       return 0;

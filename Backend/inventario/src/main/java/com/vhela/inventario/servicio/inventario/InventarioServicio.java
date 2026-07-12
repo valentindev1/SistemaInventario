@@ -1,9 +1,6 @@
 package com.vhela.inventario.servicio.inventario;
 
-import com.vhela.inventario.dto.inventario.AjusteInventarioDTO;
-import com.vhela.inventario.dto.inventario.IngresoInventarioDTO;
-import com.vhela.inventario.dto.inventario.MovimientoInventarioDTO;
-import com.vhela.inventario.dto.inventario.ResumenInventarioSucursalDTO;
+import com.vhela.inventario.dto.inventario.*;
 import com.vhela.inventario.dto.inventario.empleado.MovimientoInventarioEmpleadoDTO;
 
 import java.util.List;
@@ -27,6 +24,9 @@ public interface InventarioServicio {
             Long sucursalId
     );
 
-
+    List<InventarioEmpleadoDTO> listarInventarioPorSucursalEmpleado(
+            Long usuarioId,
+            Long sucursalId
+    );
 
 }

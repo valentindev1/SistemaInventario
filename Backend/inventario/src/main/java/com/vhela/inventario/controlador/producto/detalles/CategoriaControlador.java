@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -24,6 +25,7 @@ public class CategoriaControlador {
     private final CategoriaServicio categoriaServicio;
 
     // ✅ CREAR CATEGORÍA
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
     @PostMapping
     public ResponseEntity<CategoriaObtenerDTO> crear(
             @RequestParam Long usuarioId,
@@ -35,6 +37,7 @@ public class CategoriaControlador {
     }
 
     // ✅ LISTAR CATEGORÍAS SEGÚN ROL
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
     @GetMapping
     public ResponseEntity<List<CategoriaObtenerDTO>> listar(
             @RequestParam Long usuarioId) {
@@ -45,6 +48,7 @@ public class CategoriaControlador {
     }
 
     // ✅ LISTAR CATEGORÍAS POR EMPRESA
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
     @GetMapping("/empresa/{empresaId}")
     public ResponseEntity<List<CategoriaObtenerDTO>> listarPorEmpresa(
             @RequestParam Long usuarioId,
@@ -56,6 +60,7 @@ public class CategoriaControlador {
     }
 
     // ✅ OBTENER CATEGORÍA POR ID
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
     @GetMapping("/{categoriaId}")
     public ResponseEntity<CategoriaObtenerDTO> obtenerPorId(
             @RequestParam Long usuarioId,
@@ -67,6 +72,7 @@ public class CategoriaControlador {
     }
 
     // ✅ EDITAR CATEGORÍA
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
     @PutMapping("/{categoriaId}")
     public ResponseEntity<CategoriaObtenerDTO> editar(
             @RequestParam Long usuarioId,
@@ -79,6 +85,7 @@ public class CategoriaControlador {
     }
 
     // ✅ ELIMINAR CATEGORÍA
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
     @DeleteMapping("/{categoriaId}")
     public ResponseEntity<Void> eliminar(
             @RequestParam Long usuarioId,

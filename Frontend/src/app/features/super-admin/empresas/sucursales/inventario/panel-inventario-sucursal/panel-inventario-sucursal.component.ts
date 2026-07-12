@@ -1,8 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { InventarioService } from '../../../../../../core/services/inventario/inventario.service';
+import { AuthService } from '../../../../../../core/services/auth/auth.service';
+
 import { InventarioAdminDTO } from '../../../../../../core/models/inventario/inventario.model';
 
 @Component({
@@ -33,19 +35,188 @@ export class PanelInventarioSucursalComponent implements OnInit {
 
   constructor(
     private route: ActivatedRoute,
-    private inventarioService: InventarioService
+    private router: Router,
+    private inventarioService: InventarioService,
+    private authService: AuthService
   ) {}
 
   ngOnInit(): void {
-    this.empresaId = Number(this.route.snapshot.paramMap.get('empresaId'));
-    this.sucursalId = Number(this.route.snapshot.paramMap.get('sucursalId'));
+    const empresaIdParam = this.obtenerEmpresaIdDesdeRuta();
+    const sucursalIdParam = this.obtenerSucursalIdDesdeRuta();
 
-    if (!this.empresaId || !this.sucursalId) {
+    if (!empresaIdParam || !sucursalIdParam) {
       this.mensajeError = 'No se pudo identificar la empresa o la sucursal.';
       return;
     }
 
+    this.empresaId = Number(empresaIdParam);
+    this.sucursalId = Number(sucursalIdParam);
+
+    if (
+      Number.isNaN(this.empresaId) ||
+      Number.isNaN(this.sucursalId) ||
+      this.empresaId <= 0 ||
+      this.sucursalId <= 0
+    ) {
+      this.mensajeError = 'No se pudo identificar la empresa o la sucursal.';
+      return;
+    }
+
+    if (!this.validarAccesoLocal()) {
+      return;
+    }
+
     this.cargarMetricasInventario();
+  }
+
+  private obtenerEmpresaIdDesdeRuta(): string | null {
+    return (
+      this.route.snapshot.paramMap.get('empresaId') ??
+      this.route.parent?.snapshot.paramMap.get('empresaId') ??
+      this.route.parent?.parent?.snapshot.paramMap.get('empresaId') ??
+      null
+    );
+  }
+
+  private obtenerSucursalIdDesdeRuta(): string | null {
+    return (
+      this.route.snapshot.paramMap.get('sucursalId') ??
+      this.route.parent?.snapshot.paramMap.get('sucursalId') ??
+      this.route.parent?.parent?.snapshot.paramMap.get('sucursalId') ??
+      null
+    );
+  }
+
+  private validarAccesoLocal(): boolean {
+    const rol = this.authService.obtenerRol();
+    const empresaIdUsuario = this.authService.obtenerEmpresaId();
+
+    if (rol === 'SUPER_ADMIN') {
+      return true;
+    }
+
+    if (rol === 'ADMIN' && empresaIdUsuario === this.empresaId) {
+      return true;
+    }
+
+    this.router.navigate(['/acceso-denegado']);
+    return false;
+  }
+
+  esSuperAdmin(): boolean {
+    return this.authService.obtenerRol() === 'SUPER_ADMIN';
+  }
+
+  esAdmin(): boolean {
+    return this.authService.obtenerRol() === 'ADMIN';
+  }
+
+  rutaDetalleSucursal(): any[] {
+    if (this.esSuperAdmin()) {
+      return [
+        '/super-admin/empresas',
+        this.empresaId,
+        'sucursales',
+        'detalle',
+        this.sucursalId
+      ];
+    }
+
+    return [
+      '/admin/empresa',
+      this.empresaId,
+      'sucursales',
+      'detalle',
+      this.sucursalId
+    ];
+  }
+
+  rutaIngresarInventario(): any[] {
+    if (this.esSuperAdmin()) {
+      return [
+        '/super-admin/empresas',
+        this.empresaId,
+        'sucursales',
+        this.sucursalId,
+        'inventario',
+        'ingresar'
+      ];
+    }
+
+    return [
+      '/admin/empresa',
+      this.empresaId,
+      'sucursales',
+      this.sucursalId,
+      'inventario',
+      'ingresar'
+    ];
+  }
+
+  rutaAjustarInventario(): any[] {
+    if (this.esSuperAdmin()) {
+      return [
+        '/super-admin/empresas',
+        this.empresaId,
+        'sucursales',
+        this.sucursalId,
+        'inventario',
+        'ajustar'
+      ];
+    }
+
+    return [
+      '/admin/empresa',
+      this.empresaId,
+      'sucursales',
+      this.sucursalId,
+      'inventario',
+      'ajustar'
+    ];
+  }
+
+  rutaResumenInventario(): any[] {
+    if (this.esSuperAdmin()) {
+      return [
+        '/super-admin/empresas',
+        this.empresaId,
+        'sucursales',
+        this.sucursalId,
+        'inventario',
+        'resumen'
+      ];
+    }
+
+    return [
+      '/admin/empresa',
+      this.empresaId,
+      'sucursales',
+      this.sucursalId,
+      'inventario',
+      'resumen'
+    ];
+  }
+
+  rutaMovimientosInventario(): any[] {
+    if (this.esSuperAdmin()) {
+      return [
+        '/super-admin/empresas',
+        this.empresaId,
+        'sucursales',
+        this.sucursalId,
+        'inventario',
+        'movimientos'
+      ];
+    }
+
+    return [
+      '/admin/empresa',
+      this.empresaId,
+      'sucursales',
+      this.sucursalId,
+      'inventario',
+      'movimientos'
+    ];
   }
 
   cargarMetricasInventario(): void {
@@ -54,7 +225,7 @@ export class PanelInventarioSucursalComponent implements OnInit {
 
     this.inventarioService.listarPorSucursal(this.sucursalId).subscribe({
       next: (data) => {
-        this.inventario = data;
+        this.inventario = data || [];
         this.calcularMetricasInventario();
         this.cargandoMetricas = false;
       },
@@ -64,10 +235,32 @@ export class PanelInventarioSucursalComponent implements OnInit {
           error?.error?.message ||
           error?.error ||
           'No se pudieron cargar las métricas del inventario.';
+
+        console.error(error);
       }
     });
   }
 
+  rutaInventarioSucursal(): any[] {
+    if (this.esSuperAdmin()) {
+      return [
+        '/super-admin/empresas',
+        this.empresaId,
+        'sucursales',
+        this.sucursalId,
+        'inventario'
+      ];
+    }
+
+    return [
+      '/admin/empresa',
+      this.empresaId,
+      'sucursales',
+      this.sucursalId,
+      'inventario'
+    ];
+  }
+  
   calcularMetricasInventario(): void {
     this.referenciasTotales = this.inventario.length;
 
@@ -105,6 +298,6 @@ export class PanelInventarioSucursalComponent implements OnInit {
       return 0;
     }
 
-    return this.utilidadProyectada / this.valorComercialInventario * 100;
+    return (this.utilidadProyectada / this.valorComercialInventario) * 100;
   }
 }

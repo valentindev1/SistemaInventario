@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import {ActivatedRoute, Router, RouterLink} from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { EmpresaService } from '../../../../core/services/empresa/empresa.service';
 import { UsuarioService } from '../../../../core/services/usuario/usuario.service';
@@ -9,7 +9,8 @@ import { SucursalService } from '../../../../core/services/sucursal/sucursal.ser
 import { EmpresaObtenerDTO } from '../../../../core/models/empresa/empresa.model';
 import { UsuarioObtenerDTO } from '../../../../core/models/usuario/usuario.model';
 import { SucursalObtenerDTO } from '../../../../core/models/sucursal/sucursal.model';
-import {AuthTemporalService} from '../../../../core/services/auth/auth-temporal.service';
+
+import { AuthService } from '../../../../core/services/auth/auth.service';
 
 @Component({
   selector: 'app-detalle-empresa',
@@ -39,15 +40,13 @@ export class DetalleEmpresaComponent implements OnInit {
     private route: ActivatedRoute,
     private empresaService: EmpresaService,
     private usuarioService: UsuarioService,
-    private sucursalService: SucursalService
-    ,  private router: Router,
-
-    public authTemporalService: AuthTemporalService
-
+    private sucursalService: SucursalService,
+    private router: Router,
+    private authService: AuthService
   ) {}
 
   ngOnInit(): void {
-    const idParam = this.route.snapshot.paramMap.get('id');
+    const idParam = this.obtenerEmpresaIdDesdeRuta();
 
     if (!idParam) {
       this.mensajeError = 'ID de empresa no válido';
@@ -56,8 +55,23 @@ export class DetalleEmpresaComponent implements OnInit {
 
     this.empresaId = Number(idParam);
 
+    if (Number.isNaN(this.empresaId)) {
+      this.mensajeError = 'ID de empresa no válido';
+      return;
+    }
+
     this.cargarEmpresa();
     this.cargarUsuarios();
+  }
+
+  private obtenerEmpresaIdDesdeRuta(): string | null {
+    return (
+      this.route.snapshot.paramMap.get('id') ??
+      this.route.snapshot.paramMap.get('empresaId') ??
+      this.route.parent?.snapshot.paramMap.get('id') ??
+      this.route.parent?.snapshot.paramMap.get('empresaId') ??
+      null
+    );
   }
 
   cargarEmpresa(): void {
@@ -69,7 +83,6 @@ export class DetalleEmpresaComponent implements OnInit {
         this.empresa = empresa;
         this.cargandoEmpresa = false;
 
-        // Cuando ya tenemos el NIT, cargamos las sucursales
         this.cargarSucursales(empresa.nit);
       },
       error: (error) => {
@@ -78,10 +91,6 @@ export class DetalleEmpresaComponent implements OnInit {
         console.error(error);
       }
     });
-  }
-
-  esSuperAdmin(): boolean {
-    return this.authTemporalService.esSuperAdmin();
   }
 
   cargarUsuarios(): void {
@@ -118,15 +127,142 @@ export class DetalleEmpresaComponent implements OnInit {
     });
   }
 
+  esSuperAdmin(): boolean {
+    return this.authService.obtenerRol() === 'SUPER_ADMIN';
+  }
 
-  irEditarPasswordAdmin(usuarioId: number): void {
-    this.router.navigate([
-      '/super-admin/empresas',
+  esAdmin(): boolean {
+    return this.authService.obtenerRol() === 'ADMIN';
+  }
+
+  rutaDashboardEmpresa(): any[] {
+    if (this.esSuperAdmin()) {
+      return [
+        '/super-admin/empresas',
+        this.empresaId,
+        'dashboard'
+      ];
+    }
+
+    return [
+      '/admin/empresa',
+      this.empresaId,
+      'dashboard',
+      'estadisticas'
+    ];
+  }
+
+  rutaEditarEmpresa(): any[] {
+    if (this.esSuperAdmin()) {
+      return [
+        '/super-admin/empresas/editar',
+        this.empresaId
+      ];
+    }
+
+    return [
+      '/admin/empresa',
+      this.empresaId,
+      'editar'
+    ];
+  }
+
+  rutaCrearAdministrador(): any[] {
+    if (this.esSuperAdmin()) {
+      return [
+        '/super-admin/empresas',
+        this.empresaId,
+        'usuarios',
+        'crear'
+      ];
+    }
+
+    return [
+      '/admin/empresa',
+      this.empresaId,
+      'usuarios',
+      'crear'
+    ];
+  }
+
+  rutaCrearSucursal(): any[] {
+    if (this.esSuperAdmin()) {
+      return [
+        '/super-admin/empresas',
+        this.empresaId,
+        'sucursales',
+        'crear'
+      ];
+    }
+
+    return [
+      '/admin/empresa',
+      this.empresaId,
+      'sucursales',
+      'crear'
+    ];
+  }
+
+  rutaProductos(): any[] {
+    if (this.esSuperAdmin()) {
+      return [
+        '/super-admin/empresas',
+        this.empresaId,
+        'productos'
+      ];
+    }
+
+    return [
+      '/admin/empresa',
+      this.empresaId,
+      'productos'
+    ];
+  }
+
+  rutaDetalleSucursal(sucursalId: number): any[] {
+    if (this.esSuperAdmin()) {
+      return [
+        '/super-admin/empresas',
+        this.empresaId,
+        'sucursales',
+        'detalle',
+        sucursalId
+      ];
+    }
+
+    return [
+      '/admin/empresa',
+      this.empresaId,
+      'sucursales',
+      'detalle',
+      sucursalId
+    ];
+  }
+
+  rutaEditarPasswordAdmin(usuarioId: number): any[] {
+    if (this.esSuperAdmin()) {
+      return [
+        '/super-admin/empresas',
+        this.empresaId,
+        'usuarios',
+        usuarioId,
+        'editar-password'
+      ];
+    }
+
+    return [
+      '/admin/empresa',
       this.empresaId,
       'usuarios',
       usuarioId,
       'editar-password'
-    ]);
+    ];
+  }
+
+  irEditarPasswordAdmin(usuarioId: number): void {
+    this.router.navigate(
+      this.rutaEditarPasswordAdmin(usuarioId)
+    );
   }
 
   eliminarUsuario(usuarioId: number): void {
@@ -138,7 +274,9 @@ export class DetalleEmpresaComponent implements OnInit {
 
     this.usuarioService.eliminar(usuarioId).subscribe({
       next: () => {
-        this.usuarios = this.usuarios.filter(usuario => usuario.id !== usuarioId);
+        this.usuarios = this.usuarios.filter(
+          usuario => usuario.id !== usuarioId
+        );
       },
       error: (error) => {
         this.mensajeError = 'No se pudo eliminar el usuario';

@@ -2,8 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 
-import { AuthTemporalService } from '../../../core/services/auth/auth-temporal.service';
-import { UsuarioAuthTemporal } from '../../../core/models/auth/usuario-auth.model';
+import { AuthService } from '../../../core/services/auth/auth.service';
 
 import { EmpleadoVentaService } from '../../../core/services/empleado/empleado-venta.service';
 
@@ -20,6 +19,15 @@ interface ModuloEmpleado {
   disponible: boolean;
 }
 
+interface UsuarioEmpleadoSesion {
+  usuarioId: number | null;
+  username: string | null;
+  nombre: string | null;
+  rol: string | null;
+  empresaId: number | null;
+  sucursalId: number | null;
+}
+
 @Component({
   selector: 'app-dashboard',
   standalone: true,
@@ -33,8 +41,9 @@ interface ModuloEmpleado {
 export class DashboardComponent implements OnInit {
 
   sucursalId!: number;
+  empresaId!: number;
 
-  usuarioActual!: UsuarioAuthTemporal;
+  usuarioActual!: UsuarioEmpleadoSesion;
 
   modulos: ModuloEmpleado[] = [];
 
@@ -54,31 +63,116 @@ export class DashboardComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private authTemporalService: AuthTemporalService,
+    private authService: AuthService,
     private empleadoVentaService: EmpleadoVentaService
   ) {}
 
   ngOnInit(): void {
 
-    const sucursalIdParam = this.route.snapshot.paramMap.get('sucursalId');
+    const accesoValido = this.validarAccesoEmpleado();
 
-    if (!sucursalIdParam) {
-      this.mensajeError = 'No se pudo identificar la sucursal del empleado.';
+    if (!accesoValido) {
       return;
     }
-
-    this.sucursalId = Number(sucursalIdParam);
-
-    if (!this.sucursalId) {
-      this.mensajeError = 'El identificador de la sucursal no es válido.';
-      return;
-    }
-
-    this.usuarioActual = this.authTemporalService.obtenerUsuarioActual();
 
     this.inicializarModulos();
-
     this.cargarMetricasDashboard();
+  }
+
+  private validarAccesoEmpleado(): boolean {
+
+    this.mensajeError = '';
+
+    if (!this.authService.estaAutenticado()) {
+      this.router.navigate(['/login']);
+      return false;
+    }
+
+    const usuarioId = this.authService.obtenerUsuarioId();
+    const username = this.authService.obtenerUsername();
+    const nombre = this.authService.obtenerNombre();
+    const rol = this.authService.obtenerRol();
+    const empresaIdUsuario = this.authService.obtenerEmpresaId();
+    const sucursalIdUsuario = this.authService.obtenerSucursalId();
+
+    if (!rol) {
+      this.router.navigate(['/login']);
+      return false;
+    }
+
+    if (rol !== 'EMPLEADO') {
+      this.router.navigate(['/acceso-denegado']);
+      return false;
+    }
+
+    if (!empresaIdUsuario || !sucursalIdUsuario) {
+      this.mensajeError = 'No se pudo identificar la empresa o sucursal del empleado.';
+      this.router.navigate(['/login']);
+      return false;
+    }
+
+    const sucursalIdParam = this.obtenerSucursalIdDesdeRuta();
+
+    if (!sucursalIdParam) {
+      this.router.navigate([
+        '/empleado',
+        'sucursal',
+        sucursalIdUsuario,
+        'dashboard'
+      ]);
+
+      return false;
+    }
+
+    const sucursalIdRuta = Number(sucursalIdParam);
+
+    if (
+      Number.isNaN(sucursalIdRuta) ||
+      sucursalIdRuta <= 0
+    ) {
+      this.router.navigate([
+        '/empleado',
+        'sucursal',
+        sucursalIdUsuario,
+        'dashboard'
+      ]);
+
+      return false;
+    }
+
+    if (sucursalIdRuta !== sucursalIdUsuario) {
+      this.router.navigate([
+        '/empleado',
+        'sucursal',
+        sucursalIdUsuario,
+        'dashboard'
+      ]);
+
+      return false;
+    }
+
+    this.empresaId = empresaIdUsuario;
+    this.sucursalId = sucursalIdUsuario;
+
+    this.usuarioActual = {
+      usuarioId,
+      username,
+      nombre,
+      rol,
+      empresaId: empresaIdUsuario,
+      sucursalId: sucursalIdUsuario
+    };
+
+    return true;
+  }
+
+  private obtenerSucursalIdDesdeRuta(): string | null {
+    return (
+      this.route.snapshot.paramMap.get('sucursalId') ??
+      this.route.parent?.snapshot.paramMap.get('sucursalId') ??
+      this.route.parent?.parent?.snapshot.paramMap.get('sucursalId') ??
+      null
+    );
   }
 
   private inicializarModulos(): void {

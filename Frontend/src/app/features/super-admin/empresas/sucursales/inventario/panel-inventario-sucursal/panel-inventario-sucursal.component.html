@@ -4,13 +4,7 @@
 
     <div>
       <a
-        [routerLink]="[
-          '/super-admin/empresas',
-          empresaId,
-          'sucursales',
-          'detalle',
-          sucursalId
-        ]"
+        [routerLink]="rutaDetalleSucursal()"
         class="btn btn-link px-0 mb-2">
         <i class="bi bi-arrow-left me-1"></i>
         Volver a la sucursal
@@ -28,11 +22,14 @@
       class="btn btn-outline-primary"
       (click)="cargarMetricasInventario()"
       [disabled]="cargandoMetricas">
-      <span
-        class="spinner-border spinner-border-sm me-1"
-        aria-hidden="true"
-        [class.d-none]="!cargandoMetricas">
-      </span>
+
+      @if (cargandoMetricas) {
+        <span
+          class="spinner-border spinner-border-sm me-1"
+          aria-hidden="true">
+        </span>
+      }
+
       Actualizar métricas
     </button>
 
@@ -197,6 +194,7 @@
 
   <div class="row g-4">
 
+    <!-- Agregar producto -->
     <div class="col-12 col-md-6 col-xl-3">
       <div class="inventory-card h-100">
 
@@ -212,20 +210,14 @@
 
         <a
           class="btn btn-primary w-100 mt-auto"
-          [routerLink]="[
-            '/super-admin/empresas',
-            empresaId,
-            'sucursales',
-            sucursalId,
-            'inventario',
-            'ingresar'
-          ]">
+          [routerLink]="rutaIngresarInventario()">
           Agregar producto
         </a>
 
       </div>
     </div>
 
+    <!-- Inventario de la tienda -->
     <div class="col-12 col-md-6 col-xl-3">
       <div class="inventory-card h-100">
 
@@ -241,19 +233,14 @@
 
         <a
           class="btn btn-success w-100 mt-auto"
-          [routerLink]="[
-            '/super-admin/empresas',
-            empresaId,
-            'sucursales',
-            sucursalId,
-            'inventario'
-          ]">
+          [routerLink]="rutaInventarioSucursal()">
           Ver inventario
         </a>
 
       </div>
     </div>
 
+    <!-- Movimientos -->
     <div class="col-12 col-md-6 col-xl-3">
       <div class="inventory-card h-100">
 
@@ -269,20 +256,14 @@
 
         <a
           class="btn btn-warning w-100 mt-auto"
-          [routerLink]="[
-            '/super-admin/empresas',
-            empresaId,
-            'sucursales',
-            sucursalId,
-            'inventario',
-            'movimientos'
-          ]">
+          [routerLink]="rutaMovimientosInventario()">
           Ver movimientos
         </a>
 
       </div>
     </div>
 
+    <!-- Ajuste manual -->
     <div class="col-12 col-md-6 col-xl-3">
       <div class="inventory-card h-100">
 
@@ -298,14 +279,7 @@
 
         <a
           class="btn btn-danger w-100 mt-auto"
-          [routerLink]="[
-            '/super-admin/empresas',
-            empresaId,
-            'sucursales',
-            sucursalId,
-            'inventario',
-            'ajustar'
-          ]">
+          [routerLink]="rutaAjustarInventario()">
           Realizar ajuste
         </a>
 

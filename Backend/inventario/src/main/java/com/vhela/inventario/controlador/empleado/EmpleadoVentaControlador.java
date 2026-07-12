@@ -13,14 +13,23 @@ import lombok.RequiredArgsConstructor;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/empleado/ventas")
 @RequiredArgsConstructor
+@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'EMPLEADO')")
 public class EmpleadoVentaControlador {
 
     private final VentaServicio ventaServicio;
+
 
     @PostMapping
     public ResponseEntity<FacturaVentaEmpleadoDTO> crearVentaEmpleado(
@@ -37,6 +46,7 @@ public class EmpleadoVentaControlador {
                 .body(response);
     }
 
+
     @GetMapping("/{ventaId}")
     public ResponseEntity<FacturaVentaEmpleadoDTO> obtenerPorIdEmpleado(
             @RequestParam Long usuarioId,
@@ -46,6 +56,7 @@ public class EmpleadoVentaControlador {
                 ventaServicio.obtenerPorIdEmpleado(usuarioId, ventaId)
         );
     }
+
 
     @GetMapping("/sucursal/{sucursalId}")
     public ResponseEntity<List<VentaHistorialEmpleadoDTO>> listarPorSucursalEmpleado(
@@ -57,6 +68,7 @@ public class EmpleadoVentaControlador {
         );
     }
 
+
     @PostMapping("/{ventaId}/devoluciones")
     public ResponseEntity<FacturaVentaEmpleadoDTO> generarDevolucionEmpleado(
             @RequestParam Long usuarioId,
@@ -67,6 +79,7 @@ public class EmpleadoVentaControlador {
                 ventaServicio.generarDevolucionEmpleado(usuarioId, ventaId, dto)
         );
     }
+
 
     @GetMapping("/numero/{numeroVenta}")
     public ResponseEntity<FacturaVentaEmpleadoDTO> obtenerPorNumeroEmpleado(

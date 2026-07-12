@@ -1,202 +1,315 @@
-<div class="container-fluid">
+<div class="editar-cliente-page">
 
-  <!-- Encabezado -->
-  <div class="d-flex flex-column flex-md-row justify-content-md-between align-items-md-center gap-3 mb-4">
+  <!-- HERO -->
+  <section class="cliente-hero mb-4">
+    <div class="hero-content">
 
-    <div>
-      <a
-        [routerLink]="[
-          '/super-admin/empresas',
-          empresaId,
-          'sucursales',
-          sucursalId,
-          'clientes',
-          'panel'
-        ]"
-        class="btn btn-link px-0 mb-2"
-      >
-        <i class="bi bi-arrow-left me-1"></i>
-        Volver al panel de clientes
-      </a>
+      <div class="hero-top">
 
-      <h2 class="fw-bold mb-1">
-        Editar cliente
-      </h2>
+        <a
+          [routerLink]="rutaPanelClientes()"
+          class="btn-back">
+          <i class="bi bi-arrow-left"></i>
+          Volver al panel de clientes
+        </a>
 
-      <p class="text-muted mb-0">
-        Actualiza la información básica del cliente. El número de documento no se puede modificar.
-      </p>
-    </div>
+        <span class="hero-badge">
+          <i class="bi bi-pencil-square"></i>
+          Actualización de cliente
+        </span>
 
-  </div>
+      </div>
 
-  <!-- Alertas -->
-  <div *ngIf="mensajeError" class="alert alert-danger">
-    <i class="bi bi-exclamation-triangle me-1"></i>
-    {{ mensajeError }}
-  </div>
+      <div class="hero-main">
+        <div>
+          <h1>
+            <i class="bi bi-person-vcard me-2"></i>
+            Editar cliente
+          </h1>
 
-  <div *ngIf="mensajeExito" class="alert alert-success">
-    <i class="bi bi-check-circle me-1"></i>
-    {{ mensajeExito }}
-  </div>
-
-  <!-- Cargando -->
-  <div *ngIf="cargando" class="text-center p-4">
-    <div class="spinner-border text-primary"></div>
-    <p class="text-muted mt-2 mb-0">
-      Cargando cliente...
-    </p>
-  </div>
-
-  <!-- Formulario -->
-  <div *ngIf="!cargando && cliente" class="row justify-content-center">
-    <div class="col-12 col-xl-9">
-
-      <div class="card border-0 shadow-sm">
-        <div class="card-body p-4">
-
-          <div class="mb-4">
-            <h5 class="fw-bold mb-1">
-              Información del cliente
-            </h5>
-
-            <p class="text-muted mb-0">
-              Solo puedes modificar el nombre, correo y teléfono del cliente.
-            </p>
-          </div>
-
-          <!-- Documento bloqueado -->
-          <div class="alert alert-info">
-            <div class="d-flex flex-column flex-md-row justify-content-md-between gap-2">
-              <div>
-                <strong>Documento:</strong>
-                {{ cliente.numeroDocumento }}
-              </div>
-
-              <div>
-                <strong>Empresa:</strong>
-                {{ cliente.empresaNombre }}
-              </div>
-            </div>
-          </div>
-
-          <form [formGroup]="formulario" (ngSubmit)="guardar()">
-
-            <div class="row g-3">
-
-              <!-- Nombre -->
-              <div class="col-12 col-md-6">
-                <label class="form-label">
-                  Nombre <span class="text-danger">*</span>
-                </label>
-
-                <input
-                  type="text"
-                  class="form-control"
-                  formControlName="nombre"
-                  placeholder="Nombre completo"
-                  [class.is-invalid]="campoInvalido('nombre')"
-                >
-
-                <div class="invalid-feedback" *ngIf="campoInvalido('nombre')">
-                  <span *ngIf="formulario.get('nombre')?.errors?.['required']">
-                    El nombre es obligatorio.
-                  </span>
-
-                  <span *ngIf="formulario.get('nombre')?.errors?.['minlength']">
-                    El nombre debe tener mínimo 3 caracteres.
-                  </span>
-
-                  <span *ngIf="formulario.get('nombre')?.errors?.['maxlength']">
-                    El nombre no puede superar 150 caracteres.
-                  </span>
-                </div>
-              </div>
-
-              <!-- Correo -->
-              <div class="col-12 col-md-6">
-                <label class="form-label">
-                  Correo electrónico
-                </label>
-
-                <input
-                  type="email"
-                  class="form-control"
-                  formControlName="correo"
-                  placeholder="cliente@correo.com"
-                  [class.is-invalid]="campoInvalido('correo')"
-                >
-
-                <div class="invalid-feedback" *ngIf="campoInvalido('correo')">
-                  <span *ngIf="formulario.get('correo')?.errors?.['email']">
-                    El correo electrónico no es válido.
-                  </span>
-
-                  <span *ngIf="formulario.get('correo')?.errors?.['maxlength']">
-                    El correo no puede superar 150 caracteres.
-                  </span>
-                </div>
-              </div>
-
-              <!-- Teléfono -->
-              <div class="col-12 col-md-6">
-                <label class="form-label">
-                  Teléfono
-                </label>
-
-                <input
-                  type="text"
-                  class="form-control"
-                  formControlName="telefono"
-                  placeholder="Ej: 3001234567"
-                  [class.is-invalid]="campoInvalido('telefono')"
-                >
-
-                <div class="invalid-feedback" *ngIf="campoInvalido('telefono')">
-                  <span *ngIf="formulario.get('telefono')?.errors?.['maxlength']">
-                    El teléfono no puede superar 30 caracteres.
-                  </span>
-                </div>
-              </div>
-
-            </div>
-
-            <!-- Acciones -->
-            <div class="d-flex flex-column flex-md-row justify-content-end gap-2 mt-4">
-
-              <button
-                type="button"
-                class="btn btn-outline-secondary"
-                (click)="volverPanelClientes()"
-                [disabled]="guardando"
-              >
-                Cancelar
-              </button>
-
-              <button
-                type="submit"
-                class="btn btn-primary"
-                [disabled]="guardando"
-              >
-                <span *ngIf="!guardando">
-                  <i class="bi bi-save me-1"></i>
-                  Guardar cambios
-                </span>
-
-                <span *ngIf="guardando">
-                  Guardando...
-                </span>
-              </button>
-
-            </div>
-
-          </form>
-
+          <p>
+            Actualiza la información básica del cliente. El número de documento permanece bloqueado
+            para conservar la integridad del historial comercial.
+          </p>
         </div>
       </div>
 
     </div>
-  </div>
+  </section>
+
+  <!-- ALERTAS -->
+  @if (mensajeError) {
+    <div class="app-alert-danger mb-4">
+      <i class="bi bi-exclamation-triangle"></i>
+      <span>{{ mensajeError }}</span>
+    </div>
+  }
+
+  @if (mensajeExito) {
+    <div class="app-alert-success mb-4">
+      <i class="bi bi-check-circle"></i>
+      <span>{{ mensajeExito }}</span>
+    </div>
+  }
+
+  <!-- CARGANDO -->
+  @if (cargando) {
+    <div class="loading-state">
+      <div class="loading-box">
+
+        <div class="spinner-border text-primary mb-3"></div>
+
+        <h6>
+          Cargando cliente
+        </h6>
+
+        <p>
+          Estamos consultando la información registrada del cliente...
+        </p>
+
+      </div>
+    </div>
+  }
+
+  <!-- FORMULARIO -->
+  @if (!cargando && cliente) {
+    <section class="form-card">
+
+      <div class="form-card-header">
+
+        <div class="section-icon">
+          <i class="bi bi-person-lines-fill"></i>
+        </div>
+
+        <div>
+          <h2>
+            Información del cliente
+          </h2>
+
+          <p>
+            Solo puedes modificar el nombre, correo electrónico y teléfono del cliente.
+          </p>
+        </div>
+
+      </div>
+
+      <div class="form-card-body">
+
+        <!-- DOCUMENTO BLOQUEADO -->
+        <div class="locked-info mb-4">
+
+          <div class="locked-icon">
+            <i class="bi bi-shield-lock"></i>
+          </div>
+
+          <div class="locked-content">
+
+            <div class="locked-row">
+
+              <div>
+                <span>Documento</span>
+                <strong>{{ cliente.numeroDocumento }}</strong>
+              </div>
+
+              <div>
+                <span>Empresa</span>
+                <strong>{{ cliente.empresaNombre }}</strong>
+              </div>
+
+            </div>
+
+            <p>
+              El número de documento no se puede modificar porque identifica al cliente dentro del sistema.
+            </p>
+
+          </div>
+
+        </div>
+
+        <form
+          [formGroup]="formulario"
+          (ngSubmit)="guardar()">
+
+          <div class="row g-4">
+
+            <!-- Nombre -->
+            <div class="col-12 col-md-6">
+              <div class="form-field">
+
+                <label>
+                  Nombre <span>*</span>
+                </label>
+
+                <div class="input-shell">
+                  <i class="bi bi-person"></i>
+
+                  <input
+                    type="text"
+                    formControlName="nombre"
+                    placeholder="Nombre completo"
+                    [class.is-invalid]="campoInvalido('nombre')">
+                </div>
+
+                @if (campoInvalido('nombre')) {
+                  <div class="field-error">
+
+                    @if (tieneError('nombre', 'required')) {
+                      <span>
+                        El nombre es obligatorio.
+                      </span>
+                    }
+
+                    @if (tieneError('nombre', 'minlength')) {
+                      <span>
+                        El nombre debe tener mínimo 3 caracteres.
+                      </span>
+                    }
+
+                    @if (tieneError('nombre', 'maxlength')) {
+                      <span>
+                        El nombre no puede superar 150 caracteres.
+                      </span>
+                    }
+
+                  </div>
+                }
+
+              </div>
+            </div>
+
+            <!-- Correo -->
+            <div class="col-12 col-md-6">
+              <div class="form-field">
+
+                <label>
+                  Correo electrónico
+                </label>
+
+                <div class="input-shell">
+                  <i class="bi bi-envelope"></i>
+
+                  <input
+                    type="email"
+                    formControlName="correo"
+                    placeholder="cliente@correo.com"
+                    [class.is-invalid]="campoInvalido('correo')">
+                </div>
+
+                @if (campoInvalido('correo')) {
+                  <div class="field-error">
+
+                    @if (tieneError('correo', 'email')) {
+                      <span>
+                        El correo electrónico no es válido.
+                      </span>
+                    }
+
+                    @if (tieneError('correo', 'maxlength')) {
+                      <span>
+                        El correo no puede superar 150 caracteres.
+                      </span>
+                    }
+
+                  </div>
+                }
+
+              </div>
+            </div>
+
+            <!-- Teléfono -->
+            <div class="col-12 col-md-6">
+              <div class="form-field">
+
+                <label>
+                  Teléfono
+                </label>
+
+                <div class="input-shell">
+                  <i class="bi bi-telephone"></i>
+
+                  <input
+                    type="text"
+                    formControlName="telefono"
+                    placeholder="Ej: 3001234567"
+                    [class.is-invalid]="campoInvalido('telefono')">
+                </div>
+
+                @if (campoInvalido('telefono')) {
+                  <div class="field-error">
+
+                    @if (tieneError('telefono', 'maxlength')) {
+                      <span>
+                        El teléfono no puede superar 30 caracteres.
+                      </span>
+                    }
+
+                  </div>
+                }
+
+              </div>
+            </div>
+
+          </div>
+
+          <!-- INFORMACIÓN -->
+          <div class="info-box mt-4">
+
+            <div class="info-icon">
+              <i class="bi bi-info-circle"></i>
+            </div>
+
+            <div>
+              <strong>Información importante</strong>
+
+              <p>
+                Los cambios realizados afectarán los datos básicos del cliente, pero no alterarán
+                sus ventas, facturas o historial comercial asociado.
+              </p>
+            </div>
+
+          </div>
+
+          <!-- ACCIONES -->
+          <div class="form-actions">
+
+            <button
+              type="button"
+              class="btn btn-cancel"
+              (click)="volverPanelClientes()"
+              [disabled]="guardando">
+
+              Cancelar
+
+            </button>
+
+            <button
+              type="submit"
+              class="btn btn-save"
+              [disabled]="guardando">
+
+              @if (!guardando) {
+                <span>
+                  <i class="bi bi-save me-2"></i>
+                  Guardar cambios
+                </span>
+              }
+
+              @if (guardando) {
+                <span>
+                  <span class="spinner-border spinner-border-sm me-2"></span>
+                  Guardando...
+                </span>
+              }
+
+            </button>
+
+          </div>
+
+        </form>
+
+      </div>
+
+    </section>
+  }
 
 </div>

@@ -5,6 +5,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { EmpresaService } from '../../../../../core/services/empresa/empresa.service';
 import { SucursalService } from '../../../../../core/services/sucursal/sucursal.service';
+import { AuthService } from '../../../../../core/services/auth/auth.service';
 
 import { EmpresaObtenerDTO } from '../../../../../core/models/empresa/empresa.model';
 import { SucursalCrearDTO } from '../../../../../core/models/sucursal/sucursal.model';
@@ -38,7 +39,8 @@ export class CrearSucursalEmpresaComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private empresaService: EmpresaService,
-    private sucursalService: SucursalService
+    private sucursalService: SucursalService,
+    private authService: AuthService
   ) {
     this.formularioSucursal = this.fb.group({
       nombre: ['', [Validators.required, Validators.maxLength(150)]],
@@ -49,7 +51,7 @@ export class CrearSucursalEmpresaComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    const idParam = this.route.snapshot.paramMap.get('empresaId');
+    const idParam = this.obtenerEmpresaIdDesdeRuta();
 
     if (!idParam) {
       this.mensajeError = 'ID de empresa no válido';
@@ -58,7 +60,44 @@ export class CrearSucursalEmpresaComponent implements OnInit {
 
     this.empresaId = Number(idParam);
 
+    if (Number.isNaN(this.empresaId) || this.empresaId <= 0) {
+      this.mensajeError = 'ID de empresa no válido';
+      return;
+    }
+
     this.cargarEmpresa();
+  }
+
+  private obtenerEmpresaIdDesdeRuta(): string | null {
+    return (
+      this.route.snapshot.paramMap.get('empresaId') ??
+      this.route.parent?.snapshot.paramMap.get('empresaId') ??
+      this.route.parent?.parent?.snapshot.paramMap.get('empresaId') ??
+      null
+    );
+  }
+
+  esSuperAdmin(): boolean {
+    return this.authService.obtenerRol() === 'SUPER_ADMIN';
+  }
+
+  esAdmin(): boolean {
+    return this.authService.obtenerRol() === 'ADMIN';
+  }
+
+  rutaDetalleEmpresa(): any[] {
+    if (this.esSuperAdmin()) {
+      return [
+        '/super-admin/empresas/detalle',
+        this.empresaId
+      ];
+    }
+
+    return [
+      '/admin/empresa',
+      this.empresaId,
+      'dashboard'
+    ];
   }
 
   cargarEmpresa(): void {
@@ -84,6 +123,7 @@ export class CrearSucursalEmpresaComponent implements OnInit {
 
     if (this.formularioSucursal.invalid) {
       this.formularioSucursal.markAllAsTouched();
+      this.mensajeError = 'Debes completar correctamente todos los campos obligatorios';
       return;
     }
 
@@ -93,10 +133,10 @@ export class CrearSucursalEmpresaComponent implements OnInit {
     }
 
     const dto: SucursalCrearDTO = {
-      nombre: this.formularioSucursal.value.nombre,
-      ciudad: this.formularioSucursal.value.ciudad,
-      direccion: this.formularioSucursal.value.direccion,
-      telefono: this.formularioSucursal.value.telefono,
+      nombre: this.formularioSucursal.value.nombre.trim(),
+      ciudad: this.formularioSucursal.value.ciudad.trim(),
+      direccion: this.formularioSucursal.value.direccion.trim(),
+      telefono: this.formularioSucursal.value.telefono.trim(),
       empresaNit: this.empresa.nit
     };
 
@@ -108,7 +148,7 @@ export class CrearSucursalEmpresaComponent implements OnInit {
         this.mensajeExito = 'Sucursal creada correctamente';
 
         setTimeout(() => {
-          this.router.navigate(['/super-admin/empresas/detalle', this.empresaId]);
+          this.router.navigate(this.rutaDetalleEmpresa());
         }, 800);
       },
       error: (error) => {
@@ -116,6 +156,10 @@ export class CrearSucursalEmpresaComponent implements OnInit {
 
         if (typeof error.error === 'string') {
           this.mensajeError = error.error;
+        } else if (error.error?.message) {
+          this.mensajeError = error.error.message;
+        } else if (error.error?.error) {
+          this.mensajeError = error.error.error;
         } else {
           this.mensajeError = 'No se pudo crear la sucursal';
         }

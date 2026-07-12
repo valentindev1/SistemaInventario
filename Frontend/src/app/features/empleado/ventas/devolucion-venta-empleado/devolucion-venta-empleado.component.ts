@@ -3,6 +3,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
+import { AuthService } from '../../../../core/services/auth/auth.service';
 import { EmpleadoVentaService } from '../../../../core/services/empleado/empleado-venta.service';
 
 import {
@@ -42,6 +43,7 @@ interface ItemDevolucionTemporal {
 export class DevolucionVentaEmpleadoComponent implements OnInit {
 
   sucursalId!: number;
+  empresaId!: number;
 
   numeroVenta = '';
   motivo = '';
@@ -58,22 +60,15 @@ export class DevolucionVentaEmpleadoComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
+    private authService: AuthService,
     private empleadoVentaService: EmpleadoVentaService
   ) {}
 
   ngOnInit(): void {
 
-    const sucursalIdParam = this.route.snapshot.paramMap.get('sucursalId');
+    const accesoValido = this.validarAccesoEmpleado();
 
-    if (!sucursalIdParam) {
-      this.mensajeError = 'No se pudo identificar la sucursal.';
-      return;
-    }
-
-    this.sucursalId = Number(sucursalIdParam);
-
-    if (!this.sucursalId) {
-      this.mensajeError = 'El identificador de la sucursal no es válido.';
+    if (!accesoValido) {
       return;
     }
 
@@ -83,6 +78,94 @@ export class DevolucionVentaEmpleadoComponent implements OnInit {
       this.numeroVenta = numeroVentaQuery;
       this.buscarFactura();
     }
+  }
+
+  private validarAccesoEmpleado(): boolean {
+
+    this.mensajeError = '';
+
+    if (!this.authService.estaAutenticado()) {
+      this.router.navigate(['/login']);
+      return false;
+    }
+
+    const rol = this.authService.obtenerRol();
+    const empresaIdUsuario = this.authService.obtenerEmpresaId();
+    const sucursalIdUsuario = this.authService.obtenerSucursalId();
+
+    if (!rol) {
+      this.router.navigate(['/login']);
+      return false;
+    }
+
+    if (rol !== 'EMPLEADO') {
+      this.router.navigate(['/acceso-denegado']);
+      return false;
+    }
+
+    if (!empresaIdUsuario || !sucursalIdUsuario) {
+      this.mensajeError = 'No se pudo identificar la empresa o sucursal del empleado.';
+      this.router.navigate(['/login']);
+      return false;
+    }
+
+    const sucursalIdParam = this.obtenerSucursalIdDesdeRuta();
+
+    if (!sucursalIdParam) {
+      this.router.navigate([
+        '/empleado',
+        'sucursal',
+        sucursalIdUsuario,
+        'ventas',
+        'devolucion'
+      ]);
+
+      return false;
+    }
+
+    const sucursalIdRuta = Number(sucursalIdParam);
+
+    if (
+      Number.isNaN(sucursalIdRuta) ||
+      sucursalIdRuta <= 0
+    ) {
+      this.router.navigate([
+        '/empleado',
+        'sucursal',
+        sucursalIdUsuario,
+        'ventas',
+        'devolucion'
+      ]);
+
+      return false;
+    }
+
+    if (sucursalIdRuta !== sucursalIdUsuario) {
+      this.router.navigate([
+        '/empleado',
+        'sucursal',
+        sucursalIdUsuario,
+        'ventas',
+        'devolucion'
+      ]);
+
+      return false;
+    }
+
+    this.empresaId = empresaIdUsuario;
+    this.sucursalId = sucursalIdUsuario;
+
+    return true;
+  }
+
+  private obtenerSucursalIdDesdeRuta(): string | null {
+    return (
+      this.route.snapshot.paramMap.get('sucursalId') ??
+      this.route.parent?.snapshot.paramMap.get('sucursalId') ??
+      this.route.parent?.parent?.snapshot.paramMap.get('sucursalId') ??
+      this.route.parent?.parent?.parent?.snapshot.paramMap.get('sucursalId') ??
+      null
+    );
   }
 
   buscarFactura(): void {
@@ -95,7 +178,7 @@ export class DevolucionVentaEmpleadoComponent implements OnInit {
     const numero = this.numeroVenta.trim();
 
     if (!numero) {
-      this.mensajeError = 'Debe ingresar el número de la factura.';
+      this.mensajeError = 'Debe ingresar el numero de la factura.';
       return;
     }
 
@@ -113,7 +196,7 @@ export class DevolucionVentaEmpleadoComponent implements OnInit {
           }
 
           if (factura.estado === 'CANCELADA') {
-            this.mensajeError = 'No se puede generar devolución sobre una factura cancelada.';
+            this.mensajeError = 'No se puede generar devolucion sobre una factura cancelada.';
             return;
           }
 
@@ -129,17 +212,19 @@ export class DevolucionVentaEmpleadoComponent implements OnInit {
             .map(detalle => this.mapDetalleAItemDevolucion(detalle));
 
           if (this.itemsDevolucion.length === 0) {
-            this.mensajeError = 'Esta factura no tiene productos disponibles para devolución.';
+            this.mensajeError = 'Esta factura no tiene productos disponibles para devolucion.';
           }
         },
         error: (error) => {
 
           this.buscando = false;
 
-          this.mensajeError =
-            error?.error?.message ||
-            error?.error ||
-            'No se pudo consultar la factura.';
+          this.mensajeError = this.obtenerMensajeError(
+            error,
+            'No se pudo consultar la factura.'
+          );
+
+          console.error(error);
         }
       });
   }
@@ -175,7 +260,7 @@ export class DevolucionVentaEmpleadoComponent implements OnInit {
       item.cantidadADevolver = item.cantidadDisponibleDevolucion;
 
       this.mensajeError =
-        `No puedes devolver más de ${item.cantidadDisponibleDevolucion} unidades de ${item.productoNombre}.`;
+        `No puedes devolver mas de ${item.cantidadDisponibleDevolucion} unidades de ${item.productoNombre}.`;
 
       return;
     }
@@ -221,7 +306,12 @@ export class DevolucionVentaEmpleadoComponent implements OnInit {
     this.mensajeExito = '';
 
     if (!this.factura) {
-      this.mensajeError = 'Debe buscar una factura antes de generar la devolución.';
+      this.mensajeError = 'Debe buscar una factura antes de generar la devolucion.';
+      return;
+    }
+
+    if (this.factura.sucursalId !== this.sucursalId) {
+      this.mensajeError = 'La factura no pertenece a esta sucursal.';
       return;
     }
 
@@ -238,7 +328,7 @@ export class DevolucionVentaEmpleadoComponent implements OnInit {
     }
 
     const dto: DevolucionVentaDTO = {
-      motivo: this.motivo,
+      motivo: this.motivo.trim(),
       items
     };
 
@@ -260,7 +350,7 @@ export class DevolucionVentaEmpleadoComponent implements OnInit {
         this.motivo = '';
 
         this.mensajeExito =
-          `Devolución generada correctamente. Estado actual: ${facturaActualizada.estado}`;
+          `Devolucion generada correctamente. Estado actual: ${facturaActualizada.estado}`;
 
         if (this.itemsDevolucion.length === 0) {
           this.mensajeError = '';
@@ -270,10 +360,12 @@ export class DevolucionVentaEmpleadoComponent implements OnInit {
 
         this.guardando = false;
 
-        this.mensajeError =
-          error?.error?.message ||
-          error?.error ||
-          'No se pudo generar la devolución.';
+        this.mensajeError = this.obtenerMensajeError(
+          error,
+          'No se pudo generar la devolucion.'
+        );
+
+        console.error(error);
       }
     });
   }
@@ -328,5 +420,26 @@ export class DevolucionVentaEmpleadoComponent implements OnInit {
       default:
         return 'estado-default';
     }
+  }
+
+  private obtenerMensajeError(error: any, mensajeDefecto: string): string {
+
+    if (Array.isArray(error?.error?.errores)) {
+      return error.error.errores.join(', ');
+    }
+
+    if (typeof error?.error === 'string') {
+      return error.error;
+    }
+
+    if (error?.error?.message) {
+      return error.error.message;
+    }
+
+    if (error?.error?.error) {
+      return error.error.error;
+    }
+
+    return mensajeDefecto;
   }
 }

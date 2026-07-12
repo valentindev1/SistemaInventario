@@ -4,14 +4,13 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { EmpresaService } from '../../../../core/services/empresa/empresa.service';
+import { AuthService } from '../../../../core/services/auth/auth.service';
 
 import {
   DashboardEmpresaDTO,
   DashboardProductoCriticoDTO,
   DashboardSucursalResumenDTO
 } from '../../../../core/models/empresa/empresa.model';
-
-import { AuthTemporalService } from '../../../../core/services/auth/auth-temporal.service';
 
 type TipoFiltroDashboard = 'DIA' | 'MES' | 'RANGO';
 
@@ -48,11 +47,11 @@ export class DashboardEmpresaComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private empresaService: EmpresaService,
-    private authTemporalService: AuthTemporalService
+    private authService: AuthService
   ) {}
 
   ngOnInit(): void {
-    const empresaIdParam = this.route.snapshot.paramMap.get('empresaId');
+    const empresaIdParam = this.obtenerEmpresaIdDesdeRuta();
 
     if (!empresaIdParam) {
       this.mensajeError = 'No se pudo identificar la empresa.';
@@ -61,13 +60,22 @@ export class DashboardEmpresaComponent implements OnInit {
 
     this.empresaId = Number(empresaIdParam);
 
-    if (!this.empresaId) {
+    if (Number.isNaN(this.empresaId) || this.empresaId <= 0) {
       this.mensajeError = 'El identificador de la empresa no es válido.';
       return;
     }
 
     this.inicializarFechas();
     this.cargarDashboard();
+  }
+
+  private obtenerEmpresaIdDesdeRuta(): string | null {
+    return (
+      this.route.snapshot.paramMap.get('empresaId') ??
+      this.route.parent?.snapshot.paramMap.get('empresaId') ??
+      this.route.parent?.parent?.snapshot.paramMap.get('empresaId') ??
+      null
+    );
   }
 
   inicializarFechas(): void {
@@ -216,21 +224,53 @@ export class DashboardEmpresaComponent implements OnInit {
   }
 
   volverADetalleEmpresa(): void {
-    this.router.navigate([
-      '/super-admin/empresas',
-      'detalle',
-      this.empresaId
-    ]);
+    this.router.navigate(this.rutaDetalleEmpresa());
   }
 
   irASucursal(sucursal: DashboardSucursalResumenDTO): void {
-    this.router.navigate([
+    this.router.navigate(
+      this.rutaDetalleSucursal(sucursal.sucursalId)
+    );
+  }
+
+  private rutaDetalleEmpresa(): any[] {
+    if (this.estaEnRutaAdmin()) {
+      return [
+        '/admin/empresa',
+        this.empresaId,
+        'dashboard'
+      ];
+    }
+
+    return [
+      '/super-admin/empresas',
+      'detalle',
+      this.empresaId
+    ];
+  }
+
+  private rutaDetalleSucursal(sucursalId: number): any[] {
+    if (this.estaEnRutaAdmin()) {
+      return [
+        '/admin/empresa',
+        this.empresaId,
+        'sucursales',
+        'detalle',
+        sucursalId
+      ];
+    }
+
+    return [
       '/super-admin/empresas',
       this.empresaId,
       'sucursales',
       'detalle',
-      sucursal.sucursalId
-    ]);
+      sucursalId
+    ];
+  }
+
+  private estaEnRutaAdmin(): boolean {
+    return this.router.url.startsWith('/admin/empresa');
   }
 
   obtenerSucursales(): DashboardSucursalResumenDTO[] {
@@ -278,7 +318,11 @@ export class DashboardEmpresaComponent implements OnInit {
   }
 
   esSuperAdmin(): boolean {
-    return this.authTemporalService.esSuperAdmin();
+    return this.authService.obtenerRol() === 'SUPER_ADMIN';
+  }
+
+  esAdmin(): boolean {
+    return this.authService.obtenerRol() === 'ADMIN';
   }
 
   private formatearFecha(fecha: Date): string {

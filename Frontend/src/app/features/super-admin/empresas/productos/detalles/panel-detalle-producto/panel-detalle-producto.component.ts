@@ -4,14 +4,16 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import Swal from 'sweetalert2';
-import {EmpresaObtenerDTO} from '../../../../../../core/models/empresa/empresa.model';
-import {EmpresaService} from '../../../../../../core/services/empresa/empresa.service';
-import {ColorService} from '../../../../../../core/services/producto/detalles/color/color.service';
-import {CategoriaService} from '../../../../../../core/services/producto/detalles/categoria/categoria.service';
-import {GeneroService} from '../../../../../../core/services/producto/detalles/genero/genero.service';
-import {TallaService} from '../../../../../../core/services/producto/detalles/talla/talla.service';
 
+import { EmpresaObtenerDTO } from '../../../../../../core/models/empresa/empresa.model';
+import { EmpresaService } from '../../../../../../core/services/empresa/empresa.service';
 
+import { ColorService } from '../../../../../../core/services/producto/detalles/color/color.service';
+import { CategoriaService } from '../../../../../../core/services/producto/detalles/categoria/categoria.service';
+import { GeneroService } from '../../../../../../core/services/producto/detalles/genero/genero.service';
+import { TallaService } from '../../../../../../core/services/producto/detalles/talla/talla.service';
+
+import { AuthService } from '../../../../../../core/services/auth/auth.service';
 
 interface DetalleProductoItem {
   id: number;
@@ -59,7 +61,8 @@ export class PanelDetalleProductoComponent implements OnInit {
     private colorService: ColorService,
     private categoriaService: CategoriaService,
     private generoService: GeneroService,
-    private tallaService: TallaService
+    private tallaService: TallaService,
+    private authService: AuthService
   ) {
     this.formulario = this.fb.group({
       nombre: ['', [Validators.required, Validators.maxLength(80)]]
@@ -67,8 +70,8 @@ export class PanelDetalleProductoComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    const empresaIdParam = this.route.snapshot.paramMap.get('empresaId');
-    const tipoParam = this.route.snapshot.paramMap.get('tipo') as TipoDetalle;
+    const empresaIdParam = this.obtenerEmpresaIdDesdeRuta();
+    const tipoParam = this.route.snapshot.paramMap.get('tipo') as TipoDetalle | null;
 
     if (!empresaIdParam || !tipoParam) {
       this.mensajeError = 'Parámetros no válidos';
@@ -78,6 +81,11 @@ export class PanelDetalleProductoComponent implements OnInit {
     this.empresaId = Number(empresaIdParam);
     this.tipo = tipoParam;
 
+    if (Number.isNaN(this.empresaId)) {
+      this.mensajeError = 'ID de empresa no válido';
+      return;
+    }
+
     if (!this.tipoEsValido(this.tipo)) {
       this.mensajeError = 'Tipo de catálogo no válido';
       return;
@@ -85,6 +93,39 @@ export class PanelDetalleProductoComponent implements OnInit {
 
     this.cargarEmpresa();
     this.cargarItems();
+  }
+
+  private obtenerEmpresaIdDesdeRuta(): string | null {
+    return (
+      this.route.snapshot.paramMap.get('empresaId') ??
+      this.route.parent?.snapshot.paramMap.get('empresaId') ??
+      this.route.parent?.parent?.snapshot.paramMap.get('empresaId') ??
+      null
+    );
+  }
+
+  esSuperAdmin(): boolean {
+    return this.authService.obtenerRol() === 'SUPER_ADMIN';
+  }
+
+  esAdmin(): boolean {
+    return this.authService.obtenerRol() === 'ADMIN';
+  }
+
+  rutaProductos(): any[] {
+    if (this.esSuperAdmin()) {
+      return [
+        '/super-admin/empresas',
+        this.empresaId,
+        'productos'
+      ];
+    }
+
+    return [
+      '/admin/empresa',
+      this.empresaId,
+      'productos'
+    ];
   }
 
   cargarEmpresa(): void {

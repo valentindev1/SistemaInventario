@@ -1,5 +1,6 @@
 package com.vhela.inventario.controlador;
 
+import com.vhela.inventario.dto.usuario.CambiarPasswordDTO;
 import com.vhela.inventario.dto.usuario.UsuarioCrearDTO;
 import com.vhela.inventario.dto.usuario.UsuarioEditarDTO;
 import com.vhela.inventario.dto.usuario.UsuarioObtenerDTO;
@@ -10,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,6 +19,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/usuarios")
 @RequiredArgsConstructor
+@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
 public class UsuarioControlador {
 
     private final UsuarioServicio usuarioServicio;
@@ -27,6 +30,7 @@ public class UsuarioControlador {
 
     // CREAR USUARIO
     @PostMapping
+
     public ResponseEntity<UsuarioObtenerDTO> crear(
             @RequestParam Long usuarioId,
             @Valid @RequestBody UsuarioCrearDTO dto) {
@@ -78,6 +82,29 @@ public class UsuarioControlador {
                 usuarioServicio.editar(usuarioId, id, dto)
         );
     }
+
+
+    // CAMBIAR CONTRASEÑA DE USUARIO
+    @PutMapping("/{id}/cambiar-password")
+    public ResponseEntity<Void> cambiarPassword(
+            @RequestParam Long usuarioId,
+            @PathVariable Long id,
+            @Valid @RequestBody CambiarPasswordDTO dto) {
+
+        usuarioServicio.cambiarPassword(
+                usuarioId,
+                id,
+                dto.getNuevaPassword()
+        );
+
+        return ResponseEntity.ok().build();
+    }
+
+
+
+
+
+
 
     // ELIMINAR USUARIO
     @DeleteMapping("/{id}")

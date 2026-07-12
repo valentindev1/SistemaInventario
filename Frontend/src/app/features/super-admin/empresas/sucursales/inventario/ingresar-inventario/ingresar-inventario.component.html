@@ -1,12 +1,11 @@
 <div class="ingreso-inventario-page">
 
   <!-- Encabezado -->
-
   <div class="inventory-hero">
 
     <div class="inventory-badge">
       <i class="bi bi-box-arrow-in-down"></i>
-      Ingreso de Inventario
+      Ingreso de inventario
     </div>
 
     <div class="hero-content">
@@ -30,22 +29,40 @@
 
   </div>
 
-
   <!-- Mensajes -->
-  <div *ngIf="mensajeExito" class="alert alert-success">
-    {{ mensajeExito }}
-  </div>
+  @if (mensajeExito) {
+    <div class="alert alert-success">
+      <i class="bi bi-check-circle me-2"></i>
+      {{ mensajeExito }}
+    </div>
+  }
 
-  <div *ngIf="mensajeError" class="alert alert-error">
-    {{ mensajeError }}
-  </div>
+  @if (mensajeError) {
+    <div class="alert alert-error">
+      <i class="bi bi-exclamation-triangle me-2"></i>
+      {{ mensajeError }}
+    </div>
+  }
 
   <!-- Información general -->
   <section class="card">
-    <h2>Información del ingreso</h2>
+
+    <div class="section-header">
+      <div>
+        <h2>Información del ingreso</h2>
+        <p>
+          Registra una observación para identificar el motivo del movimiento.
+        </p>
+      </div>
+
+      <div class="section-icon">
+        <i class="bi bi-chat-left-text"></i>
+      </div>
+    </div>
 
     <div class="form-group">
       <label for="motivo">Motivo u observación</label>
+
       <textarea
         id="motivo"
         name="motivo"
@@ -54,251 +71,371 @@
         placeholder="Ejemplo: ingreso inicial, compra a proveedor, reposición de mercancía">
       </textarea>
     </div>
+
   </section>
 
   <!-- Agregar producto -->
   <section class="card">
-    <h2>Agregar producto al ingreso</h2>
 
-    <div *ngIf="cargandoProductos" class="loading">
-      Cargando productos...
+    <div class="section-header">
+      <div>
+        <h2>Agregar producto al ingreso</h2>
+        <p>
+          Selecciona el producto, la cantidad, el costo unitario y el precio de venta.
+        </p>
+      </div>
+
+      <div class="section-icon success">
+        <i class="bi bi-plus-circle"></i>
+      </div>
     </div>
 
-    <div *ngIf="!cargandoProductos" class="producto-form-grid">
+    @if (cargandoProductos) {
+      <div class="loading">
+        <div class="spinner-border text-primary me-2"></div>
+        Cargando productos...
+      </div>
+    }
 
-      <div class="form-group producto-select">
-        <label for="producto">Producto</label>
-        <select
-          id="producto"
-          name="producto"
-          [(ngModel)]="productoSeleccionadoId"
-          (change)="onProductoSeleccionado()">
-          <option value="">Seleccione un producto</option>
+    @if (!cargandoProductos) {
+      <div class="producto-form-grid">
 
-          <option
-            *ngFor="let producto of productos"
-            [value]="producto.id">
-            {{ producto.codigo }} - {{ producto.nombre }}
-          </option>
-        </select>
+        <div class="form-group producto-select">
+          <label for="producto">Producto</label>
+
+          <select
+            id="producto"
+            name="producto"
+            [(ngModel)]="productoSeleccionadoId"
+            (change)="onProductoSeleccionado()">
+
+            <option [ngValue]="null">
+              Seleccione un producto
+            </option>
+
+            @for (producto of productos; track producto.id) {
+              <option [ngValue]="producto.id">
+                {{ producto.codigo }} - {{ producto.nombre }}
+              </option>
+            }
+
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="cantidad">Cantidad</label>
+
+          <input
+            id="cantidad"
+            name="cantidad"
+            type="number"
+            min="1"
+            [(ngModel)]="cantidad">
+        </div>
+
+        <div class="form-group">
+          <label for="costoUnitario">Costo unitario</label>
+
+          <input
+            id="costoUnitario"
+            name="costoUnitario"
+            type="number"
+            min="0"
+            [(ngModel)]="costoUnitario">
+        </div>
+
+        <div class="form-group">
+          <label for="precioVenta">Precio de venta</label>
+
+          <input
+            id="precioVenta"
+            name="precioVenta"
+            type="number"
+            min="0"
+            [(ngModel)]="precioVenta">
+        </div>
+
       </div>
 
-      <div class="form-group">
-        <label for="cantidad">Cantidad</label>
-        <input
-          id="cantidad"
-          name="cantidad"
-          type="number"
-          min="1"
-          [(ngModel)]="cantidad">
+      <div class="form-actions">
+        <button
+          type="button"
+          class="btn btn-primary"
+          (click)="agregarItem()">
+
+          <i class="bi bi-plus-circle me-2"></i>
+          Agregar producto
+
+        </button>
       </div>
+    }
 
-      <div class="form-group">
-        <label for="costoUnitario">Costo unitario</label>
-        <input
-          id="costoUnitario"
-          name="costoUnitario"
-          type="number"
-          min="0"
-          [(ngModel)]="costoUnitario">
-      </div>
-
-      <div class="form-group">
-        <label for="precioVenta">Precio de venta</label>
-        <input
-          id="precioVenta"
-          name="precioVenta"
-          type="number"
-          min="0"
-          [(ngModel)]="precioVenta">
-      </div>
-
-    </div>
-
-    <div class="form-actions">
-      <button
-        type="button"
-        class="btn btn-primary"
-        (click)="agregarItem()">
-        Agregar producto
-      </button>
-    </div>
   </section>
 
   <!-- Productos agregados -->
   <section class="card">
+
     <div class="section-header">
-      <h2>Productos agregados</h2>
+      <div>
+        <h2>Productos agregados</h2>
+        <p>
+          Revisa los productos que serán ingresados al inventario.
+        </p>
+      </div>
 
-      <span *ngIf="items.length > 0" class="badge">
-        {{ items.length }} referencia(s)
-      </span>
+      @if (items.length > 0) {
+        <span class="badge">
+          {{ items.length }} referencia(s)
+        </span>
+      }
     </div>
 
-    <div *ngIf="items.length === 0" class="empty-state">
-      No hay productos agregados todavía.
-    </div>
+    @if (items.length === 0) {
+      <div class="empty-state">
 
-    <div *ngIf="items.length > 0" class="table-wrapper">
-      <table>
-        <thead>
-        <tr>
-          <th>Producto</th>
-          <th>Cantidad</th>
-          <th>Costo unitario</th>
-          <th>Precio venta</th>
-          <th>Total costo</th>
-          <th>Total venta</th>
-          <th>Acción</th>
-        </tr>
-        </thead>
+        <div class="empty-icon">
+          <i class="bi bi-box-seam"></i>
+        </div>
 
-        <tbody>
-        <tr *ngFor="let item of items; let i = index">
+        <h3>No hay productos agregados todavía</h3>
 
-          <!-- Producto -->
-          <td class="producto-cell">
-            {{ obtenerProductoNombre(item.productoId) }}
-          </td>
+        <p>
+          Selecciona un producto y presiona “Agregar producto” para iniciar el ingreso.
+        </p>
 
-          <!-- Cantidad -->
-          <td>
-            <ng-container *ngIf="indiceEditando !== i; else editarCantidad">
-              {{ item.cantidad }}
-            </ng-container>
+      </div>
+    }
 
-            <ng-template #editarCantidad>
-              <input
-                class="table-input"
-                type="number"
-                min="1"
-                [(ngModel)]="itemEditando.cantidad">
-            </ng-template>
-          </td>
+    @if (items.length > 0) {
+      <div class="table-wrapper">
 
-          <!-- Costo unitario -->
-          <td>
-            <ng-container *ngIf="indiceEditando !== i; else editarCosto">
-              {{ item.costoUnitario | currency:'COP':'symbol-narrow':'1.0-0' }}
-            </ng-container>
+        <table>
 
-            <ng-template #editarCosto>
-              <input
-                class="table-input"
-                type="number"
-                min="0"
-                [(ngModel)]="itemEditando.costoUnitario">
-            </ng-template>
-          </td>
+          <thead>
+          <tr>
+            <th>Producto</th>
+            <th>Cantidad</th>
+            <th>Costo unitario</th>
+            <th>Precio venta</th>
+            <th>Total costo</th>
+            <th>Total venta</th>
+            <th>Acción</th>
+          </tr>
+          </thead>
 
-          <!-- Precio venta -->
-          <td>
-            <ng-container *ngIf="indiceEditando !== i; else editarPrecio">
-              {{ item.precioVenta | currency:'COP':'symbol-narrow':'1.0-0' }}
-            </ng-container>
+          <tbody>
 
-            <ng-template #editarPrecio>
-              <input
-                class="table-input"
-                type="number"
-                min="0"
-                [(ngModel)]="itemEditando.precioVenta">
-            </ng-template>
-          </td>
+            @for (item of items; track item.productoId; let i = $index) {
+              <tr>
 
-          <!-- Total costo -->
-          <td>
-            <ng-container *ngIf="indiceEditando !== i; else editarTotalCosto">
-              {{ item.costoUnitario * item.cantidad | currency:'COP':'symbol-narrow':'1.0-0' }}
-            </ng-container>
+                <!-- Producto -->
+                <td class="producto-cell">
+                  {{ obtenerProductoNombre(item.productoId) }}
+                </td>
 
-            <ng-template #editarTotalCosto>
-              {{ itemEditando.costoUnitario * itemEditando.cantidad | currency:'COP':'symbol-narrow':'1.0-0' }}
-            </ng-template>
-          </td>
+                <!-- Cantidad -->
+                <td>
+                  @if (indiceEditando !== i) {
+                    <span>
+                      {{ item.cantidad }}
+                    </span>
+                  } @else {
+                    <input
+                      class="table-input"
+                      type="number"
+                      min="1"
+                      [(ngModel)]="itemEditando.cantidad">
+                  }
+                </td>
 
-          <!-- Total venta -->
-          <td>
-            <ng-container *ngIf="indiceEditando !== i; else editarTotalVenta">
-              {{ item.precioVenta * item.cantidad | currency:'COP':'symbol-narrow':'1.0-0' }}
-            </ng-container>
+                <!-- Costo unitario -->
+                <td>
+                  @if (indiceEditando !== i) {
+                    <span>
+                      {{ item.costoUnitario | currency:'COP':'symbol-narrow':'1.0-0' }}
+                    </span>
+                  } @else {
+                    <input
+                      class="table-input"
+                      type="number"
+                      min="0"
+                      [(ngModel)]="itemEditando.costoUnitario">
+                  }
+                </td>
 
-            <ng-template #editarTotalVenta>
-              {{ itemEditando.precioVenta * itemEditando.cantidad | currency:'COP':'symbol-narrow':'1.0-0' }}
-            </ng-template>
-          </td>
+                <!-- Precio venta -->
+                <td>
+                  @if (indiceEditando !== i) {
+                    <span>
+                      {{ item.precioVenta | currency:'COP':'symbol-narrow':'1.0-0' }}
+                    </span>
+                  } @else {
+                    <input
+                      class="table-input"
+                      type="number"
+                      min="0"
+                      [(ngModel)]="itemEditando.precioVenta">
+                  }
+                </td>
 
-          <!-- Acciones -->
-          <td>
-            <div class="table-actions" *ngIf="indiceEditando !== i">
-              <button
-                type="button"
-                class="btn btn-warning btn-small"
-                (click)="editarItem(i)">
-                Editar
-              </button>
+                <!-- Total costo -->
+                <td>
+                  @if (indiceEditando !== i) {
+                    <strong>
+                      {{ item.costoUnitario * item.cantidad | currency:'COP':'symbol-narrow':'1.0-0' }}
+                    </strong>
+                  } @else {
+                    <strong>
+                      {{ itemEditando.costoUnitario * itemEditando.cantidad | currency:'COP':'symbol-narrow':'1.0-0' }}
+                    </strong>
+                  }
+                </td>
 
-              <button
-                type="button"
-                class="btn btn-danger btn-small"
-                (click)="eliminarItem(i)">
-                Eliminar
-              </button>
-            </div>
+                <!-- Total venta -->
+                <td>
+                  @if (indiceEditando !== i) {
+                    <strong>
+                      {{ item.precioVenta * item.cantidad | currency:'COP':'symbol-narrow':'1.0-0' }}
+                    </strong>
+                  } @else {
+                    <strong>
+                      {{ itemEditando.precioVenta * itemEditando.cantidad | currency:'COP':'symbol-narrow':'1.0-0' }}
+                    </strong>
+                  }
+                </td>
 
-            <div class="table-actions" *ngIf="indiceEditando === i">
-              <button
-                type="button"
-                class="btn btn-success btn-small"
-                (click)="guardarEdicion()">
-                Guardar
-              </button>
+                <!-- Acciones -->
+                <td>
+                  @if (indiceEditando !== i) {
+                    <div class="table-actions">
 
-              <button
-                type="button"
-                class="btn btn-secondary btn-small"
-                (click)="cancelarEdicion()">
-                Cancelar
-              </button>
-            </div>
-          </td>
+                      <button
+                        type="button"
+                        class="btn btn-warning btn-small"
+                        (click)="editarItem(i)">
 
-        </tr>
-        </tbody>
+                        <i class="bi bi-pencil me-1"></i>
+                        Editar
 
-        <tfoot>
-        <tr>
-          <td colspan="4">
-            <strong>Totales del ingreso</strong>
-          </td>
+                      </button>
 
-          <td>
-            <strong>
-              {{ calcularTotalCosto() | currency:'COP':'symbol-narrow':'1.0-0' }}
-            </strong>
-          </td>
+                      <button
+                        type="button"
+                        class="btn btn-danger btn-small"
+                        (click)="eliminarItem(i)">
 
-          <td>
-            <strong>
-              {{ calcularTotalVenta() | currency:'COP':'symbol-narrow':'1.0-0' }}
-            </strong>
-          </td>
+                        <i class="bi bi-trash me-1"></i>
+                        Eliminar
 
-          <td></td>
-        </tr>
-        </tfoot>
-      </table>
-    </div>
+                      </button>
 
-    <div class="footer-actions" *ngIf="items.length > 0">
-      <button
-        type="button"
-        class="btn btn-primary"
-        [disabled]="guardando"
-        (click)="guardarIngreso()">
-        {{ guardando ? 'Guardando...' : 'Guardar ingreso' }}
-      </button>
-    </div>
+                    </div>
+                  } @else {
+                    <div class="table-actions">
+
+                      <button
+                        type="button"
+                        class="btn btn-success btn-small"
+                        (click)="guardarEdicion()">
+
+                        <i class="bi bi-check-lg me-1"></i>
+                        Guardar
+
+                      </button>
+
+                      <button
+                        type="button"
+                        class="btn btn-secondary btn-small"
+                        (click)="cancelarEdicion()">
+
+                        <i class="bi bi-x-lg me-1"></i>
+                        Cancelar
+
+                      </button>
+
+                    </div>
+                  }
+                </td>
+
+              </tr>
+            }
+
+          </tbody>
+
+          <tfoot>
+          <tr>
+            <td colspan="4">
+              <strong>Totales del ingreso</strong>
+            </td>
+
+            <td>
+              <strong>
+                {{ calcularTotalCosto() | currency:'COP':'symbol-narrow':'1.0-0' }}
+              </strong>
+            </td>
+
+            <td>
+              <strong>
+                {{ calcularTotalVenta() | currency:'COP':'symbol-narrow':'1.0-0' }}
+              </strong>
+            </td>
+
+            <td></td>
+          </tr>
+          </tfoot>
+
+        </table>
+
+      </div>
+
+      <div class="totals-summary">
+
+        <div class="total-card">
+          <span>Total costo</span>
+          <strong>
+            {{ calcularTotalCosto() | currency:'COP':'symbol-narrow':'1.0-0' }}
+          </strong>
+        </div>
+
+        <div class="total-card commercial">
+          <span>Total venta</span>
+          <strong>
+            {{ calcularTotalVenta() | currency:'COP':'symbol-narrow':'1.0-0' }}
+          </strong>
+        </div>
+
+        <div class="total-card profit">
+          <span>Utilidad proyectada</span>
+          <strong>
+            {{ calcularTotalVenta() - calcularTotalCosto() | currency:'COP':'symbol-narrow':'1.0-0' }}
+          </strong>
+        </div>
+
+      </div>
+
+      <div class="footer-actions">
+        <button
+          type="button"
+          class="btn btn-primary"
+          [disabled]="guardando"
+          (click)="guardarIngreso()">
+
+          @if (guardando) {
+            <span>
+              <span class="spinner-border spinner-border-sm me-2"></span>
+              Guardando...
+            </span>
+          } @else {
+            <span>
+              <i class="bi bi-save me-2"></i>
+              Guardar ingreso
+            </span>
+          }
+
+        </button>
+      </div>
+    }
+
   </section>
 
 </div>

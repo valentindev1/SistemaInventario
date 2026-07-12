@@ -5,7 +5,7 @@
     <div class="empleados-hero-content">
 
       <a
-        [routerLink]="['/super-admin/empresas', empresaId, 'sucursales', 'detalle', sucursalId]"
+        [routerLink]="rutaDetalleSucursal()"
         class="btn btn-back mb-3">
         <i class="bi bi-arrow-left me-2"></i>
         Volver a la sucursal
@@ -33,380 +33,424 @@
   </div>
 
   <!-- Error local -->
-  <div *ngIf="mensajeError" class="alert alert-danger app-alert">
-    <i class="bi bi-exclamation-triangle me-2"></i>
-    {{ mensajeError }}
-  </div>
+  @if (mensajeError) {
+    <div class="alert alert-danger app-alert">
+      <i class="bi bi-exclamation-triangle me-2"></i>
+      {{ mensajeError }}
+    </div>
+  }
 
   <!-- Cargando -->
-  <div *ngIf="cargandoEmpresa || cargandoSucursal" class="loading-state">
-    <div class="loading-card">
-      <div class="spinner-border text-primary mb-3"></div>
+  @if (cargandoEmpresa || cargandoSucursal) {
+    <div class="loading-state">
+      <div class="loading-card">
+        <div class="spinner-border text-primary mb-3"></div>
 
-      <h6 class="mb-1">
-        Cargando información
-      </h6>
+        <h6 class="mb-1">
+          Cargando información
+        </h6>
 
-      <p class="text-muted mb-0">
-        Estamos consultando los datos de la empresa y la sucursal...
-      </p>
+        <p class="text-muted mb-0">
+          Estamos consultando los datos de la empresa y la sucursal...
+        </p>
+      </div>
     </div>
-  </div>
+  }
 
   <!-- Contexto -->
-  <div
-    *ngIf="empresa && sucursal && !cargandoEmpresa && !cargandoSucursal"
-    class="app-card mb-4">
+  @if (empresa && sucursal && !cargandoEmpresa && !cargandoSucursal) {
+    <div class="app-card mb-4">
 
-    <div class="app-card-body">
+      <div class="app-card-body">
 
-      <div class="section-heading mb-4">
-        <div>
-          <h5 class="section-title mb-1">
-            Contexto
-          </h5>
-
-          <p class="section-subtitle mb-0">
-            Información de referencia donde se asociará el empleado.
-          </p>
-        </div>
-
-        <div class="section-icon primary">
-          <i class="bi bi-diagram-3"></i>
-        </div>
-      </div>
-
-      <div class="context-grid">
-
-        <div class="context-item">
-          <span>Empresa</span>
-          <strong>{{ empresa.nombre }}</strong>
-        </div>
-
-        <div class="context-item">
-          <span>NIT</span>
-          <strong>{{ empresa.nit }}</strong>
-        </div>
-
-        <div class="context-item">
-          <span>Sucursal</span>
-          <strong>{{ sucursal.nombre }}</strong>
-        </div>
-
-        <div class="context-item">
-          <span>Ciudad</span>
-          <strong>{{ sucursal.ciudad }}</strong>
-        </div>
-
-      </div>
-
-    </div>
-  </div>
-
-  <!-- Contenido principal -->
-  <div
-    *ngIf="empresa && sucursal && !cargandoEmpresa && !cargandoSucursal"
-    class="row g-4">
-
-    <!-- Formulario -->
-    <div class="col-12 col-xl-5">
-
-      <div class="app-card employee-form-card h-100">
-
-        <div class="app-card-header">
-
-          <div class="section-heading">
-            <div>
-              <h5 class="section-title mb-1">
-                Crear empleado
-              </h5>
-
-              <p class="section-subtitle mb-0">
-                Este formulario crea únicamente usuarios con rol EMPLEADO.
-              </p>
-            </div>
-
-            <div class="section-icon success">
-              <i class="bi bi-person-plus"></i>
-            </div>
-          </div>
-
-        </div>
-
-        <div class="app-card-body">
-
-          <form [formGroup]="formularioEmpleado" (ngSubmit)="crearEmpleado()">
-
-            <!-- Nombre -->
-            <div class="form-group-custom mb-3">
-              <label class="form-label form-label-custom">
-                Nombre del empleado
-              </label>
-
-              <div class="input-icon-wrapper">
-                <i class="bi bi-person"></i>
-
-                <input
-                  type="text"
-                  class="form-control form-control-custom"
-                  formControlName="nombre"
-                  placeholder="Ej: Juan Pérez"
-                  [class.is-invalid]="campoInvalido('nombre')">
-              </div>
-
-              <div
-                *ngIf="campoInvalido('nombre')"
-                class="invalid-feedback d-block">
-                El nombre es obligatorio y no puede superar 150 caracteres.
-              </div>
-            </div>
-
-            <!-- Username -->
-            <div class="form-group-custom mb-3">
-              <label class="form-label form-label-custom">
-                Username
-              </label>
-
-              <div class="input-icon-wrapper">
-                <i class="bi bi-at"></i>
-
-                <input
-                  type="text"
-                  class="form-control form-control-custom"
-                  formControlName="username"
-                  placeholder="Ej: empleado_sucursal"
-                  [class.is-invalid]="campoInvalido('username')">
-              </div>
-
-              <div
-                *ngIf="campoInvalido('username')"
-                class="invalid-feedback d-block">
-                El username es obligatorio y no puede superar 100 caracteres.
-              </div>
-            </div>
-
-            <!-- Password -->
-            <div class="form-group-custom mb-3">
-              <label class="form-label form-label-custom">
-                Contraseña
-              </label>
-
-              <div class="input-icon-wrapper">
-                <i class="bi bi-lock"></i>
-
-                <input
-                  type="password"
-                  class="form-control form-control-custom"
-                  formControlName="password"
-                  placeholder="Mínimo 6 caracteres"
-                  [class.is-invalid]="campoInvalido('password')">
-              </div>
-
-              <div
-                *ngIf="campoInvalido('password')"
-                class="invalid-feedback d-block">
-                La contraseña es obligatoria y debe tener mínimo 6 caracteres.
-              </div>
-            </div>
-
-            <!-- Rol -->
-            <div class="form-group-custom mb-3">
-              <label class="form-label form-label-custom">
-                Rol
-              </label>
-
-              <div class="input-icon-wrapper role-input">
-                <i class="bi bi-shield-check"></i>
-
-                <input
-                  type="text"
-                  class="form-control form-control-custom"
-                  value="EMPLEADO"
-                  disabled>
-              </div>
-            </div>
-
-            <!-- Info -->
-            <div class="employee-info-alert">
-              <i class="bi bi-info-circle"></i>
-
-              <span>
-                El empleado quedará asociado directamente a la sucursal
-                <strong>{{ sucursal.nombre }}</strong>.
-              </span>
-            </div>
-
-            <!-- Acciones -->
-            <div class="form-actions mt-4">
-
-              <a
-                [routerLink]="['/super-admin/empresas', empresaId, 'sucursales', 'detalle', sucursalId]"
-                class="btn btn-cancel">
-                Cancelar
-              </a>
-
-              <button
-                type="submit"
-                class="btn btn-submit"
-                [disabled]="guardando">
-
-                <span
-                  *ngIf="guardando"
-                  class="spinner-border spinner-border-sm me-2">
-                </span>
-
-                <i *ngIf="!guardando" class="bi bi-person-plus me-2"></i>
-                Crear empleado
-              </button>
-
-            </div>
-
-          </form>
-
-        </div>
-
-      </div>
-
-    </div>
-
-    <!-- Lista de usuarios -->
-    <div class="col-12 col-xl-7">
-
-      <div class="app-card h-100">
-
-        <div class="app-card-header">
-
-          <div class="section-heading">
-            <div>
-              <h5 class="section-title mb-1">
-                Usuarios existentes
-              </h5>
-
-              <p class="section-subtitle mb-0">
-                Primero aparecen administradores y luego empleados de esta sucursal.
-              </p>
-            </div>
-
-            <div class="section-icon info">
-              <i class="bi bi-people"></i>
-            </div>
-          </div>
-
-        </div>
-
-        <div class="app-card-body p-0">
-
-          <!-- Cargando usuarios -->
-          <div *ngIf="cargandoUsuarios" class="loading-inline">
-            <div class="spinner-border text-primary mb-3"></div>
-            <p class="text-muted mb-0">
-              Cargando usuarios...
-            </p>
-          </div>
-
-          <!-- Estado vacío -->
-          <div
-            *ngIf="!cargandoUsuarios && usuariosContexto.length === 0"
-            class="empty-state m-4">
-
-            <div class="empty-icon">
-              <i class="bi bi-person-badge"></i>
-            </div>
-
-            <h5>
-              No hay usuarios para mostrar
+        <div class="section-heading mb-4">
+          <div>
+            <h5 class="section-title mb-1">
+              Contexto
             </h5>
 
-            <p>
-              Crea el primer empleado para esta sucursal.
+            <p class="section-subtitle mb-0">
+              Información de referencia donde se asociará el empleado.
             </p>
+          </div>
+
+          <div class="section-icon primary">
+            <i class="bi bi-diagram-3"></i>
+          </div>
+        </div>
+
+        <div class="context-grid">
+
+          <div class="context-item">
+            <span>Empresa</span>
+            <strong>{{ empresa.nombre }}</strong>
+          </div>
+
+          <div class="context-item">
+            <span>NIT</span>
+            <strong>{{ empresa.nit }}</strong>
+          </div>
+
+          <div class="context-item">
+            <span>Sucursal</span>
+            <strong>{{ sucursal.nombre }}</strong>
+          </div>
+
+          <div class="context-item">
+            <span>Ciudad</span>
+            <strong>{{ sucursal.ciudad }}</strong>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  }
+
+  <!-- Contenido principal -->
+  @if (empresa && sucursal && !cargandoEmpresa && !cargandoSucursal) {
+    <div class="row g-4">
+
+      <!-- Formulario -->
+      <div class="col-12 col-xl-5">
+
+        <div class="app-card employee-form-card h-100">
+
+          <div class="app-card-header">
+
+            <div class="section-heading">
+              <div>
+                <h5 class="section-title mb-1">
+                  Crear empleado
+                </h5>
+
+                <p class="section-subtitle mb-0">
+                  Este formulario crea únicamente usuarios con rol EMPLEADO.
+                </p>
+              </div>
+
+              <div class="section-icon success">
+                <i class="bi bi-person-plus"></i>
+              </div>
+            </div>
 
           </div>
 
-          <!-- Tabla usuarios -->
-          <div
-            *ngIf="!cargandoUsuarios && usuariosContexto.length > 0"
-            class="table-wrapper">
+          <div class="app-card-body">
 
-            <table class="table users-table align-middle mb-0">
+            <form
+              [formGroup]="formularioEmpleado"
+              (ngSubmit)="crearEmpleado()">
 
-              <thead>
-              <tr>
-                <th>ID</th>
-                <th>Nombre</th>
-                <th>Username</th>
-                <th>Rol</th>
-                <th>Sucursal</th>
-                <th class="text-end">Acciones</th>
-              </tr>
-              </thead>
+              <!-- Nombre -->
+              <div class="form-group-custom mb-3">
+                <label class="form-label form-label-custom">
+                  Nombre del empleado
+                </label>
 
-              <tbody>
-              <tr *ngFor="let usuario of usuariosContexto">
+                <div class="input-icon-wrapper">
+                  <i class="bi bi-person"></i>
 
-                <td>
-                    <span class="id-pill">
-                      #{{ usuario.id }}
-                    </span>
-                </td>
+                  <input
+                    type="text"
+                    class="form-control form-control-custom"
+                    formControlName="nombre"
+                    placeholder="Ej: Juan Pérez"
+                    [class.is-invalid]="campoInvalido('nombre')">
+                </div>
 
-                <td>
-                  <div class="user-cell">
-
-                    <div class="user-avatar">
-                      {{ usuario.nombre ? usuario.nombre.charAt(0).toUpperCase() : 'U' }}
-                    </div>
-
-                    <div class="user-name">
-                      {{ usuario.nombre }}
-                    </div>
-
+                @if (campoInvalido('nombre')) {
+                  <div class="invalid-feedback d-block">
+                    El nombre es obligatorio y no puede superar 150 caracteres.
                   </div>
-                </td>
+                }
+              </div>
 
-                <td>
-                    <span class="username-text">
-                      {{ usuario.username }}
-                    </span>
-                </td>
+              <!-- Username -->
+              <div class="form-group-custom mb-3">
+                <label class="form-label form-label-custom">
+                  Username
+                </label>
 
-                <td>
-                    <span
-                      class="role-badge"
-                      [ngClass]="{
-                        'role-admin': usuario.rol === 'ADMIN',
-                        'role-employee': usuario.rol === 'EMPLEADO'
-                      }">
-                      {{ usuario.rol }}
-                    </span>
-                </td>
+                <div class="input-icon-wrapper">
+                  <i class="bi bi-at"></i>
 
-                <td>
-                  {{ usuario.sucursalNombre || 'Sin sucursal' }}
-                </td>
+                  <input
+                    type="text"
+                    class="form-control form-control-custom"
+                    formControlName="username"
+                    placeholder="Ej: empleado_sucursal"
+                    [class.is-invalid]="campoInvalido('username')">
+                </div>
 
-                <td class="text-end">
-
-                  <div class="table-actions">
-
-
-
-                    <button
-                      *ngIf="puedeEliminarUsuario(usuario)"
-                      type="button"
-                      class="btn btn-action-delete"
-                      (click)="eliminarUsuario(usuario)">
-                      <i class="bi bi-trash"></i>
-                    </button>
-
+                @if (campoInvalido('username')) {
+                  <div class="invalid-feedback d-block">
+                    El username es obligatorio y debe tener entre 4 y 100 caracteres.
                   </div>
+                }
+              </div>
 
-                </td>
+              <!-- Password -->
+              <div class="form-group-custom mb-3">
+                <label class="form-label form-label-custom">
+                  Contraseña
+                </label>
 
-              </tr>
-              </tbody>
+                <div class="input-icon-wrapper">
+                  <i class="bi bi-lock"></i>
 
-            </table>
+                  <input
+                    type="password"
+                    class="form-control form-control-custom"
+                    formControlName="password"
+                    placeholder="Mínimo 6 caracteres"
+                    [class.is-invalid]="campoInvalido('password')">
+                </div>
+
+                @if (campoInvalido('password')) {
+                  <div class="invalid-feedback d-block">
+                    La contraseña es obligatoria y debe tener mínimo 6 caracteres.
+                  </div>
+                }
+              </div>
+
+              <!-- Rol -->
+              <div class="form-group-custom mb-3">
+                <label class="form-label form-label-custom">
+                  Rol
+                </label>
+
+                <div class="input-icon-wrapper role-input">
+                  <i class="bi bi-shield-check"></i>
+
+                  <input
+                    type="text"
+                    class="form-control form-control-custom"
+                    value="EMPLEADO"
+                    disabled>
+                </div>
+              </div>
+
+              <!-- Info -->
+              <div class="employee-info-alert">
+                <i class="bi bi-info-circle"></i>
+
+                <span>
+                  El empleado quedará asociado directamente a la sucursal
+                  <strong>{{ sucursal.nombre }}</strong>.
+                </span>
+              </div>
+
+              <!-- Acciones -->
+              <div class="form-actions mt-4">
+
+                <a
+                  [routerLink]="rutaDetalleSucursal()"
+                  class="btn btn-cancel">
+                  Cancelar
+                </a>
+
+                <button
+                  type="submit"
+                  class="btn btn-submit"
+                  [disabled]="guardando">
+
+                  @if (guardando) {
+                    <span class="spinner-border spinner-border-sm me-2"></span>
+                  }
+
+                  @if (!guardando) {
+                    <i class="bi bi-person-plus me-2"></i>
+                  }
+
+                  Crear empleado
+                </button>
+
+              </div>
+
+            </form>
+
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- Lista de usuarios -->
+      <div class="col-12 col-xl-7">
+
+        <div class="app-card h-100">
+
+          <div class="app-card-header">
+
+            <div class="section-heading">
+              <div>
+                <h5 class="section-title mb-1">
+                  Usuarios existentes
+                </h5>
+
+                <p class="section-subtitle mb-0">
+                  Primero aparecen administradores y luego empleados de esta sucursal.
+                </p>
+              </div>
+
+              <div class="section-icon info">
+                <i class="bi bi-people"></i>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="app-card-body p-0">
+
+            <!-- Cargando usuarios -->
+            @if (cargandoUsuarios) {
+              <div class="loading-inline">
+                <div class="spinner-border text-primary mb-3"></div>
+                <p class="text-muted mb-0">
+                  Cargando usuarios...
+                </p>
+              </div>
+            }
+
+            <!-- Estado vacío -->
+            @if (!cargandoUsuarios && usuariosContexto.length === 0) {
+              <div class="empty-state m-4">
+
+                <div class="empty-icon">
+                  <i class="bi bi-person-badge"></i>
+                </div>
+
+                <h5>
+                  No hay usuarios para mostrar
+                </h5>
+
+                <p>
+                  Crea el primer empleado para esta sucursal.
+                </p>
+
+              </div>
+            }
+
+            <!-- Tabla usuarios -->
+            @if (!cargandoUsuarios && usuariosContexto.length > 0) {
+              <div class="table-wrapper">
+
+                <table class="table users-table align-middle mb-0">
+
+                  <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Username</th>
+                    <th>Rol</th>
+                    <th>Sucursal</th>
+                    <th class="text-end">Acciones</th>
+                  </tr>
+                  </thead>
+
+                  <tbody>
+
+                    @for (usuario of usuariosContexto; track usuario.id) {
+                      <tr>
+
+                        <td>
+                          <span class="id-pill">
+                            #{{ usuario.id }}
+                          </span>
+                        </td>
+
+                        <td>
+                          <div class="user-cell">
+
+                            <div class="user-avatar">
+                              {{ usuario.nombre ? usuario.nombre.charAt(0).toUpperCase() : 'U' }}
+                            </div>
+
+                            <div>
+                              <div class="user-name">
+                                {{ usuario.nombre }}
+                              </div>
+
+                              <small class="text-muted d-xl-none">
+                                {{ usuario.username }}
+                              </small>
+                            </div>
+
+                          </div>
+                        </td>
+
+                        <td>
+                          <span class="username-text">
+                            {{ usuario.username }}
+                          </span>
+                        </td>
+
+                        <td>
+                          <span
+                            class="role-badge"
+                            [ngClass]="{
+                              'role-admin': usuario.rol === 'ADMIN',
+                              'role-employee': usuario.rol === 'EMPLEADO',
+                              'role-super-admin': usuario.rol === 'SUPER_ADMIN'
+                            }">
+                            {{ usuario.rol }}
+                          </span>
+                        </td>
+
+                        <td>
+                          {{ usuario.sucursalNombre || 'Sin sucursal' }}
+                        </td>
+
+                        <td class="text-end">
+
+                          <div class="table-actions">
+
+                            <!-- Cambiar contraseña -->
+                            <button
+                              type="button"
+                              class="btn btn-action-password"
+                              title="Cambiar contraseña"
+                              [disabled]="cambiandoPassword"
+                              (click)="abrirCambioPassword(usuario)">
+
+                              @if (cambiandoPassword) {
+                                <span class="spinner-border spinner-border-sm"></span>
+                              }
+
+                              @if (!cambiandoPassword) {
+                                <i class="bi bi-pencil-square"></i>
+                              }
+
+                            </button>
+
+                            <!-- Eliminar -->
+                            @if (puedeEliminarUsuario(usuario)) {
+                              <button
+                                type="button"
+                                class="btn btn-action-delete"
+                                title="Eliminar usuario"
+                                [disabled]="eliminando"
+                                (click)="eliminarUsuario(usuario)">
+
+                                <i class="bi bi-trash"></i>
+
+                              </button>
+                            }
+
+                          </div>
+
+                        </td>
+
+                      </tr>
+                    }
+
+                  </tbody>
+
+                </table>
+
+              </div>
+            }
 
           </div>
 
@@ -415,7 +459,6 @@
       </div>
 
     </div>
-
-  </div>
+  }
 
 </div>

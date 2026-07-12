@@ -62,6 +62,7 @@
     </div>
   }
 
+  <!-- Cliente -->
   <div class="card border-0 shadow-sm mb-4">
     <div class="card-body p-4">
 
@@ -219,6 +220,7 @@
   @if (!cargandoInventario) {
     <div class="row g-4">
 
+      <!-- Agregar producto -->
       <div class="col-12 col-xl-5">
 
         <div
@@ -304,6 +306,7 @@
 
       </div>
 
+      <!-- Detalle venta -->
       <div class="col-12 col-xl-7">
 
         <div
@@ -411,6 +414,7 @@
 
               </div>
 
+              <!-- Descuento -->
               <div class="discount-box mb-3">
 
                 <div class="d-flex flex-column flex-md-row justify-content-md-between gap-2 mb-3">
@@ -421,7 +425,7 @@
                     </h6>
 
                     <p class="text-muted small mb-0">
-                      Aplica un porcentaje rápido o ingresa un descuento manual.
+                      Aplica un porcentaje rápido o ingresa un porcentaje manual.
                     </p>
                   </div>
 
@@ -461,7 +465,7 @@
                     (click)="activarDescuentoManual()"
                     [disabled]="!ventaHabilitada">
 
-                    Descuento manual
+                    Descuento manual %
 
                   </button>
 
@@ -471,18 +475,31 @@
                   <div class="manual-discount mt-3">
 
                     <label class="form-label">
-                      Valor descuento manual
+                      Porcentaje de descuento manual
                     </label>
 
-                    <input
-                      type="number"
-                      class="form-control"
-                      min="0"
-                      [max]="calcularSubtotal()"
-                      [(ngModel)]="descuento"
-                      (input)="actualizarDescuentoManual()"
-                      [disabled]="!ventaHabilitada"
-                      placeholder="Ej: 10000">
+                    <div class="input-group">
+                      <input
+                        type="number"
+                        class="form-control"
+                        min="0"
+                        max="100"
+                        [(ngModel)]="descuentoManualPorcentaje"
+                        (input)="actualizarDescuentoManual()"
+                        [disabled]="!ventaHabilitada"
+                        placeholder="Ej: 12">
+
+                      <span class="input-group-text">
+                        %
+                      </span>
+                    </div>
+
+                    <div class="text-muted small mt-2">
+                      Descuento calculado:
+                      <strong>
+                        {{ (descuento || 0) | currency:'COP':'symbol-narrow':'1.0-0' }}
+                      </strong>
+                    </div>
 
                   </div>
                 }
@@ -497,7 +514,16 @@
                   </div>
 
                   <div class="sale-summary-row discount-row">
-                    <span>Descuento</span>
+                    <span>
+                      Descuento
+                      @if (porcentajeDescuentoSeleccionado !== null) {
+                        ({{ porcentajeDescuentoSeleccionado }}%)
+                      }
+                      @if (descuentoManualActivo) {
+                        ({{ descuentoManualPorcentaje || 0 }}%)
+                      }
+                    </span>
+
                     <strong>
                       - {{ (descuento || 0) | currency:'COP':'symbol-narrow':'1.0-0' }}
                     </strong>

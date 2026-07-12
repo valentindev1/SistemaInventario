@@ -529,7 +529,79 @@ public class InventarioServicioImpl implements InventarioServicio {
         return dto;
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<InventarioEmpleadoDTO> listarInventarioPorSucursalEmpleado(
+            Long usuarioId,
+            Long sucursalId
+    ) {
 
+        Usuario empleado = usuarioRepositorio.findById(usuarioId)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        if (empleado.getRol() != RolEnum.EMPLEADO) {
+            throw new RuntimeException("Solo empleados pueden consultar este inventario");
+        }
+
+        if (empleado.getSucursal() == null) {
+            throw new RuntimeException("El empleado no tiene sucursal asignada");
+        }
+
+        if (!empleado.getSucursal().getId().equals(sucursalId)) {
+            throw new RuntimeException("No puedes consultar inventario de otra sucursal");
+        }
+
+        return inventarioSucursalRepositorio.findBySucursalId(sucursalId)
+                .stream()
+                .map(this::mapToInventarioEmpleadoDTO)
+                .toList();
+    }
+
+    private InventarioEmpleadoDTO mapToInventarioEmpleadoDTO(
+            InventarioSucursal inventario
+    ) {
+
+        InventarioEmpleadoDTO dto = new InventarioEmpleadoDTO();
+
+
+
+        dto.setProductoId(inventario.getProducto().getId());
+        dto.setCodigo(inventario.getProducto().getCodigo());
+        dto.setNombre(inventario.getProducto().getNombre());
+        dto.setDescripcion(inventario.getProducto().getDescripcion());
+
+        dto.setCategoria(
+                inventario.getProducto().getCategoria() != null
+                        ? inventario.getProducto().getCategoria().getNombre()
+                        : null
+        );
+
+        dto.setColor(
+                inventario.getProducto().getColor() != null
+                        ? inventario.getProducto().getColor().getNombre()
+                        : null
+        );
+
+        dto.setTalla(
+                inventario.getProducto().getTalla() != null
+                        ? inventario.getProducto().getTalla().getNombre()
+                        : null
+        );
+
+        dto.setGenero(
+                inventario.getProducto().getGenero() != null
+                        ? inventario.getProducto().getGenero().getNombre()
+                        : null
+        );
+
+        dto.setStockActual(inventario.getStockActual());
+        dto.setPrecioVenta(inventario.getProducto().getPrecioVenta());
+
+        dto.setSucursalId(inventario.getSucursal().getId());
+        dto.setSucursalNombre(inventario.getSucursal().getNombre());
+
+        return dto;
+    }
 
 
 }

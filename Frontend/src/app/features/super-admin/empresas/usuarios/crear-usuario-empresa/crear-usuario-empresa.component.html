@@ -1,185 +1,299 @@
-<div class="container-fluid">
+<div class="crear-admin-page">
 
-  <div class="d-flex flex-column flex-md-row justify-content-md-between align-items-md-center gap-3 mb-4">
+  <!-- HERO -->
+  <section class="admin-hero mb-4">
 
-    <div>
-      <a
-        [routerLink]="['/super-admin/empresas/detalle', empresaId]"
-        class="btn btn-link px-0 mb-2"
-      >
-        <i class="bi bi-arrow-left me-1"></i>
-        Volver al detalle de empresa
-      </a>
+    <div class="hero-content">
 
-      <h2 class="fw-bold mb-1">Crear usuario administrador</h2>
+      <div class="hero-top">
 
-      <p class="text-muted mb-0">
-        Crea un usuario ADMIN asociado directamente a esta empresa.
-      </p>
-    </div>
+        <a
+          [routerLink]="rutaDetalleEmpresa()"
+          class="btn-back">
+          <i class="bi bi-arrow-left"></i>
+          Volver al detalle de empresa
+        </a>
 
-  </div>
+        <span class="hero-badge">
+          <i class="bi bi-person-plus"></i>
+          Nuevo administrador
+        </span>
 
-  <div *ngIf="mensajeExito" class="alert alert-success">
-    <i class="bi bi-check-circle me-1"></i>
-    {{ mensajeExito }}
-  </div>
+      </div>
 
-  <div *ngIf="mensajeError" class="alert alert-danger">
-    <i class="bi bi-exclamation-triangle me-1"></i>
-    {{ mensajeError }}
-  </div>
+      <div class="hero-main">
 
-  <div *ngIf="cargandoEmpresa || verificandoUsuarios" class="text-center p-4">
-    <div class="spinner-border text-primary"></div>
-    <p class="text-muted mt-2 mb-0">Cargando información...</p>
-  </div>
+        <div>
+          <h1>
+            <i class="bi bi-person-gear me-2"></i>
+            Crear usuario administrador
+          </h1>
 
-  <!-- Información de empresa -->
-  <div
-    *ngIf="empresa && !cargandoEmpresa && !verificandoUsuarios"
-    class="card border-0 shadow-sm mb-4"
-  >
-    <div class="card-body p-4">
-
-      <h5 class="fw-bold mb-3">{{ empresa.nombre }}</h5>
-
-      <div class="row g-3">
-
-        <div class="col-12 col-md-6 col-xl-3">
-          <div class="text-muted small">NIT</div>
-          <div class="fw-semibold">{{ empresa.nit }}</div>
-        </div>
-
-        <div class="col-12 col-md-6 col-xl-3">
-          <div class="text-muted small">Correo</div>
-          <div class="fw-semibold">{{ empresa.correo }}</div>
-        </div>
-
-        <div class="col-12 col-md-6 col-xl-3">
-          <div class="text-muted small">Teléfono</div>
-          <div class="fw-semibold">{{ empresa.telefono }}</div>
-        </div>
-
-        <div class="col-12 col-md-6 col-xl-3">
-          <div class="text-muted small">Fecha creación</div>
-          <div class="fw-semibold">
-            {{ empresa.fechaCreacion | date:'yyyy-MM-dd HH:mm' }}
-          </div>
+          <p>
+            Registra un usuario ADMIN asociado directamente a esta empresa.
+            Este usuario podrá gestionar sucursales, productos, inventario, ventas y clientes.
+          </p>
         </div>
 
       </div>
 
     </div>
+
+  </section>
+
+  <!-- ALERTAS -->
+  <div *ngIf="mensajeExito" class="app-alert-success mb-4">
+    <i class="bi bi-check-circle"></i>
+    <span>{{ mensajeExito }}</span>
   </div>
 
-  <!-- Aviso si NO tiene usuarios -->
+  <div *ngIf="mensajeError" class="app-alert-danger mb-4">
+    <i class="bi bi-exclamation-triangle"></i>
+    <span>{{ mensajeError }}</span>
+  </div>
+
+  <!-- LOADING -->
+  <div *ngIf="cargandoEmpresa || verificandoUsuarios" class="loading-state">
+    <div class="spinner-border text-primary"></div>
+    <p>Cargando información...</p>
+  </div>
+
+  <!-- EMPRESA -->
+  <section
+    *ngIf="empresa && !cargandoEmpresa && !verificandoUsuarios"
+    class="empresa-card mb-4">
+
+    <div class="empresa-card-header">
+
+      <div class="empresa-icon">
+        <i class="bi bi-building"></i>
+      </div>
+
+      <div>
+        <h2>{{ empresa.nombre }}</h2>
+        <p>Información principal de la empresa asociada al administrador.</p>
+      </div>
+
+    </div>
+
+    <div class="empresa-grid">
+
+      <div class="empresa-info-item">
+        <span>NIT</span>
+        <strong>{{ empresa.nit }}</strong>
+      </div>
+
+      <div class="empresa-info-item">
+        <span>Correo</span>
+        <strong>{{ empresa.correo }}</strong>
+      </div>
+
+      <div class="empresa-info-item">
+        <span>Teléfono</span>
+        <strong>{{ empresa.telefono }}</strong>
+      </div>
+
+      <div class="empresa-info-item">
+        <span>Fecha creación</span>
+        <strong>{{ empresa.fechaCreacion | date:'yyyy-MM-dd HH:mm' }}</strong>
+      </div>
+
+    </div>
+
+  </section>
+
+  <!-- AVISO SIN USUARIOS -->
   <div
     *ngIf="empresa && !tieneUsuarios && !verificandoUsuarios"
-    class="alert alert-warning"
-  >
-    <i class="bi bi-exclamation-triangle me-1"></i>
-    Esta empresa aún no tiene usuarios registrados. Debes crear su primer usuario administrador.
+    class="info-banner warning mb-4">
+
+    <div class="banner-icon">
+      <i class="bi bi-exclamation-triangle"></i>
+    </div>
+
+    <div>
+      <strong>Primer administrador requerido</strong>
+      <p>
+        Esta empresa aún no tiene usuarios registrados. Crea su primer usuario administrador.
+      </p>
+    </div>
+
   </div>
 
-  <!-- Aviso si YA tiene usuarios -->
+  <!-- AVISO CON USUARIOS -->
   <div
     *ngIf="empresa && tieneUsuarios && !verificandoUsuarios"
-    class="alert alert-info"
-  >
-    <i class="bi bi-info-circle me-1"></i>
-    Esta empresa ya tiene usuarios registrados. Puedes crear otro administrador para esta empresa.
+    class="info-banner info mb-4">
+
+    <div class="banner-icon">
+      <i class="bi bi-info-circle"></i>
+    </div>
+
+    <div>
+      <strong>Empresa con usuarios existentes</strong>
+      <p>
+        Esta empresa ya tiene usuarios registrados. Puedes crear otro administrador para esta empresa.
+      </p>
+    </div>
+
   </div>
 
-  <!-- Formulario -->
-  <div
+  <!-- FORMULARIO -->
+  <section
     *ngIf="empresa && !cargandoEmpresa && !verificandoUsuarios"
-    class="card border-0 shadow-sm"
-  >
-    <div class="card-body p-4">
+    class="form-card">
+
+    <div class="form-card-header">
+
+      <div class="section-icon">
+        <i class="bi bi-person-plus"></i>
+      </div>
+
+      <div>
+        <h3>Datos del administrador</h3>
+        <p>
+          Completa la información de acceso para el nuevo usuario administrador.
+        </p>
+      </div>
+
+    </div>
+
+    <div class="form-card-body">
 
       <form [formGroup]="formularioAdministrador" (ngSubmit)="crearAdministrador()">
 
-        <div class="row g-3">
+        <div class="row g-4">
 
+          <!-- Nombre -->
           <div class="col-12 col-md-6">
-            <label class="form-label">Nombre del administrador</label>
-            <input
-              type="text"
-              class="form-control"
-              formControlName="nombre"
-              placeholder="Ej: Juan Pérez"
-              [class.is-invalid]="campoInvalido('nombre')"
-            >
+            <div class="form-field">
 
-            <div class="invalid-feedback">
-              El nombre es obligatorio.
+              <label>Nombre del administrador</label>
+
+              <div class="input-shell">
+                <i class="bi bi-person"></i>
+
+                <input
+                  type="text"
+                  formControlName="nombre"
+                  placeholder="Ej: Juan Pérez"
+                  [class.is-invalid]="campoInvalido('nombre')">
+              </div>
+
+              <div *ngIf="campoInvalido('nombre')" class="field-error">
+                El nombre es obligatorio.
+              </div>
+
             </div>
           </div>
 
+          <!-- Username -->
           <div class="col-12 col-md-6">
-            <label class="form-label">Username</label>
-            <input
-              type="text"
-              class="form-control"
-              formControlName="username"
-              placeholder="Ej: admin_empresa"
-              [class.is-invalid]="campoInvalido('username')"
-            >
+            <div class="form-field">
 
-            <div class="invalid-feedback">
-              El username es obligatorio.
+              <label>Username</label>
+
+              <div class="input-shell">
+                <i class="bi bi-at"></i>
+
+                <input
+                  type="text"
+                  formControlName="username"
+                  placeholder="Ej: admin_empresa"
+                  [class.is-invalid]="campoInvalido('username')">
+              </div>
+
+              <div *ngIf="campoInvalido('username')" class="field-error">
+                El username es obligatorio y debe tener entre 4 y 20 caracteres.
+              </div>
+
             </div>
           </div>
 
+          <!-- Password -->
           <div class="col-12 col-md-6">
-            <label class="form-label">Contraseña</label>
-            <input
-              type="password"
-              class="form-control"
-              formControlName="password"
-              placeholder="Mínimo 6 caracteres"
-              [class.is-invalid]="campoInvalido('password')"
-            >
+            <div class="form-field">
 
-            <div class="invalid-feedback">
-              La contraseña es obligatoria y debe tener mínimo 6 caracteres.
+              <label>Contraseña</label>
+
+              <div class="input-shell">
+                <i class="bi bi-lock"></i>
+
+                <input
+                  type="password"
+                  formControlName="password"
+                  placeholder="Mínimo 6 caracteres"
+                  [class.is-invalid]="campoInvalido('password')">
+              </div>
+
+              <div *ngIf="campoInvalido('password')" class="field-error">
+                La contraseña es obligatoria y debe tener mínimo 6 caracteres.
+              </div>
+
             </div>
           </div>
 
+          <!-- Rol -->
           <div class="col-12 col-md-6">
-            <label class="form-label">Rol</label>
-            <input
-              type="text"
-              class="form-control"
-              value="ADMIN"
-              disabled
-            >
+            <div class="form-field">
+
+              <label>Rol</label>
+
+              <div class="input-shell locked">
+                <i class="bi bi-shield-check"></i>
+
+                <input
+                  type="text"
+                  value="ADMIN"
+                  disabled>
+              </div>
+
+            </div>
           </div>
 
         </div>
 
-        <div class="d-flex flex-column flex-md-row justify-content-md-end gap-2 mt-4">
+        <!-- INFO -->
+        <div class="info-box mt-4">
+
+          <div class="info-icon">
+            <i class="bi bi-info-circle"></i>
+          </div>
+
+          <div>
+            <strong>Información importante</strong>
+
+            <p>
+              El usuario creado quedará asociado a
+              <strong>{{ empresa.nombre }}</strong>.
+              Su rol será <strong>ADMIN</strong> y podrá acceder al panel administrativo de esta empresa.
+            </p>
+          </div>
+
+        </div>
+
+        <!-- ACTIONS -->
+        <div class="form-actions">
 
           <a
-            [routerLink]="['/super-admin/empresas/detalle', empresaId]"
-            class="btn btn-light"
-          >
+            [routerLink]="rutaDetalleEmpresa()"
+            class="btn btn-cancel">
             Cancelar
           </a>
 
           <button
             type="submit"
-            class="btn btn-primary"
-            [disabled]="guardando"
-          >
+            class="btn btn-save"
+            [disabled]="guardando">
+
             <span
               *ngIf="guardando"
-              class="spinner-border spinner-border-sm me-2"
-            ></span>
+              class="spinner-border spinner-border-sm me-2">
+            </span>
 
-            <i *ngIf="!guardando" class="bi bi-person-plus me-1"></i>
+            <i *ngIf="!guardando" class="bi bi-person-plus me-2"></i>
             Crear administrador
+
           </button>
 
         </div>
@@ -187,6 +301,7 @@
       </form>
 
     </div>
-  </div>
+
+  </section>
 
 </div>

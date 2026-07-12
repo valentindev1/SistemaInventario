@@ -1,171 +1,296 @@
-<div class="container-fluid">
+<div class="crear-sucursal-page">
 
-  <div class="d-flex flex-column flex-md-row justify-content-md-between align-items-md-center gap-3 mb-4">
+  <!-- Hero -->
+  <section class="sucursal-hero mb-4">
+    <div class="hero-content">
 
-    <div>
-      <a
-        [routerLink]="['/super-admin/empresas/detalle', empresaId]"
-        class="btn btn-link px-0 mb-2"
-      >
-        <i class="bi bi-arrow-left me-1"></i>
-        Volver al detalle de empresa
-      </a>
+      <div class="hero-top">
 
-      <h2 class="fw-bold mb-1">Crear sucursal</h2>
+        <a
+          [routerLink]="rutaDetalleEmpresa()"
+          class="btn-back">
+          <i class="bi bi-arrow-left"></i>
+          Volver al detalle de empresa
+        </a>
 
-      <p class="text-muted mb-0">
-        Registra una nueva sucursal asociada a la empresa seleccionada.
-      </p>
+        <span class="hero-badge">
+          <i class="bi bi-building-add"></i>
+          Nueva sucursal
+        </span>
+
+      </div>
+
+      <div class="hero-main">
+        <div>
+          <h1>
+            <i class="bi bi-shop me-2"></i>
+            Crear sucursal
+          </h1>
+
+          <p>
+            Registra una nueva sucursal asociada a la empresa seleccionada.
+            Desde esta sucursal podrás gestionar usuarios, inventario, ventas y clientes.
+          </p>
+        </div>
+      </div>
+
     </div>
+  </section>
 
-  </div>
+  <!-- Mensaje éxito -->
+  @if (mensajeExito) {
+    <div class="app-alert-success mb-4">
+      <i class="bi bi-check-circle"></i>
+      <span>{{ mensajeExito }}</span>
+    </div>
+  }
 
-  <div *ngIf="mensajeExito" class="alert alert-success">
-    <i class="bi bi-check-circle me-1"></i>
-    {{ mensajeExito }}
-  </div>
+  <!-- Mensaje error -->
+  @if (mensajeError) {
+    <div class="app-alert-danger mb-4">
+      <i class="bi bi-exclamation-triangle"></i>
+      <span>{{ mensajeError }}</span>
+    </div>
+  }
 
-  <div *ngIf="mensajeError" class="alert alert-danger">
-    <i class="bi bi-exclamation-triangle me-1"></i>
-    {{ mensajeError }}
-  </div>
+  <!-- Cargando empresa -->
+  @if (cargandoEmpresa) {
+    <div class="loading-state">
+      <div class="spinner-border text-primary"></div>
+      <p>Cargando empresa...</p>
+    </div>
+  }
 
-  <div *ngIf="cargandoEmpresa" class="text-center p-4">
-    <div class="spinner-border text-primary"></div>
-    <p class="text-muted mt-2 mb-0">Cargando empresa...</p>
-  </div>
+  <!-- Empresa -->
+  @if (empresa && !cargandoEmpresa) {
+    <section class="empresa-card mb-4">
 
-  <div *ngIf="empresa && !cargandoEmpresa" class="card border-0 shadow-sm mb-4">
-    <div class="card-body p-4">
+      <div class="empresa-card-header">
 
-      <h5 class="fw-bold mb-3">{{ empresa.nombre }}</h5>
-
-      <div class="row g-3">
-
-        <div class="col-12 col-md-6 col-xl-3">
-          <div class="text-muted small">NIT</div>
-          <div class="fw-semibold">{{ empresa.nit }}</div>
+        <div class="empresa-icon">
+          <i class="bi bi-building"></i>
         </div>
 
-        <div class="col-12 col-md-6 col-xl-3">
-          <div class="text-muted small">Correo</div>
-          <div class="fw-semibold">{{ empresa.correo }}</div>
-        </div>
-
-        <div class="col-12 col-md-6 col-xl-3">
-          <div class="text-muted small">Teléfono</div>
-          <div class="fw-semibold">{{ empresa.telefono }}</div>
-        </div>
-
-        <div class="col-12 col-md-6 col-xl-3">
-          <div class="text-muted small">Fecha creación</div>
-          <div class="fw-semibold">
-            {{ empresa.fechaCreacion | date:'yyyy-MM-dd HH:mm' }}
-          </div>
+        <div>
+          <h2>{{ empresa.nombre }}</h2>
+          <p>
+            Información principal de la empresa asociada a la nueva sucursal.
+          </p>
         </div>
 
       </div>
 
-    </div>
-  </div>
+      <div class="empresa-grid">
 
-  <div *ngIf="empresa && !cargandoEmpresa" class="card border-0 shadow-sm">
-    <div class="card-body p-4">
-
-      <form [formGroup]="formularioSucursal" (ngSubmit)="crearSucursal()">
-
-        <div class="row g-3">
-
-          <div class="col-12 col-md-6">
-            <label class="form-label">Nombre de la sucursal</label>
-            <input
-              type="text"
-              class="form-control"
-              formControlName="nombre"
-              placeholder="Ej: Sucursal Centro"
-              [class.is-invalid]="campoInvalido('nombre')"
-            >
-
-            <div class="invalid-feedback">
-              El nombre es obligatorio y no puede superar 150 caracteres.
-            </div>
-          </div>
-
-          <div class="col-12 col-md-6">
-            <label class="form-label">Ciudad</label>
-            <input
-              type="text"
-              class="form-control"
-              formControlName="ciudad"
-              placeholder="Ej: Bogotá"
-              [class.is-invalid]="campoInvalido('ciudad')"
-            >
-
-            <div class="invalid-feedback">
-              La ciudad es obligatoria y no puede superar 200 caracteres.
-            </div>
-          </div>
-
-          <div class="col-12 col-md-8">
-            <label class="form-label">Dirección</label>
-            <input
-              type="text"
-              class="form-control"
-              formControlName="direccion"
-              placeholder="Ej: Calle 10 # 20 - 30"
-              [class.is-invalid]="campoInvalido('direccion')"
-            >
-
-            <div class="invalid-feedback">
-              La dirección es obligatoria y no puede superar 200 caracteres.
-            </div>
-          </div>
-
-          <div class="col-12 col-md-4">
-            <label class="form-label">Teléfono</label>
-            <input
-              type="text"
-              class="form-control"
-              formControlName="telefono"
-              placeholder="Ej: 3001234567"
-              [class.is-invalid]="campoInvalido('telefono')"
-            >
-
-            <div class="invalid-feedback">
-              El teléfono es obligatorio y no puede superar 30 caracteres.
-            </div>
-          </div>
-
+        <div class="empresa-info-item">
+          <span>NIT</span>
+          <strong>{{ empresa.nit }}</strong>
         </div>
 
-        <div class="d-flex flex-column flex-md-row justify-content-md-end gap-2 mt-4">
-
-          <a
-            [routerLink]="['/super-admin/empresas/detalle', empresaId]"
-            class="btn btn-light"
-          >
-            Cancelar
-          </a>
-
-          <button
-            type="submit"
-            class="btn btn-primary"
-            [disabled]="guardando"
-          >
-            <span
-              *ngIf="guardando"
-              class="spinner-border spinner-border-sm me-2"
-            ></span>
-
-            <i *ngIf="!guardando" class="bi bi-building-add me-1"></i>
-            Crear sucursal
-          </button>
-
+        <div class="empresa-info-item">
+          <span>Correo</span>
+          <strong>{{ empresa.correo }}</strong>
         </div>
 
-      </form>
+        <div class="empresa-info-item">
+          <span>Teléfono</span>
+          <strong>{{ empresa.telefono }}</strong>
+        </div>
 
-    </div>
-  </div>
+        <div class="empresa-info-item">
+          <span>Fecha creación</span>
+          <strong>
+            {{ empresa.fechaCreacion | date:'yyyy-MM-dd HH:mm' }}
+          </strong>
+        </div>
+
+      </div>
+
+    </section>
+  }
+
+  <!-- Formulario crear sucursal -->
+  @if (empresa && !cargandoEmpresa) {
+    <section class="form-card">
+
+      <div class="form-card-header">
+
+        <div class="section-icon">
+          <i class="bi bi-building-add"></i>
+        </div>
+
+        <div>
+          <h3>Datos de la sucursal</h3>
+          <p>
+            Completa la información operativa y de contacto de la nueva sucursal.
+          </p>
+        </div>
+
+      </div>
+
+      <div class="form-card-body">
+
+        <form
+          [formGroup]="formularioSucursal"
+          (ngSubmit)="crearSucursal()">
+
+          <div class="row g-4">
+
+            <!-- Nombre -->
+            <div class="col-12 col-md-6">
+              <div class="form-field">
+
+                <label>Nombre de la sucursal</label>
+
+                <div class="input-shell">
+                  <i class="bi bi-shop"></i>
+
+                  <input
+                    type="text"
+                    formControlName="nombre"
+                    placeholder="Ej: Sucursal Centro"
+                    [class.is-invalid]="campoInvalido('nombre')">
+                </div>
+
+                @if (campoInvalido('nombre')) {
+                  <div class="field-error">
+                    El nombre es obligatorio y no puede superar 150 caracteres.
+                  </div>
+                }
+
+              </div>
+            </div>
+
+            <!-- Ciudad -->
+            <div class="col-12 col-md-6">
+              <div class="form-field">
+
+                <label>Ciudad</label>
+
+                <div class="input-shell">
+                  <i class="bi bi-geo-alt"></i>
+
+                  <input
+                    type="text"
+                    formControlName="ciudad"
+                    placeholder="Ej: Bogotá"
+                    [class.is-invalid]="campoInvalido('ciudad')">
+                </div>
+
+                @if (campoInvalido('ciudad')) {
+                  <div class="field-error">
+                    La ciudad es obligatoria y no puede superar 200 caracteres.
+                  </div>
+                }
+
+              </div>
+            </div>
+
+            <!-- Dirección -->
+            <div class="col-12 col-md-8">
+              <div class="form-field">
+
+                <label>Dirección</label>
+
+                <div class="input-shell">
+                  <i class="bi bi-signpost-2"></i>
+
+                  <input
+                    type="text"
+                    formControlName="direccion"
+                    placeholder="Ej: Calle 10 # 20 - 30"
+                    [class.is-invalid]="campoInvalido('direccion')">
+                </div>
+
+                @if (campoInvalido('direccion')) {
+                  <div class="field-error">
+                    La dirección es obligatoria y no puede superar 200 caracteres.
+                  </div>
+                }
+
+              </div>
+            </div>
+
+            <!-- Teléfono -->
+            <div class="col-12 col-md-4">
+              <div class="form-field">
+
+                <label>Teléfono</label>
+
+                <div class="input-shell">
+                  <i class="bi bi-telephone"></i>
+
+                  <input
+                    type="text"
+                    formControlName="telefono"
+                    placeholder="Ej: 3001234567"
+                    [class.is-invalid]="campoInvalido('telefono')">
+                </div>
+
+                @if (campoInvalido('telefono')) {
+                  <div class="field-error">
+                    El teléfono es obligatorio y no puede superar 30 caracteres.
+                  </div>
+                }
+
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Información -->
+          <div class="info-box mt-4">
+
+            <div class="info-icon">
+              <i class="bi bi-info-circle"></i>
+            </div>
+
+            <div>
+              <strong>Información importante</strong>
+
+              <p>
+                La sucursal quedará asociada a la empresa
+                <strong>{{ empresa.nombre }}</strong>.
+                Después podrás crear empleados, gestionar inventario,
+                registrar ventas y administrar clientes.
+              </p>
+            </div>
+
+          </div>
+
+          <!-- Acciones -->
+          <div class="form-actions">
+
+            <a
+              [routerLink]="rutaDetalleEmpresa()"
+              class="btn btn-cancel">
+              Cancelar
+            </a>
+
+            <button
+              type="submit"
+              class="btn btn-save"
+              [disabled]="guardando">
+
+              @if (guardando) {
+                <span class="spinner-border spinner-border-sm me-2"></span>
+              }
+
+              @if (!guardando) {
+                <i class="bi bi-building-add me-2"></i>
+              }
+
+              Crear sucursal
+
+            </button>
+
+          </div>
+
+        </form>
+
+      </div>
+
+    </section>
+  }
 
 </div>

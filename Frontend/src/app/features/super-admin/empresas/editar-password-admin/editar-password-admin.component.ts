@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { UsuarioService } from '../../../../core/services/usuario/usuario.service';
+import { AuthService } from '../../../../core/services/auth/auth.service';
 
 import {
   RolUsuario,
@@ -40,12 +41,13 @@ export class EditarPasswordAdminComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private usuarioService: UsuarioService
+    private usuarioService: UsuarioService,
+    private authService: AuthService
   ) {}
 
   ngOnInit(): void {
-    const empresaIdParam = this.route.snapshot.paramMap.get('empresaId');
-    const usuarioIdParam = this.route.snapshot.paramMap.get('usuarioId');
+    const empresaIdParam = this.obtenerEmpresaIdDesdeRuta();
+    const usuarioIdParam = this.obtenerUsuarioIdDesdeRuta();
 
     if (!empresaIdParam || !usuarioIdParam) {
       this.mensajeError = 'No se recibió la información necesaria para editar el usuario.';
@@ -55,12 +57,88 @@ export class EditarPasswordAdminComponent implements OnInit {
     this.empresaId = Number(empresaIdParam);
     this.usuarioId = Number(usuarioIdParam);
 
-    if (isNaN(this.empresaId) || isNaN(this.usuarioId)) {
+    if (
+      Number.isNaN(this.empresaId) ||
+      Number.isNaN(this.usuarioId) ||
+      this.empresaId <= 0 ||
+      this.usuarioId <= 0
+    ) {
       this.mensajeError = 'Los identificadores recibidos no son válidos.';
       return;
     }
 
+    if (!this.validarAccesoLocal()) {
+      return;
+    }
+
     this.cargarUsuario();
+  }
+
+  private obtenerEmpresaIdDesdeRuta(): string | null {
+    return (
+      this.route.snapshot.paramMap.get('empresaId') ??
+      this.route.parent?.snapshot.paramMap.get('empresaId') ??
+      this.route.parent?.parent?.snapshot.paramMap.get('empresaId') ??
+      null
+    );
+  }
+
+  private obtenerUsuarioIdDesdeRuta(): string | null {
+    return (
+      this.route.snapshot.paramMap.get('usuarioId') ??
+      this.route.parent?.snapshot.paramMap.get('usuarioId') ??
+      this.route.parent?.parent?.snapshot.paramMap.get('usuarioId') ??
+      null
+    );
+  }
+
+  private obtenerRolNormalizado(): string | null {
+    const rol = this.authService.obtenerRol();
+
+    if (!rol) {
+      return null;
+    }
+
+    return rol.replace('ROLE_', '');
+  }
+
+  private validarAccesoLocal(): boolean {
+    const rol = this.obtenerRolNormalizado();
+    const empresaIdUsuario = this.authService.obtenerEmpresaId();
+
+    if (rol === 'SUPER_ADMIN') {
+      return true;
+    }
+
+    if (rol === 'ADMIN' && empresaIdUsuario === this.empresaId) {
+      return true;
+    }
+
+    this.router.navigate(['/acceso-denegado']);
+    return false;
+  }
+
+  esSuperAdmin(): boolean {
+    return this.obtenerRolNormalizado() === 'SUPER_ADMIN';
+  }
+
+  esAdmin(): boolean {
+    return this.obtenerRolNormalizado() === 'ADMIN';
+  }
+
+  rutaDetalleEmpresa(): any[] {
+    if (this.esSuperAdmin()) {
+      return [
+        '/super-admin/empresas/detalle',
+        this.empresaId
+      ];
+    }
+
+    return [
+      '/admin/empresa',
+      this.empresaId,
+      'dashboard'
+    ];
   }
 
   cargarUsuario(): void {
@@ -75,7 +153,10 @@ export class EditarPasswordAdminComponent implements OnInit {
 
         if (usuario.rol !== 'ADMIN') {
           this.mensajeError = 'Solo se permite cambiar la contraseña de usuarios administradores.';
+          return;
         }
+
+        this.validarUsuarioPerteneceAEmpresa(usuario);
       },
       error: (error) => {
         console.error(error);
@@ -83,6 +164,23 @@ export class EditarPasswordAdminComponent implements OnInit {
         this.mensajeError = 'No se pudo cargar la información del usuario.';
       }
     });
+  }
+
+  private validarUsuarioPerteneceAEmpresa(usuario: any): void {
+    const empresaIdUsuarioEditado =
+      usuario.empresaId ??
+      usuario.empresa?.id ??
+      null;
+
+    if (!empresaIdUsuarioEditado) {
+      return;
+    }
+
+    if (Number(empresaIdUsuarioEditado) !== this.empresaId) {
+      this.usuario = null;
+      this.mensajeError = 'El usuario administrador no pertenece a la empresa seleccionada.';
+      this.router.navigate(['/acceso-denegado']);
+    }
   }
 
   guardarPassword(): void {
@@ -96,6 +194,10 @@ export class EditarPasswordAdminComponent implements OnInit {
 
     if (this.usuario.rol !== 'ADMIN') {
       this.mensajeError = 'Solo se permite cambiar la contraseña de administradores.';
+      return;
+    }
+
+    if (!this.validarAccesoLocal()) {
       return;
     }
 
@@ -134,16 +236,13 @@ export class EditarPasswordAdminComponent implements OnInit {
       error: (error) => {
         console.error(error);
         this.guardando = false;
-        this.mensajeError = 'No se pudo actualizar la contraseña.';
+        this.mensajeError = this.obtenerMensajeError(error);
       }
     });
   }
 
   volverADetalleEmpresa(): void {
-    this.router.navigate([
-      '/super-admin/empresas/detalle',
-      this.empresaId
-    ]);
+    this.router.navigate(this.rutaDetalleEmpresa());
   }
 
   obtenerInicialUsuario(): string {
@@ -170,4 +269,19 @@ export class EditarPasswordAdminComponent implements OnInit {
     return this.usuario?.rol === 'ADMIN';
   }
 
+  private obtenerMensajeError(error: any): string {
+    if (error?.error?.message) {
+      return error.error.message;
+    }
+
+    if (typeof error?.error === 'string') {
+      return error.error;
+    }
+
+    if (error?.error?.error) {
+      return error.error.error;
+    }
+
+    return 'No se pudo actualizar la contraseña.';
+  }
 }

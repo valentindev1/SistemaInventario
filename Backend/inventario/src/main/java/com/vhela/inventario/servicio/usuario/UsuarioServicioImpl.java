@@ -14,6 +14,7 @@ import com.vhela.inventario.repositorio.venta.FacturaVentaRepositorio;
 
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +29,7 @@ public class UsuarioServicioImpl implements UsuarioServicio {
     private final EmpresaRepositorio empresaRepositorio;
     private final SucursalRepositorio sucursalRepositorio;
     private final FacturaVentaRepositorio facturaVentaRepositorio;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public UsuarioObtenerDTO crear(Long usuarioId, UsuarioCrearDTO dto) {
@@ -45,7 +47,7 @@ public class UsuarioServicioImpl implements UsuarioServicio {
 
         usuario.setNombre(dto.getNombre());
         usuario.setUsername(dto.getUsername());
-        usuario.setPassword(dto.getPassword());
+        usuario.setPassword(passwordEncoder.encode(dto.getPassword()));
         usuario.setRol(rolNuevo);
 
         asignarEmpresaYSucursal(usuario, creador, rolNuevo, dto);
@@ -140,7 +142,8 @@ public class UsuarioServicioImpl implements UsuarioServicio {
         }
 
         objetivo.setNombre(dto.getNombre());
-        objetivo.setPassword(dto.getPassword());
+        objetivo.setNombre(dto.getNombre());
+        objetivo.setPassword(passwordEncoder.encode(dto.getPassword()));
         objetivo.setRol(nuevoRol);
 
         Usuario actualizado = usuarioRepositorio.save(objetivo);
@@ -221,6 +224,50 @@ public class UsuarioServicioImpl implements UsuarioServicio {
                 .map(this::mapToResponse)
                 .toList();
     }
+
+    @Override
+    public void cambiarPassword(
+            Long usuarioId,
+            Long id,
+            String nuevaPassword
+    ) {
+
+        Usuario solicitante = obtenerUsuario(usuarioId);
+        Usuario objetivo = obtenerUsuario(id);
+
+        if (solicitante.getRol() == RolEnum.EMPLEADO) {
+            throw new RuntimeException("EMPLEADO no puede cambiar contraseñas de usuarios");
+        }
+
+        if (solicitante.getRol() == RolEnum.ADMIN) {
+            validarUsuarioConEmpresa(solicitante);
+
+            validarObjetivoPerteneceAEmpresa(
+                    objetivo,
+                    solicitante.getEmpresa().getId()
+            );
+
+            if (objetivo.getRol() == RolEnum.SUPER_ADMIN) {
+                throw new RuntimeException("ADMIN no puede cambiar contraseña de SUPER_ADMIN");
+            }
+
+            if (objetivo.getRol() == RolEnum.ADMIN &&
+                    !solicitante.getId().equals(objetivo.getId())) {
+                throw new RuntimeException("ADMIN no puede cambiar contraseña de otro ADMIN");
+            }
+        }
+
+        objetivo.setPassword(
+                passwordEncoder.encode(nuevaPassword)
+        );
+
+        usuarioRepositorio.save(objetivo);
+    }
+
+
+
+
+
 
     @Override
     @Transactional(readOnly = true)

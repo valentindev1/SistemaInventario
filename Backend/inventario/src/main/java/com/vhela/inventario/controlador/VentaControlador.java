@@ -8,6 +8,7 @@ import com.vhela.inventario.dto.venta.*;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import com.vhela.inventario.servicio.venta.VentaServicio;
@@ -23,6 +24,7 @@ public class VentaControlador {
     private final VentaServicio ventaServicio;
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
     public ResponseEntity<FacturaVentaDTO> crearVenta(
             @RequestParam Long usuarioId,
             @Valid @RequestBody CrearVentaDTO dto
@@ -35,6 +37,7 @@ public class VentaControlador {
     }
 
     @GetMapping("/{ventaId}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
     public ResponseEntity<FacturaVentaDTO> obtenerPorId(
             @RequestParam Long usuarioId,
             @PathVariable Long ventaId
@@ -45,6 +48,7 @@ public class VentaControlador {
     }
 
     @GetMapping("/sucursal/{sucursalId}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
     public ResponseEntity<List<FacturaVentaDTO>> listarPorSucursal(
             @RequestParam Long usuarioId,
             @PathVariable Long sucursalId
@@ -54,8 +58,8 @@ public class VentaControlador {
         );
     }
 
-
     @GetMapping("/numero/{numeroVenta}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
     public ResponseEntity<FacturaVentaDTO> obtenerPorNumero(
             @RequestParam Long usuarioId,
             @PathVariable String numeroVenta
@@ -66,6 +70,7 @@ public class VentaControlador {
     }
 
     @PutMapping("/{ventaId}/cancelar")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
     public ResponseEntity<FacturaVentaDTO> cancelarVenta(
             @RequestParam Long usuarioId,
             @PathVariable Long ventaId,
@@ -80,7 +85,9 @@ public class VentaControlador {
         );
     }
 
+
     @GetMapping("/ranking-productos/sucursal/{sucursalId}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
     public ResponseEntity<RankingProductosVentasDTO> obtenerRankingProductosVentas(
             @RequestParam Long usuarioId,
             @PathVariable Long sucursalId,
@@ -103,7 +110,9 @@ public class VentaControlador {
 
 
 
+
     @GetMapping("/informe-consolidado/sucursal/{sucursalId}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
     public ResponseEntity<InformeConsolidadoVentasDTO> generarInformeConsolidado(
             @RequestParam Long usuarioId,
             @PathVariable Long sucursalId,
@@ -126,7 +135,10 @@ public class VentaControlador {
         return ResponseEntity.ok(informe);
     }
 
+
+
     @PostMapping("/{ventaId}/devoluciones")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
     public ResponseEntity<FacturaVentaDTO> generarDevolucion(
             @RequestParam Long usuarioId,
             @PathVariable Long ventaId,
@@ -138,6 +150,7 @@ public class VentaControlador {
     }
 
 
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
     @GetMapping("/sucursal/{sucursalId}/informe")
     public ResponseEntity<InformeVentasDTO> generarInformeVentas(
             @RequestParam Long usuarioId,

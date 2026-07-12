@@ -6,6 +6,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { InventarioService } from '../../../../../../core/services/inventario/inventario.service';
 import { VentaService } from '../../../../../../core/services/venta/venta.service';
 import { ClienteService } from '../../../../../../core/services/cliente/cliente.service';
+import { AuthService } from '../../../../../../core/services/auth/auth.service';
 
 import { InventarioAdminDTO } from '../../../../../../core/models/inventario/inventario.model';
 
@@ -53,6 +54,7 @@ export class GenerarVentaComponent implements OnInit {
   porcentajesDescuento = [5, 10, 15, 20, 25, 30];
   porcentajeDescuentoSeleccionado: number | null = null;
   descuentoManualActivo = false;
+  descuentoManualPorcentaje = 0;
 
   itemsVenta: ItemVentaTemporal[] = [];
 
@@ -72,7 +74,6 @@ export class GenerarVentaComponent implements OnInit {
 
   ventaGenerada: FacturaVentaDTO | null = null;
 
-  // Control real para habilitar o bloquear la venta
   ventaHabilitada = false;
 
   constructor(
@@ -80,13 +81,13 @@ export class GenerarVentaComponent implements OnInit {
     private router: Router,
     private inventarioService: InventarioService,
     private ventaService: VentaService,
-    private clienteService: ClienteService
+    private clienteService: ClienteService,
+    private authService: AuthService
   ) {}
 
   ngOnInit(): void {
-
-    const empresaIdParam = this.route.snapshot.paramMap.get('empresaId');
-    const sucursalIdParam = this.route.snapshot.paramMap.get('sucursalId');
+    const empresaIdParam = this.obtenerEmpresaIdDesdeRuta();
+    const sucursalIdParam = this.obtenerSucursalIdDesdeRuta();
 
     if (!empresaIdParam || !sucursalIdParam) {
       this.mensajeError = 'No se pudo identificar la empresa o la sucursal.';
@@ -96,8 +97,17 @@ export class GenerarVentaComponent implements OnInit {
     this.empresaId = Number(empresaIdParam);
     this.sucursalId = Number(sucursalIdParam);
 
-    if (!this.empresaId || !this.sucursalId) {
+    if (
+      Number.isNaN(this.empresaId) ||
+      Number.isNaN(this.sucursalId) ||
+      this.empresaId <= 0 ||
+      this.sucursalId <= 0
+    ) {
       this.mensajeError = 'Los identificadores de empresa o sucursal no son válidos.';
+      return;
+    }
+
+    if (!this.validarAccesoLocal()) {
       return;
     }
 
@@ -111,6 +121,102 @@ export class GenerarVentaComponent implements OnInit {
     this.cargarClientesDisponibles();
   }
 
+  private obtenerEmpresaIdDesdeRuta(): string | null {
+    return (
+      this.route.snapshot.paramMap.get('empresaId') ??
+      this.route.parent?.snapshot.paramMap.get('empresaId') ??
+      this.route.parent?.parent?.snapshot.paramMap.get('empresaId') ??
+      null
+    );
+  }
+
+  private obtenerSucursalIdDesdeRuta(): string | null {
+    return (
+      this.route.snapshot.paramMap.get('sucursalId') ??
+      this.route.parent?.snapshot.paramMap.get('sucursalId') ??
+      this.route.parent?.parent?.snapshot.paramMap.get('sucursalId') ??
+      null
+    );
+  }
+
+  private obtenerRolNormalizado(): string | null {
+    const rol = this.authService.obtenerRol();
+
+    if (!rol) {
+      return null;
+    }
+
+    return rol.replace('ROLE_', '');
+  }
+
+  private validarAccesoLocal(): boolean {
+    const rol = this.obtenerRolNormalizado();
+    const empresaIdUsuario = this.authService.obtenerEmpresaId();
+
+    if (rol === 'SUPER_ADMIN') {
+      return true;
+    }
+
+    if (rol === 'ADMIN' && empresaIdUsuario === this.empresaId) {
+      return true;
+    }
+
+    this.router.navigate(['/acceso-denegado']);
+    return false;
+  }
+
+  esSuperAdmin(): boolean {
+    return this.obtenerRolNormalizado() === 'SUPER_ADMIN';
+  }
+
+  esAdmin(): boolean {
+    return this.obtenerRolNormalizado() === 'ADMIN';
+  }
+
+  rutaPanelVentas(): any[] {
+    if (this.esSuperAdmin()) {
+      return [
+        '/super-admin/empresas',
+        this.empresaId,
+        'sucursales',
+        this.sucursalId,
+        'ventas',
+        'panel'
+      ];
+    }
+
+    return [
+      '/admin/empresa',
+      this.empresaId,
+      'sucursales',
+      this.sucursalId,
+      'ventas',
+      'panel'
+    ];
+  }
+
+  rutaCrearCliente(): any[] {
+    if (this.esSuperAdmin()) {
+      return [
+        '/super-admin/empresas',
+        this.empresaId,
+        'sucursales',
+        this.sucursalId,
+        'clientes',
+        'crear'
+      ];
+    }
+
+    return [
+      '/admin/empresa',
+      this.empresaId,
+      'sucursales',
+      this.sucursalId,
+      'clientes',
+      'crear'
+    ];
+  }
+
   get clienteVentaSeleccionado(): boolean {
     return this.clienteSeleccionado !== null &&
       this.clienteSeleccionado.id !== null &&
@@ -118,7 +224,6 @@ export class GenerarVentaComponent implements OnInit {
   }
 
   cargarInventario(): void {
-
     this.cargandoInventario = true;
     this.mensajeError = '';
 
@@ -138,12 +243,13 @@ export class GenerarVentaComponent implements OnInit {
             error?.error?.message ||
             error?.error ||
             'No se pudo cargar el inventario de la sucursal.';
+
+          console.error(error);
         }
       });
   }
 
   cargarClientesDisponibles(): void {
-
     this.clienteService.listar().subscribe({
       next: (clientes) => {
         this.clientesDisponibles = clientes || [];
@@ -160,7 +266,6 @@ export class GenerarVentaComponent implements OnInit {
   }
 
   onDocumentoClienteChange(): void {
-
     this.mensajeError = '';
     this.mensajeExito = '';
     this.ventaGenerada = null;
@@ -202,11 +307,9 @@ export class GenerarVentaComponent implements OnInit {
   }
 
   seleccionarClienteSugerido(cliente: ClienteObtenerDTO): void {
-
     this.clienteSeleccionado = cliente;
     this.numeroDocumentoCliente = cliente.numeroDocumento;
 
-    // Habilita módulos de productos y detalle
     this.ventaHabilitada = true;
 
     this.clientesSugeridos = [];
@@ -219,7 +322,6 @@ export class GenerarVentaComponent implements OnInit {
   }
 
   buscarClientePorDocumento(): void {
-
     this.mensajeError = '';
     this.mensajeExito = '';
     this.ventaGenerada = null;
@@ -244,11 +346,9 @@ export class GenerarVentaComponent implements OnInit {
 
     this.clienteService.obtenerPorDocumento(documento).subscribe({
       next: (cliente) => {
-
         this.clienteSeleccionado = cliente;
         this.numeroDocumentoCliente = cliente.numeroDocumento;
 
-        // Habilita módulos de productos y detalle
         this.ventaHabilitada = true;
 
         this.clientesSugeridos = [];
@@ -258,7 +358,6 @@ export class GenerarVentaComponent implements OnInit {
         this.mensajeExito = `Cliente seleccionado: ${cliente.nombre}`;
       },
       error: (error) => {
-
         this.buscandoCliente = false;
         this.clienteSeleccionado = null;
         this.ventaHabilitada = false;
@@ -282,7 +381,6 @@ export class GenerarVentaComponent implements OnInit {
   }
 
   limpiarClienteSeleccionado(): void {
-
     this.numeroDocumentoCliente = '';
     this.clienteSeleccionado = null;
     this.ventaHabilitada = false;
@@ -302,17 +400,9 @@ export class GenerarVentaComponent implements OnInit {
   }
 
   irCrearCliente(): void {
-
     const documento = this.numeroDocumentoCliente.trim();
 
-    this.router.navigate([
-      '/super-admin/empresas',
-      this.empresaId,
-      'sucursales',
-      this.sucursalId,
-      'clientes',
-      'crear'
-    ], {
+    this.router.navigate(this.rutaCrearCliente(), {
       queryParams: {
         documento: documento || null,
         retorno: 'venta'
@@ -321,15 +411,7 @@ export class GenerarVentaComponent implements OnInit {
   }
 
   private irCrearClienteConDocumento(documento: string): void {
-
-    this.router.navigate([
-      '/super-admin/empresas',
-      this.empresaId,
-      'sucursales',
-      this.sucursalId,
-      'clientes',
-      'crear'
-    ], {
+    this.router.navigate(this.rutaCrearCliente(), {
       queryParams: {
         documento,
         retorno: 'venta'
@@ -338,7 +420,6 @@ export class GenerarVentaComponent implements OnInit {
   }
 
   obtenerProductoSeleccionado(): InventarioAdminDTO | undefined {
-
     if (!this.productoSeleccionadoId) {
       return undefined;
     }
@@ -349,7 +430,6 @@ export class GenerarVentaComponent implements OnInit {
   }
 
   agregarProducto(): void {
-
     this.mensajeError = '';
     this.mensajeExito = '';
     this.ventaGenerada = null;
@@ -412,7 +492,6 @@ export class GenerarVentaComponent implements OnInit {
   }
 
   eliminarItem(index: number): void {
-
     this.itemsVenta.splice(index, 1);
 
     this.mensajeError = '';
@@ -423,7 +502,6 @@ export class GenerarVentaComponent implements OnInit {
   }
 
   actualizarCantidad(index: number): void {
-
     const item = this.itemsVenta[index];
 
     if (item.cantidad <= 0) {
@@ -444,7 +522,6 @@ export class GenerarVentaComponent implements OnInit {
   }
 
   calcularSubtotal(): number {
-
     return this.itemsVenta.reduce(
       (total, item) => total + item.subtotal,
       0
@@ -456,7 +533,6 @@ export class GenerarVentaComponent implements OnInit {
   }
 
   calcularTotalConDescuento(): number {
-
     const subtotal = this.calcularSubtotal();
     const descuentoAplicado = Number(this.descuento) || 0;
 
@@ -468,7 +544,6 @@ export class GenerarVentaComponent implements OnInit {
   }
 
   aplicarDescuentoPorcentaje(porcentaje: number): void {
-
     const subtotal = this.calcularSubtotal();
 
     if (subtotal <= 0) {
@@ -476,65 +551,99 @@ export class GenerarVentaComponent implements OnInit {
       return;
     }
 
+    if (porcentaje < 0 || porcentaje > 100) {
+      this.mensajeError = 'El porcentaje de descuento debe estar entre 0 y 100.';
+      return;
+    }
+
     this.descuento = Math.round(subtotal * porcentaje / 100);
     this.porcentajeDescuentoSeleccionado = porcentaje;
     this.descuentoManualActivo = false;
+    this.descuentoManualPorcentaje = 0;
     this.mensajeError = '';
   }
 
   activarDescuentoManual(): void {
+    const subtotal = this.calcularSubtotal();
+
+    if (subtotal <= 0) {
+      this.mensajeError = 'Debe agregar productos antes de aplicar un descuento.';
+      return;
+    }
 
     this.descuentoManualActivo = true;
     this.porcentajeDescuentoSeleccionado = null;
+    this.descuento = 0;
+    this.descuentoManualPorcentaje = 0;
     this.mensajeError = '';
   }
 
   actualizarDescuentoManual(): void {
-
     const subtotal = this.calcularSubtotal();
-    const descuentoAplicado = Number(this.descuento) || 0;
+    const porcentaje = Number(this.descuentoManualPorcentaje) || 0;
 
     this.porcentajeDescuentoSeleccionado = null;
 
-    if (descuentoAplicado < 0) {
+    if (subtotal <= 0) {
       this.descuento = 0;
-      this.mensajeError = 'El descuento no puede ser negativo.';
+      this.descuentoManualPorcentaje = 0;
+      this.mensajeError = 'Debe agregar productos antes de aplicar un descuento.';
       return;
     }
 
-    if (descuentoAplicado > subtotal) {
-      this.mensajeError = 'El descuento no puede ser mayor al subtotal de la venta.';
+    if (porcentaje < 0) {
+      this.descuentoManualPorcentaje = 0;
+      this.descuento = 0;
+      this.mensajeError = 'El porcentaje de descuento no puede ser negativo.';
       return;
     }
 
+    if (porcentaje > 100) {
+      this.descuentoManualPorcentaje = 100;
+      this.descuento = subtotal;
+      this.mensajeError = 'El porcentaje de descuento no puede superar el 100%.';
+      return;
+    }
+
+    this.descuento = Math.round(subtotal * porcentaje / 100);
     this.mensajeError = '';
   }
 
   limpiarDescuento(): void {
-
     this.descuento = 0;
     this.porcentajeDescuentoSeleccionado = null;
     this.descuentoManualActivo = false;
+    this.descuentoManualPorcentaje = 0;
     this.mensajeError = '';
   }
 
   private validarDescuentoActual(): void {
-
     const subtotal = this.calcularSubtotal();
+
+    if (subtotal <= 0) {
+      this.limpiarDescuento();
+      return;
+    }
+
+    if (this.porcentajeDescuentoSeleccionado !== null) {
+      this.aplicarDescuentoPorcentaje(this.porcentajeDescuentoSeleccionado);
+      return;
+    }
+
+    if (this.descuentoManualActivo) {
+      this.actualizarDescuentoManual();
+      return;
+    }
+
     const descuentoAplicado = Number(this.descuento) || 0;
 
     if (descuentoAplicado > subtotal) {
       this.limpiarDescuento();
       this.mensajeError = 'El descuento fue reiniciado porque superaba el subtotal.';
     }
-
-    if (this.porcentajeDescuentoSeleccionado !== null) {
-      this.aplicarDescuentoPorcentaje(this.porcentajeDescuentoSeleccionado);
-    }
   }
 
   generarVenta(): void {
-
     this.mensajeError = '';
     this.mensajeExito = '';
     this.ventaGenerada = null;
@@ -580,7 +689,6 @@ export class GenerarVentaComponent implements OnInit {
     this.ventaService.crearVenta(dto)
       .subscribe({
         next: (venta) => {
-
           this.guardando = false;
           this.ventaGenerada = venta;
 
@@ -603,31 +711,23 @@ export class GenerarVentaComponent implements OnInit {
           this.cargarClientesDisponibles();
         },
         error: (error) => {
-
           this.guardando = false;
 
           this.mensajeError =
             error?.error?.message ||
             error?.error ||
             'No se pudo generar la venta.';
+
+          console.error(error);
         }
       });
   }
 
   volverAlPanel(): void {
-
-    this.router.navigate([
-      '/super-admin/empresas',
-      this.empresaId,
-      'sucursales',
-      this.sucursalId,
-      'ventas',
-      'panel'
-    ]);
+    this.router.navigate(this.rutaPanelVentas());
   }
 
   private limpiarSeleccionProducto(): void {
-
     this.productoSeleccionadoId = '';
     this.cantidadSeleccionada = 1;
   }

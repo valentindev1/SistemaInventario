@@ -1,22 +1,27 @@
-import {Component, OnInit} from '@angular/core';
-import {CommonModule} from '@angular/common';
-import {FormBuilder, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
-import {ActivatedRoute, RouterLink} from '@angular/router';
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import {
+  FormBuilder,
+  FormGroup,
+  ReactiveFormsModule,
+  Validators
+} from '@angular/forms';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import Swal from 'sweetalert2';
 
-import {EmpresaService} from '../../../../../../core/services/empresa/empresa.service';
-import {SucursalService} from '../../../../../../core/services/sucursal/sucursal.service';
-import {UsuarioService} from '../../../../../../core/services/usuario/usuario.service';
+import { EmpresaService } from '../../../../../../core/services/empresa/empresa.service';
+import { SucursalService } from '../../../../../../core/services/sucursal/sucursal.service';
+import { UsuarioService } from '../../../../../../core/services/usuario/usuario.service';
+import { AuthService } from '../../../../../../core/services/auth/auth.service';
 
-import {EmpresaObtenerDTO} from '../../../../../../core/models/empresa/empresa.model';
-import {SucursalObtenerDTO} from '../../../../../../core/models/sucursal/sucursal.model';
+import { EmpresaObtenerDTO } from '../../../../../../core/models/empresa/empresa.model';
+import { SucursalObtenerDTO } from '../../../../../../core/models/sucursal/sucursal.model';
+
 import {
   UsuarioCrearDTO,
   UsuarioObtenerDTO
 } from '../../../../../../core/models/usuario/usuario.model';
-import {AuthTemporalService} from '../../../../../../core/services/auth/auth-temporal.service';
-
 @Component({
   selector: 'app-crear-usuario-sucursal',
   standalone: true,
@@ -43,8 +48,12 @@ export class CrearUsuarioSucursalComponent implements OnInit {
   cargandoEmpresa = false;
   cargandoSucursal = false;
   cargandoUsuarios = false;
-  guardando = false;
 
+  guardando = false;
+  cambiandoPassword = false;
+  eliminando = false;
+
+  mensajeExito = '';
   mensajeError = '';
 
   constructor(
@@ -52,30 +61,85 @@ export class CrearUsuarioSucursalComponent implements OnInit {
     private route: ActivatedRoute,
     private empresaService: EmpresaService,
     private sucursalService: SucursalService,
-    private usuarioService: UsuarioService, public authTemporalService: AuthTemporalService
+    private usuarioService: UsuarioService,
+    private authService: AuthService
   ) {
     this.formularioEmpleado = this.fb.group({
       nombre: ['', [Validators.required, Validators.maxLength(150)]],
-      username: ['', [Validators.required, Validators.maxLength(100)]],
+      username: ['', [Validators.required, Validators.minLength(4), Validators.maxLength(100)]],
       password: ['', [Validators.required, Validators.minLength(6)]]
     });
   }
 
   ngOnInit(): void {
-    const empresaIdParam = this.route.snapshot.paramMap.get('empresaId');
-    const sucursalIdParam = this.route.snapshot.paramMap.get('sucursalId');
+    const empresaIdParam = this.obtenerEmpresaIdDesdeRuta();
+    const sucursalIdParam = this.obtenerSucursalIdDesdeRuta();
 
     if (!empresaIdParam || !sucursalIdParam) {
-      this.mensajeError = 'Parámetros no válidos';
+      this.mensajeError = 'ID de empresa o sucursal no válido';
       return;
     }
 
     this.empresaId = Number(empresaIdParam);
     this.sucursalId = Number(sucursalIdParam);
 
+    if (
+      Number.isNaN(this.empresaId) ||
+      Number.isNaN(this.sucursalId)
+    ) {
+      this.mensajeError = 'ID de empresa o sucursal no válido';
+      return;
+    }
+
     this.cargarEmpresa();
     this.cargarSucursal();
-    this.cargarUsuariosContexto();
+    this.cargarUsuarios();
+  }
+
+  private obtenerEmpresaIdDesdeRuta(): string | null {
+    return (
+      this.route.snapshot.paramMap.get('empresaId') ??
+      this.route.parent?.snapshot.paramMap.get('empresaId') ??
+      this.route.parent?.parent?.snapshot.paramMap.get('empresaId') ??
+      null
+    );
+  }
+
+  private obtenerSucursalIdDesdeRuta(): string | null {
+    return (
+      this.route.snapshot.paramMap.get('sucursalId') ??
+      this.route.parent?.snapshot.paramMap.get('sucursalId') ??
+      this.route.parent?.parent?.snapshot.paramMap.get('sucursalId') ??
+      null
+    );
+  }
+
+  esSuperAdmin(): boolean {
+    return this.authService.obtenerRol() === 'SUPER_ADMIN';
+  }
+
+  esAdmin(): boolean {
+    return this.authService.obtenerRol() === 'ADMIN';
+  }
+
+  rutaDetalleSucursal(): any[] {
+    if (this.esSuperAdmin()) {
+      return [
+        '/super-admin/empresas',
+        this.empresaId,
+        'sucursales',
+        'detalle',
+        this.sucursalId
+      ];
+    }
+
+    return [
+      '/admin/empresa',
+      this.empresaId,
+      'sucursales',
+      'detalle',
+      this.sucursalId
+    ];
   }
 
   cargarEmpresa(): void {
@@ -89,7 +153,7 @@ export class CrearUsuarioSucursalComponent implements OnInit {
       },
       error: (error) => {
         this.cargandoEmpresa = false;
-        this.mostrarErroresBackend(error, 'No se pudo cargar la empresa');
+        this.mensajeError = 'No se pudo cargar la información de la empresa';
         console.error(error);
       }
     });
@@ -106,43 +170,60 @@ export class CrearUsuarioSucursalComponent implements OnInit {
       },
       error: (error) => {
         this.cargandoSucursal = false;
-        this.mostrarErroresBackend(error, 'No se pudo cargar la sucursal');
+        this.mensajeError = 'No se pudo cargar la información de la sucursal';
         console.error(error);
       }
     });
   }
 
-  cargarUsuariosContexto(): void {
+  cargarUsuarios(): void {
     this.cargandoUsuarios = true;
     this.mensajeError = '';
 
-    this.usuarioService.listarPorEmpresaSeleccionada(this.empresaId).subscribe({
+    this.usuarioService.listarPorSucursal(this.sucursalId).subscribe({
       next: (usuarios) => {
-        this.usuariosContexto = usuarios
-          .filter(usuario =>
-            usuario.rol === 'ADMIN' ||
-            (usuario.rol === 'EMPLEADO' && usuario.sucursalId === this.sucursalId)
-          )
-          .sort((a, b) => {
-            const ordenRol: Record<string, number> = {
-              ADMIN: 1,
-              EMPLEADO: 2
-            };
-
-            return (ordenRol[a.rol] || 99) - (ordenRol[b.rol] || 99);
-          });
-
+        this.usuariosContexto = this.ordenarUsuarios(usuarios);
         this.cargandoUsuarios = false;
       },
       error: (error) => {
         this.cargandoUsuarios = false;
-        this.mostrarErroresBackend(error, 'No se pudieron cargar los usuarios');
+        this.mensajeError = 'No se pudieron cargar los usuarios de la sucursal';
         console.error(error);
       }
     });
   }
 
+  private ordenarUsuarios(usuarios: UsuarioObtenerDTO[]): UsuarioObtenerDTO[] {
+    return [...usuarios].sort((a, b) => {
+      const prioridadRol = (rol: string): number => {
+        if (rol === 'ADMIN') {
+          return 1;
+        }
+
+        if (rol === 'EMPLEADO') {
+          return 2;
+        }
+
+        if (rol === 'SUPER_ADMIN') {
+          return 0;
+        }
+
+        return 3;
+      };
+
+      const prioridadA = prioridadRol(a.rol);
+      const prioridadB = prioridadRol(b.rol);
+
+      if (prioridadA !== prioridadB) {
+        return prioridadA - prioridadB;
+      }
+
+      return a.nombre.localeCompare(b.nombre);
+    });
+  }
+
   crearEmpleado(): void {
+    this.mensajeExito = '';
     this.mensajeError = '';
 
     if (this.formularioEmpleado.invalid) {
@@ -160,8 +241,8 @@ export class CrearUsuarioSucursalComponent implements OnInit {
     }
 
     const dto: UsuarioCrearDTO = {
-      nombre: this.formularioEmpleado.value.nombre,
-      username: this.formularioEmpleado.value.username,
+      nombre: this.formularioEmpleado.value.nombre.trim(),
+      username: this.formularioEmpleado.value.username.trim(),
       password: this.formularioEmpleado.value.password,
       rol: 'EMPLEADO',
       empresaId: this.empresaId,
@@ -173,89 +254,236 @@ export class CrearUsuarioSucursalComponent implements OnInit {
     this.usuarioService.crear(dto).subscribe({
       next: () => {
         this.guardando = false;
+        this.mensajeExito = 'Empleado creado correctamente';
+
+        this.formularioEmpleado.reset();
 
         Swal.fire({
           icon: 'success',
           title: 'Empleado creado',
-          text: 'El empleado fue creado correctamente.',
+          text: 'El usuario empleado fue creado correctamente.',
           confirmButtonText: 'Continuar',
           confirmButtonColor: '#0d6efd'
-        }).then(() => {
-          this.formularioEmpleado.reset();
-          this.cargarUsuariosContexto();
         });
+
+        this.cargarUsuarios();
       },
       error: (error) => {
         this.guardando = false;
-        this.mostrarErroresBackend(error, 'No se pudo crear el empleado');
+
+        const errores = this.obtenerErroresBackend(error);
+
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          html: `
+            <ul style="text-align: left; margin-bottom: 0;">
+              ${errores.map(e => `<li>${e}</li>`).join('')}
+            </ul>
+          `,
+          confirmButtonText: 'Entendido',
+          confirmButtonColor: '#dc3545'
+        });
+
         console.error(error);
       }
     });
   }
 
+  abrirCambioPassword(usuario: UsuarioObtenerDTO): void {
+    Swal.fire({
+      title: 'Cambiar contraseña',
+      html: `
+        <div style="text-align: left;">
+          <p style="margin-bottom: 8px;">
+            Vas a cambiar la contraseña del usuario:
+          </p>
+          <strong>${usuario.nombre}</strong>
+          <br>
+          <small style="color: #6c757d;">${usuario.username}</small>
+        </div>
+      `,
+      input: 'password',
+      inputLabel: 'Nueva contraseña',
+      inputPlaceholder: 'Mínimo 6 caracteres',
+      inputAttributes: {
+        autocapitalize: 'off',
+        autocomplete: 'new-password'
+      },
+      showCancelButton: true,
+      confirmButtonText: 'Guardar contraseña',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#0d6efd',
+      cancelButtonColor: '#6c757d',
+      inputValidator: (value) => {
+        if (!value) {
+          return 'La contraseña es obligatoria';
+        }
+
+        if (value.length < 6) {
+          return 'La contraseña debe tener mínimo 6 caracteres';
+        }
+
+        return null;
+      }
+    }).then((result) => {
+      if (!result.isConfirmed) {
+        return;
+      }
+
+      this.confirmarCambioPassword(
+        usuario,
+        result.value
+      );
+    });
+  }
+
+  private confirmarCambioPassword(
+    usuario: UsuarioObtenerDTO,
+    nuevaPassword: string
+  ): void {
+    Swal.fire({
+      icon: 'question',
+      title: 'Confirmar cambio',
+      html: `
+        <p>
+          ¿Deseas cambiar la contraseña del usuario
+          <strong>${usuario.username}</strong>?
+        </p>
+        <small style="color: #6c757d;">
+          Recuerda compartirle la nueva contraseña al usuario.
+        </small>
+      `,
+      showCancelButton: true,
+      confirmButtonText: 'Sí, cambiar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#0d6efd',
+      cancelButtonColor: '#6c757d'
+    }).then((result) => {
+      if (!result.isConfirmed) {
+        return;
+      }
+
+      this.cambiarPasswordUsuario(
+        usuario.id,
+        nuevaPassword
+      );
+    });
+  }
+
+  private cambiarPasswordUsuario(
+    usuarioId: number,
+    nuevaPassword: string
+  ): void {
+    this.cambiandoPassword = true;
+
+    this.usuarioService.cambiarPassword(usuarioId, nuevaPassword).subscribe({
+      next: () => {
+        this.cambiandoPassword = false;
+
+        Swal.fire({
+          icon: 'success',
+          title: 'Contraseña actualizada',
+          text: 'La contraseña del usuario fue modificada correctamente.',
+          confirmButtonText: 'Entendido',
+          confirmButtonColor: '#198754'
+        });
+      },
+      error: (error) => {
+        this.cambiandoPassword = false;
+
+        const errores = this.obtenerErroresBackend(error);
+
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          html: `
+            <ul style="text-align: left; margin-bottom: 0;">
+              ${errores.map(e => `<li>${e}</li>`).join('')}
+            </ul>
+          `,
+          confirmButtonText: 'Entendido',
+          confirmButtonColor: '#dc3545'
+        });
+
+        console.error(error);
+      }
+    });
+  }
+
+  puedeEliminarUsuario(usuario: UsuarioObtenerDTO): boolean {
+    return usuario.rol === 'EMPLEADO';
+  }
+
   eliminarUsuario(usuario: UsuarioObtenerDTO): void {
-    if (!this.puedeEliminarUsuario(usuario)) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Acción no permitida',
-        text: 'No tienes permisos para eliminar este usuario.',
-        confirmButtonText: 'Entendido',
-        confirmButtonColor: '#ffc107'
-      });
-
-      return;
-    }
-
-    const textoRol = usuario.rol === 'ADMIN' ? 'administrador' : 'empleado';
-
     Swal.fire({
       icon: 'warning',
-      title: `¿Eliminar ${textoRol}?`,
-      text: `Se eliminará el usuario ${usuario.username}`,
+      title: 'Eliminar usuario',
+      html: `
+        <p>
+          ¿Deseas eliminar el usuario
+          <strong>${usuario.username}</strong>?
+        </p>
+        <small style="color: #6c757d;">
+          Esta acción no se puede deshacer.
+        </small>
+      `,
       showCancelButton: true,
       confirmButtonText: 'Sí, eliminar',
       cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#dc3545'
+      confirmButtonColor: '#dc3545',
+      cancelButtonColor: '#6c757d'
     }).then((result) => {
-      if (result.isConfirmed) {
-        this.usuarioService.eliminar(usuario.id).subscribe({
-          next: () => {
-            this.usuariosContexto = this.usuariosContexto.filter(item => item.id !== usuario.id);
-
-            Swal.fire({
-              icon: 'success',
-              title: 'Usuario eliminado',
-              text: 'El usuario fue eliminado correctamente.',
-              confirmButtonText: 'Continuar',
-              confirmButtonColor: '#0d6efd'
-            });
-          },
-          error: (error) => {
-            this.mostrarErroresBackend(error, 'No se pudo eliminar el usuario');
-            console.error(error);
-          }
-        });
+      if (!result.isConfirmed) {
+        return;
       }
+
+      this.eliminando = true;
+
+      this.usuarioService.eliminar(usuario.id).subscribe({
+        next: () => {
+          this.eliminando = false;
+
+          Swal.fire({
+            icon: 'success',
+            title: 'Usuario eliminado',
+            text: 'El usuario fue eliminado correctamente.',
+            confirmButtonText: 'Continuar',
+            confirmButtonColor: '#198754'
+          });
+
+          this.cargarUsuarios();
+        },
+        error: (error) => {
+          this.eliminando = false;
+
+          const errores = this.obtenerErroresBackend(error);
+
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            html: `
+              <ul style="text-align: left; margin-bottom: 0;">
+                ${errores.map(e => `<li>${e}</li>`).join('')}
+              </ul>
+            `,
+            confirmButtonText: 'Entendido',
+            confirmButtonColor: '#dc3545'
+          });
+
+          console.error(error);
+        }
+      });
     });
   }
 
   campoInvalido(campo: string): boolean {
     const control = this.formularioEmpleado.get(campo);
-    return !!control && control.invalid && (control.dirty || control.touched);
+
+    return !!control &&
+      control.invalid &&
+      (control.dirty || control.touched);
   }
-
-  puedeEliminarUsuario(usuario: UsuarioObtenerDTO): boolean {
-    if (usuario.rol === 'EMPLEADO') {
-      return true;
-    }
-
-    if (usuario.rol === 'ADMIN' && this.authTemporalService.esSuperAdmin()) {
-      return true;
-    }
-
-    return false;
-  }
-
 
   private obtenerErroresBackend(error: any): string[] {
     if (Array.isArray(error.error?.errores)) {
@@ -275,25 +503,5 @@ export class CrearUsuarioSucursalComponent implements OnInit {
     }
 
     return ['Ocurrió un error inesperado'];
-  }
-
-  private mostrarErroresBackend(error: any, mensajeDefecto: string): void {
-    const errores = this.obtenerErroresBackend(error);
-
-    const erroresFinales = errores.length > 0
-      ? errores
-      : [mensajeDefecto];
-
-    Swal.fire({
-      icon: 'error',
-      title: 'Error',
-      html: `
-        <ul style="text-align: left; margin-bottom: 0;">
-          ${erroresFinales.map(e => `<li>${e}</li>`).join('')}
-        </ul>
-      `,
-      confirmButtonText: 'Entendido',
-      confirmButtonColor: '#dc3545'
-    });
   }
 }

@@ -5,6 +5,7 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 
 import { InventarioService } from '../../../../../../core/services/inventario/inventario.service';
 import { ProductoService } from '../../../../../../core/services/producto/producto/producto.service';
+import { AuthService } from '../../../../../../core/services/auth/auth.service';
 
 import {
   IngresoInventarioDTO,
@@ -22,7 +23,11 @@ interface ProductoInventarioOption {
 @Component({
   selector: 'app-ingresar-inventario',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [
+    CommonModule,
+    FormsModule,
+    RouterModule
+  ],
   templateUrl: './ingresar-inventario.component.html',
   styleUrl: './ingresar-inventario.component.css'
 })
@@ -48,56 +53,6 @@ export class IngresarInventarioComponent implements OnInit {
   mensajeExito = '';
   mensajeError = '';
 
-  constructor(
-    private route: ActivatedRoute,
-    private router: Router,
-    private inventarioService: InventarioService,
-    private productoService: ProductoService
-  ) {}
-
-  ngOnInit(): void {
-    this.empresaId = Number(this.route.snapshot.paramMap.get('empresaId'));
-    this.sucursalId = Number(this.route.snapshot.paramMap.get('sucursalId'));
-
-    if (!this.empresaId || !this.sucursalId) {
-      this.mensajeError = 'No se pudo identificar la empresa o la sucursal.';
-      return;
-    }
-
-    this.cargarProductos();
-  }
-
-  cargarProductos(): void {
-    this.cargandoProductos = true;
-    this.mensajeError = '';
-
-    this.productoService.listarPorEmpresa(this.empresaId)
-      .subscribe({
-        next: (data) => {
-          this.productos = data.map(producto => ({
-            id: producto.id,
-            nombre: producto.nombre,
-            codigo: producto.codigo,
-            costoUnitario: Number(producto.costoUnitario ?? 0),
-            precioVenta: Number(producto.precioVenta ?? 0)
-          }));
-
-          this.cargandoProductos = false;
-        },
-        error: (error) => {
-          this.cargandoProductos = false;
-          this.mensajeError =
-            error?.error?.message ||
-            error?.error ||
-            'No se pudieron cargar los productos de la empresa.';
-        }
-      });
-  }
-
-
-
-
-
   indiceEditando: number | null = null;
 
   itemEditando: IngresoInventarioItemDTO = {
@@ -107,80 +62,154 @@ export class IngresarInventarioComponent implements OnInit {
     precioVenta: 0
   };
 
+  constructor(
+    private route: ActivatedRoute,
+    private router: Router,
+    private inventarioService: InventarioService,
+    private productoService: ProductoService,
+    private authService: AuthService
+  ) {}
 
+  ngOnInit(): void {
+    const empresaIdParam = this.obtenerEmpresaIdDesdeRuta();
+    const sucursalIdParam = this.obtenerSucursalIdDesdeRuta();
 
-  editarItem(index: number): void {
-    this.indiceEditando = index;
+    if (!empresaIdParam || !sucursalIdParam) {
+      this.mensajeError = 'No se pudo identificar la empresa o la sucursal.';
+      return;
+    }
 
-    this.itemEditando = {
-      productoId: this.items[index].productoId,
-      cantidad: this.items[index].cantidad,
-      costoUnitario: this.items[index].costoUnitario,
-      precioVenta: this.items[index].precioVenta
-    };
+    this.empresaId = Number(empresaIdParam);
+    this.sucursalId = Number(sucursalIdParam);
 
+    if (
+      Number.isNaN(this.empresaId) ||
+      Number.isNaN(this.sucursalId) ||
+      this.empresaId <= 0 ||
+      this.sucursalId <= 0
+    ) {
+      this.mensajeError = 'No se pudo identificar la empresa o la sucursal.';
+      return;
+    }
+
+    if (!this.validarAccesoLocal()) {
+      return;
+    }
+
+    this.cargarProductos();
+  }
+
+  private obtenerEmpresaIdDesdeRuta(): string | null {
+    return (
+      this.route.snapshot.paramMap.get('empresaId') ??
+      this.route.parent?.snapshot.paramMap.get('empresaId') ??
+      this.route.parent?.parent?.snapshot.paramMap.get('empresaId') ??
+      null
+    );
+  }
+
+  private obtenerSucursalIdDesdeRuta(): string | null {
+    return (
+      this.route.snapshot.paramMap.get('sucursalId') ??
+      this.route.parent?.snapshot.paramMap.get('sucursalId') ??
+      this.route.parent?.parent?.snapshot.paramMap.get('sucursalId') ??
+      null
+    );
+  }
+
+  private validarAccesoLocal(): boolean {
+    const rol = this.authService.obtenerRol();
+    const empresaIdUsuario = this.authService.obtenerEmpresaId();
+
+    if (rol === 'SUPER_ADMIN') {
+      return true;
+    }
+
+    if (rol === 'ADMIN' && empresaIdUsuario === this.empresaId) {
+      return true;
+    }
+
+    this.router.navigate(['/acceso-denegado']);
+    return false;
+  }
+
+  esSuperAdmin(): boolean {
+    return this.authService.obtenerRol() === 'SUPER_ADMIN';
+  }
+
+  esAdmin(): boolean {
+    return this.authService.obtenerRol() === 'ADMIN';
+  }
+
+  rutaDetalleSucursal(): any[] {
+    if (this.esSuperAdmin()) {
+      return [
+        '/super-admin/empresas',
+        this.empresaId,
+        'sucursales',
+        'detalle',
+        this.sucursalId
+      ];
+    }
+
+    return [
+      '/admin/empresa',
+      this.empresaId,
+      'sucursales',
+      'detalle',
+      this.sucursalId
+    ];
+  }
+
+  rutaPanelInventario(): any[] {
+    if (this.esSuperAdmin()) {
+      return [
+        '/super-admin/empresas',
+        this.empresaId,
+        'sucursales',
+        this.sucursalId,
+        'inventario',
+        'panel'
+      ];
+    }
+
+    return [
+      '/admin/empresa',
+      this.empresaId,
+      'sucursales',
+      this.sucursalId,
+      'inventario',
+      'panel'
+    ];
+  }
+
+  cargarProductos(): void {
+    this.cargandoProductos = true;
     this.mensajeError = '';
-    this.mensajeExito = '';
+
+    this.productoService.listarPorEmpresa(this.empresaId).subscribe({
+      next: (data) => {
+        this.productos = (data || []).map(producto => ({
+          id: producto.id,
+          nombre: producto.nombre,
+          codigo: producto.codigo,
+          costoUnitario: Number(producto.costoUnitario ?? 0),
+          precioVenta: Number(producto.precioVenta ?? 0)
+        }));
+
+        this.cargandoProductos = false;
+      },
+      error: (error) => {
+        this.cargandoProductos = false;
+        this.mensajeError =
+          error?.error?.message ||
+          error?.error ||
+          'No se pudieron cargar los productos de la empresa.';
+
+        console.error(error);
+      }
+    });
   }
-
-  guardarEdicion(): void {
-    if (this.indiceEditando === null) {
-      return;
-    }
-
-    if (this.itemEditando.cantidad <= 0) {
-      this.mensajeError = 'La cantidad debe ser mayor a cero.';
-      return;
-    }
-
-    if (this.itemEditando.costoUnitario < 0) {
-      this.mensajeError = 'El costo unitario no puede ser negativo.';
-      return;
-    }
-
-    if (this.itemEditando.precioVenta < 0) {
-      this.mensajeError = 'El precio de venta no puede ser negativo.';
-      return;
-    }
-
-    this.items[this.indiceEditando] = {
-      productoId: this.itemEditando.productoId,
-      cantidad: Number(this.itemEditando.cantidad),
-      costoUnitario: Number(this.itemEditando.costoUnitario),
-      precioVenta: Number(this.itemEditando.precioVenta)
-    };
-
-    this.cancelarEdicion();
-  }
-
-  cancelarEdicion(): void {
-    this.indiceEditando = null;
-
-    this.itemEditando = {
-      productoId: 0,
-      cantidad: 1,
-      costoUnitario: 0,
-      precioVenta: 0
-    };
-
-    this.mensajeError = '';
-  }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
   onProductoSeleccionado(): void {
     if (!this.productoSeleccionadoId) {
@@ -212,17 +241,17 @@ export class IngresarInventarioComponent implements OnInit {
       return;
     }
 
-    if (this.cantidad <= 0) {
+    if (Number(this.cantidad) <= 0) {
       this.mensajeError = 'La cantidad debe ser mayor a cero.';
       return;
     }
 
-    if (this.costoUnitario < 0) {
+    if (Number(this.costoUnitario) < 0) {
       this.mensajeError = 'El costo unitario no puede ser negativo.';
       return;
     }
 
-    if (this.precioVenta < 0) {
+    if (Number(this.precioVenta) < 0) {
       this.mensajeError = 'El precio de venta no puede ser negativo.';
       return;
     }
@@ -244,6 +273,63 @@ export class IngresarInventarioComponent implements OnInit {
     });
 
     this.limpiarFormularioProducto();
+  }
+
+  editarItem(index: number): void {
+    this.indiceEditando = index;
+
+    this.itemEditando = {
+      productoId: this.items[index].productoId,
+      cantidad: this.items[index].cantidad,
+      costoUnitario: this.items[index].costoUnitario,
+      precioVenta: this.items[index].precioVenta
+    };
+
+    this.mensajeError = '';
+    this.mensajeExito = '';
+  }
+
+  guardarEdicion(): void {
+    if (this.indiceEditando === null) {
+      return;
+    }
+
+    if (Number(this.itemEditando.cantidad) <= 0) {
+      this.mensajeError = 'La cantidad debe ser mayor a cero.';
+      return;
+    }
+
+    if (Number(this.itemEditando.costoUnitario) < 0) {
+      this.mensajeError = 'El costo unitario no puede ser negativo.';
+      return;
+    }
+
+    if (Number(this.itemEditando.precioVenta) < 0) {
+      this.mensajeError = 'El precio de venta no puede ser negativo.';
+      return;
+    }
+
+    this.items[this.indiceEditando] = {
+      productoId: this.itemEditando.productoId,
+      cantidad: Number(this.itemEditando.cantidad),
+      costoUnitario: Number(this.itemEditando.costoUnitario),
+      precioVenta: Number(this.itemEditando.precioVenta)
+    };
+
+    this.cancelarEdicion();
+  }
+
+  cancelarEdicion(): void {
+    this.indiceEditando = null;
+
+    this.itemEditando = {
+      productoId: 0,
+      cantidad: 1,
+      costoUnitario: 0,
+      precioVenta: 0
+    };
+
+    this.mensajeError = '';
   }
 
   eliminarItem(index: number): void {
@@ -292,44 +378,43 @@ export class IngresarInventarioComponent implements OnInit {
 
     const dto: IngresoInventarioDTO = {
       sucursalId: this.sucursalId,
-      motivo: this.motivo,
+      motivo: this.motivo?.trim() || undefined,
       items: this.items
     };
 
     this.guardando = true;
 
-    this.inventarioService.ingresarMercancia(dto)
-      .subscribe({
-        next: () => {
-          this.guardando = false;
-          this.mensajeExito = 'Mercancía ingresada correctamente.';
+    this.inventarioService.ingresarMercancia(dto).subscribe({
+      next: () => {
+        this.guardando = false;
+        this.mensajeExito = 'Mercancía ingresada correctamente.';
 
-          this.items = [];
-          this.motivo = '';
-          this.limpiarFormularioProducto();
+        this.items = [];
+        this.motivo = '';
+        this.limpiarFormularioProducto();
 
-          setTimeout(() => {
-            this.volverADetalleSucursal();
-          }, 800);
-        },
-        error: (error) => {
-          this.guardando = false;
-          this.mensajeError =
-            error?.error?.message ||
-            error?.error ||
-            'No se pudo ingresar la mercancía.';
-        }
-      });
+        setTimeout(() => {
+          this.volverADetalleSucursal();
+        }, 800);
+      },
+      error: (error) => {
+        this.guardando = false;
+        this.mensajeError =
+          error?.error?.message ||
+          error?.error ||
+          'No se pudo ingresar la mercancía.';
+
+        console.error(error);
+      }
+    });
   }
 
   volverADetalleSucursal(): void {
-    this.router.navigate([
-      '/super-admin/empresas',
-      this.empresaId,
-      'sucursales',
-      'detalle',
-      this.sucursalId
-    ]);
+    this.router.navigate(this.rutaDetalleSucursal());
+  }
+
+  volverPanelInventario(): void {
+    this.router.navigate(this.rutaPanelInventario());
   }
 
   private limpiarFormularioProducto(): void {

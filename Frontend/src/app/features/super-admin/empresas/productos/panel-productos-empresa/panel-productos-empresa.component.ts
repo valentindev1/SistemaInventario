@@ -9,6 +9,7 @@ import { EmpresaService } from '../../../../../core/services/empresa/empresa.ser
 import { ProductoService } from '../../../../../core/services/producto/producto/producto.service';
 
 import { EmpresaObtenerDTO } from '../../../../../core/models/empresa/empresa.model';
+
 import {
   ProductoAdminObtenerDTO,
   ProductoEditarDTO
@@ -23,6 +24,8 @@ import { ColorObtenerDTO } from '../../../../../core/models/producto/detalles/co
 import { CategoriaObtenerDTO } from '../../../../../core/models/producto/detalles/categoria.model';
 import { TallaObtenerDTO } from '../../../../../core/models/producto/detalles/talla.model';
 import { GeneroObtenerDTO } from '../../../../../core/models/producto/detalles/genero.model';
+
+import { AuthService } from '../../../../../core/services/auth/auth.service';
 
 @Component({
   selector: 'app-panel-productos-empresa',
@@ -56,10 +59,8 @@ export class PanelProductosEmpresaComponent implements OnInit {
   productoEditandoId: number | null = null;
   productoEditando: ProductoEditarDTO | null = null;
 
-  // Filtro
   codigoBusqueda = '';
 
-  // Paginación
   paginaActual = 1;
   elementosPorPagina = 10;
 
@@ -70,11 +71,12 @@ export class PanelProductosEmpresaComponent implements OnInit {
     private colorService: ColorService,
     private categoriaService: CategoriaService,
     private tallaService: TallaService,
-    private generoService: GeneroService
+    private generoService: GeneroService,
+    private authService: AuthService
   ) {}
 
   ngOnInit(): void {
-    const empresaIdParam = this.route.snapshot.paramMap.get('empresaId');
+    const empresaIdParam = this.obtenerEmpresaIdDesdeRuta();
 
     if (!empresaIdParam) {
       this.mensajeError = 'ID de empresa no válido';
@@ -83,9 +85,84 @@ export class PanelProductosEmpresaComponent implements OnInit {
 
     this.empresaId = Number(empresaIdParam);
 
+    if (Number.isNaN(this.empresaId)) {
+      this.mensajeError = 'ID de empresa no válido';
+      return;
+    }
+
     this.cargarEmpresa();
     this.cargarProductos();
     this.cargarDetallesProducto();
+  }
+
+  private obtenerEmpresaIdDesdeRuta(): string | null {
+    return (
+      this.route.snapshot.paramMap.get('empresaId') ??
+      this.route.parent?.snapshot.paramMap.get('empresaId') ??
+      this.route.parent?.parent?.snapshot.paramMap.get('empresaId') ??
+      null
+    );
+  }
+
+  esSuperAdmin(): boolean {
+    return this.authService.obtenerRol() === 'SUPER_ADMIN';
+  }
+
+  esAdmin(): boolean {
+    return this.authService.obtenerRol() === 'ADMIN';
+  }
+
+  rutaDetalleEmpresa(): any[] {
+    if (this.esSuperAdmin()) {
+      return [
+        '/super-admin/empresas/detalle',
+        this.empresaId
+      ];
+    }
+
+    return [
+      '/admin/empresa',
+      this.empresaId,
+      'dashboard'
+    ];
+  }
+
+  rutaCrearProducto(): any[] {
+    if (this.esSuperAdmin()) {
+      return [
+        '/super-admin/empresas',
+        this.empresaId,
+        'productos',
+        'crear'
+      ];
+    }
+
+    return [
+      '/admin/empresa',
+      this.empresaId,
+      'productos',
+      'crear'
+    ];
+  }
+
+  rutaDetalleProducto(tipo: string): any[] {
+    if (this.esSuperAdmin()) {
+      return [
+        '/super-admin/empresas',
+        this.empresaId,
+        'productos',
+        'detalles',
+        tipo
+      ];
+    }
+
+    return [
+      '/admin/empresa',
+      this.empresaId,
+      'productos',
+      'detalles',
+      tipo
+    ];
   }
 
   get productosFiltrados(): ProductoAdminObtenerDTO[] {
@@ -264,6 +341,7 @@ export class PanelProductosEmpresaComponent implements OnInit {
         text: 'El nombre del producto es obligatorio.',
         confirmButtonColor: '#0d6efd'
       });
+
       return;
     }
 
@@ -274,6 +352,7 @@ export class PanelProductosEmpresaComponent implements OnInit {
         text: 'La descripción del producto es obligatoria.',
         confirmButtonColor: '#0d6efd'
       });
+
       return;
     }
 

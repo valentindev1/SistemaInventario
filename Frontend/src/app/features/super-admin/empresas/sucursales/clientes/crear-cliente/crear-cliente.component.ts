@@ -9,6 +9,8 @@ import {
 } from '@angular/forms';
 
 import { ClienteService } from '../../../../../../core/services/cliente/cliente.service';
+import { AuthService } from '../../../../../../core/services/auth/auth.service';
+
 import { ClienteCrearDTO } from '../../../../../../core/models/cliente/cliente.model';
 
 @Component({
@@ -27,7 +29,7 @@ export class CrearClienteComponent implements OnInit {
   empresaId!: number;
   sucursalId!: number;
 
-  formulario!: FormGroup;
+  formulario: FormGroup;
 
   guardando = false;
 
@@ -38,25 +40,9 @@ export class CrearClienteComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private fb: FormBuilder,
-    private clienteService: ClienteService
-  ) {}
-
-  ngOnInit(): void {
-    const empresaIdParam = this.route.snapshot.paramMap.get('empresaId');
-    const sucursalIdParam = this.route.snapshot.paramMap.get('sucursalId');
-
-    if (!empresaIdParam || !sucursalIdParam) {
-      this.mensajeError = 'Parámetros no válidos';
-      return;
-    }
-
-    this.empresaId = Number(empresaIdParam);
-    this.sucursalId = Number(sucursalIdParam);
-
-    this.inicializarFormulario();
-  }
-
-  inicializarFormulario(): void {
+    private clienteService: ClienteService,
+    private authService: AuthService
+  ) {
     this.formulario = this.fb.group({
       numeroDocumento: [
         '',
@@ -90,6 +76,97 @@ export class CrearClienteComponent implements OnInit {
     });
   }
 
+  ngOnInit(): void {
+    const empresaIdParam = this.obtenerEmpresaIdDesdeRuta();
+    const sucursalIdParam = this.obtenerSucursalIdDesdeRuta();
+
+    if (!empresaIdParam || !sucursalIdParam) {
+      this.mensajeError = 'Parámetros no válidos';
+      return;
+    }
+
+    this.empresaId = Number(empresaIdParam);
+    this.sucursalId = Number(sucursalIdParam);
+
+    if (
+      Number.isNaN(this.empresaId) ||
+      Number.isNaN(this.sucursalId) ||
+      this.empresaId <= 0 ||
+      this.sucursalId <= 0
+    ) {
+      this.mensajeError = 'Parámetros no válidos';
+      return;
+    }
+
+    if (!this.validarAccesoLocal()) {
+      return;
+    }
+  }
+
+  private obtenerEmpresaIdDesdeRuta(): string | null {
+    return (
+      this.route.snapshot.paramMap.get('empresaId') ??
+      this.route.parent?.snapshot.paramMap.get('empresaId') ??
+      this.route.parent?.parent?.snapshot.paramMap.get('empresaId') ??
+      null
+    );
+  }
+
+  private obtenerSucursalIdDesdeRuta(): string | null {
+    return (
+      this.route.snapshot.paramMap.get('sucursalId') ??
+      this.route.parent?.snapshot.paramMap.get('sucursalId') ??
+      this.route.parent?.parent?.snapshot.paramMap.get('sucursalId') ??
+      null
+    );
+  }
+
+  private validarAccesoLocal(): boolean {
+    const rol = this.authService.obtenerRol();
+    const empresaIdUsuario = this.authService.obtenerEmpresaId();
+
+    if (rol === 'SUPER_ADMIN') {
+      return true;
+    }
+
+    if (rol === 'ADMIN' && empresaIdUsuario === this.empresaId) {
+      return true;
+    }
+
+    this.router.navigate(['/acceso-denegado']);
+    return false;
+  }
+
+  esSuperAdmin(): boolean {
+    return this.authService.obtenerRol() === 'SUPER_ADMIN';
+  }
+
+  esAdmin(): boolean {
+    return this.authService.obtenerRol() === 'ADMIN';
+  }
+
+  rutaPanelClientes(): any[] {
+    if (this.esSuperAdmin()) {
+      return [
+        '/super-admin/empresas',
+        this.empresaId,
+        'sucursales',
+        this.sucursalId,
+        'clientes',
+        'panel'
+      ];
+    }
+
+    return [
+      '/admin/empresa',
+      this.empresaId,
+      'sucursales',
+      this.sucursalId,
+      'clientes',
+      'panel'
+    ];
+  }
+
   guardar(): void {
     this.mensajeError = '';
     this.mensajeExito = '';
@@ -105,8 +182,7 @@ export class CrearClienteComponent implements OnInit {
       numeroDocumento: this.formulario.value.numeroDocumento.trim(),
       nombre: this.formulario.value.nombre.trim(),
       correo: this.normalizarOpcional(this.formulario.value.correo),
-      telefono: this.normalizarOpcional(this.formulario.value.telefono),
-
+      telefono: this.normalizarOpcional(this.formulario.value.telefono)
     };
 
     this.guardando = true;
@@ -129,20 +205,17 @@ export class CrearClienteComponent implements OnInit {
   }
 
   volverPanelClientes(): void {
-    this.router.navigate([
-      '/super-admin/empresas',
-      this.empresaId,
-      'sucursales',
-      this.sucursalId,
-      'clientes',
-      'panel'
-    ]);
+    this.router.navigate(this.rutaPanelClientes());
   }
 
   campoInvalido(campo: string): boolean {
     const control = this.formulario.get(campo);
 
     return !!control && control.invalid && (control.touched || control.dirty);
+  }
+
+  tieneError(campo: string, error: string): boolean {
+    return !!this.formulario.get(campo)?.errors?.[error];
   }
 
   private normalizarOpcional(valor: string | null | undefined): string | null {
@@ -160,6 +233,10 @@ export class CrearClienteComponent implements OnInit {
 
     if (typeof error?.error === 'string') {
       return error.error;
+    }
+
+    if (error?.error?.error) {
+      return error.error.error;
     }
 
     return 'No se pudo crear el cliente.';

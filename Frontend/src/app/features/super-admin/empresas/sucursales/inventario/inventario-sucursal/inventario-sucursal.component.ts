@@ -1,10 +1,11 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 
 import { InventarioService } from '../../../../../../core/services/inventario/inventario.service';
 import { VentaService } from '../../../../../../core/services/venta/venta.service';
+import { AuthService } from '../../../../../../core/services/auth/auth.service';
 
 import { InventarioAdminDTO } from '../../../../../../core/models/inventario/inventario.model';
 
@@ -59,12 +60,13 @@ export class InventarioSucursalComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private inventarioService: InventarioService,
-    private ventaService: VentaService
+    private ventaService: VentaService,
+    private authService: AuthService
   ) {}
 
   ngOnInit(): void {
-    const empresaIdParam = this.route.snapshot.paramMap.get('empresaId');
-    const sucursalIdParam = this.route.snapshot.paramMap.get('sucursalId');
+    const empresaIdParam = this.obtenerEmpresaIdDesdeRuta();
+    const sucursalIdParam = this.obtenerSucursalIdDesdeRuta();
 
     if (!empresaIdParam || !sucursalIdParam) {
       this.mensajeError = 'No se pudo identificar la empresa o la sucursal.';
@@ -74,8 +76,17 @@ export class InventarioSucursalComponent implements OnInit {
     this.empresaId = Number(empresaIdParam);
     this.sucursalId = Number(sucursalIdParam);
 
-    if (!this.empresaId || !this.sucursalId) {
+    if (
+      Number.isNaN(this.empresaId) ||
+      Number.isNaN(this.sucursalId) ||
+      this.empresaId <= 0 ||
+      this.sucursalId <= 0
+    ) {
       this.mensajeError = 'Los identificadores de empresa o sucursal no son válidos.';
+      return;
+    }
+
+    if (!this.validarAccesoLocal()) {
       return;
     }
 
@@ -85,6 +96,124 @@ export class InventarioSucursalComponent implements OnInit {
     this.cargarRankingProductosVentas();
   }
 
+  private obtenerEmpresaIdDesdeRuta(): string | null {
+    return (
+      this.route.snapshot.paramMap.get('empresaId') ??
+      this.route.parent?.snapshot.paramMap.get('empresaId') ??
+      this.route.parent?.parent?.snapshot.paramMap.get('empresaId') ??
+      null
+    );
+  }
+
+  private obtenerSucursalIdDesdeRuta(): string | null {
+    return (
+      this.route.snapshot.paramMap.get('sucursalId') ??
+      this.route.parent?.snapshot.paramMap.get('sucursalId') ??
+      this.route.parent?.parent?.snapshot.paramMap.get('sucursalId') ??
+      null
+    );
+  }
+
+  private obtenerRolNormalizado(): string | null {
+    const rol = this.authService.obtenerRol();
+
+    if (!rol) {
+      return null;
+    }
+
+    return rol.replace('ROLE_', '');
+  }
+
+  private validarAccesoLocal(): boolean {
+    const rol = this.obtenerRolNormalizado();
+    const empresaIdUsuario = this.authService.obtenerEmpresaId();
+
+    if (rol === 'SUPER_ADMIN') {
+      return true;
+    }
+
+    if (rol === 'ADMIN' && empresaIdUsuario === this.empresaId) {
+      return true;
+    }
+
+    this.router.navigate(['/acceso-denegado']);
+    return false;
+  }
+
+  esSuperAdmin(): boolean {
+    return this.obtenerRolNormalizado() === 'SUPER_ADMIN';
+  }
+
+  esAdmin(): boolean {
+    return this.obtenerRolNormalizado() === 'ADMIN';
+  }
+
+  rutaPanelInventario(): any[] {
+    if (this.esSuperAdmin()) {
+      return [
+        '/super-admin/empresas',
+        this.empresaId,
+        'sucursales',
+        this.sucursalId,
+        'inventario',
+        'panel'
+      ];
+    }
+
+    return [
+      '/admin/empresa',
+      this.empresaId,
+      'sucursales',
+      this.sucursalId,
+      'inventario',
+      'panel'
+    ];
+  }
+
+  rutaIngresoInventario(): any[] {
+    if (this.esSuperAdmin()) {
+      return [
+        '/super-admin/empresas',
+        this.empresaId,
+        'sucursales',
+        this.sucursalId,
+        'inventario',
+        'ingresar'
+      ];
+    }
+
+    return [
+      '/admin/empresa',
+      this.empresaId,
+      'sucursales',
+      this.sucursalId,
+      'inventario',
+      'ingresar'
+    ];
+  }
+
+  rutaAjusteInventario(): any[] {
+    if (this.esSuperAdmin()) {
+      return [
+        '/super-admin/empresas',
+        this.empresaId,
+        'sucursales',
+        this.sucursalId,
+        'inventario',
+        'ajustar'
+      ];
+    }
+
+    return [
+      '/admin/empresa',
+      this.empresaId,
+      'sucursales',
+      this.sucursalId,
+      'inventario',
+      'ajustar'
+    ];
+  }
+
   cargarInventario(): void {
     this.cargando = true;
     this.mensajeError = '';
@@ -92,7 +221,7 @@ export class InventarioSucursalComponent implements OnInit {
     this.inventarioService.listarPorSucursal(this.sucursalId)
       .subscribe({
         next: (data) => {
-          this.inventario = data;
+          this.inventario = data || [];
           this.paginaActual = 1;
           this.cargando = false;
         },
@@ -102,6 +231,8 @@ export class InventarioSucursalComponent implements OnInit {
             error?.error?.message ||
             error?.error ||
             'No se pudo cargar el inventario de la sucursal.';
+
+          console.error(error);
         }
       });
   }
@@ -233,15 +364,18 @@ export class InventarioSucursalComponent implements OnInit {
     }
 
     resultado.sort((a, b) => {
+      const stockA = a.stockActual || 0;
+      const stockB = b.stockActual || 0;
+
       if (this.ordenStock === 'MENOR_MAYOR') {
-        return a.stockActual - b.stockActual;
+        return stockA - stockB;
       }
 
       if (this.ordenStock === 'MAYOR_MENOR') {
-        return b.stockActual - a.stockActual;
+        return stockB - stockA;
       }
 
-      return a.nombre.localeCompare(b.nombre);
+      return (a.nombre || '').localeCompare(b.nombre || '');
     });
 
     return resultado;
@@ -390,36 +524,15 @@ export class InventarioSucursalComponent implements OnInit {
   }
 
   volverAlPanel(): void {
-    this.router.navigate([
-      '/super-admin/empresas',
-      this.empresaId,
-      'sucursales',
-      this.sucursalId,
-      'inventario',
-      'panel'
-    ]);
+    this.router.navigate(this.rutaPanelInventario());
   }
 
   irAAjuste(): void {
-    this.router.navigate([
-      '/super-admin/empresas',
-      this.empresaId,
-      'sucursales',
-      this.sucursalId,
-      'inventario',
-      'ajustar'
-    ]);
+    this.router.navigate(this.rutaAjusteInventario());
   }
 
   irAIngreso(): void {
-    this.router.navigate([
-      '/super-admin/empresas',
-      this.empresaId,
-      'sucursales',
-      this.sucursalId,
-      'inventario',
-      'ingresar'
-    ]);
+    this.router.navigate(this.rutaIngresoInventario());
   }
 
   private formatearFechaRanking(fecha: Date): string {

@@ -5,16 +5,8 @@
 
     <div>
       <a
-        [routerLink]="[
-          '/super-admin/empresas',
-          empresaId,
-          'sucursales',
-          sucursalId,
-          'clientes',
-          'panel'
-        ]"
-        class="btn btn-link px-0 mb-2"
-      >
+        [routerLink]="rutaPanelClientes()"
+        class="btn btn-link px-0 mb-2">
         <i class="bi bi-arrow-left me-1"></i>
         Volver al panel de clientes
       </a>
@@ -31,15 +23,19 @@
   </div>
 
   <!-- Alertas -->
-  <div *ngIf="mensajeError" class="alert alert-danger">
-    <i class="bi bi-exclamation-triangle me-1"></i>
-    {{ mensajeError }}
-  </div>
+  @if (mensajeError) {
+    <div class="alert alert-danger">
+      <i class="bi bi-exclamation-triangle me-1"></i>
+      {{ mensajeError }}
+    </div>
+  }
 
-  <div *ngIf="mensajeExito" class="alert alert-success">
-    <i class="bi bi-check-circle me-1"></i>
-    {{ mensajeExito }}
-  </div>
+  @if (mensajeExito) {
+    <div class="alert alert-success">
+      <i class="bi bi-check-circle me-1"></i>
+      {{ mensajeExito }}
+    </div>
+  }
 
   <!-- Formulario -->
   <div class="row justify-content-center">
@@ -58,12 +54,15 @@
             </p>
           </div>
 
-          <form [formGroup]="formulario" (ngSubmit)="guardar()">
+          <form
+            [formGroup]="formulario"
+            (ngSubmit)="guardar()">
 
             <div class="row g-3">
 
               <!-- Número documento -->
               <div class="col-12 col-md-6">
+
                 <label class="form-label">
                   Número de documento <span class="text-danger">*</span>
                 </label>
@@ -73,26 +72,37 @@
                   class="form-control"
                   formControlName="numeroDocumento"
                   placeholder="Ej: 1075289632"
-                  [class.is-invalid]="campoInvalido('numeroDocumento')"
-                >
+                  [class.is-invalid]="campoInvalido('numeroDocumento')">
 
-                <div class="invalid-feedback" *ngIf="campoInvalido('numeroDocumento')">
-                  <span *ngIf="formulario.get('numeroDocumento')?.errors?.['required']">
-                    El número de documento es obligatorio.
-                  </span>
+                @if (campoInvalido('numeroDocumento')) {
+                  <div class="invalid-feedback d-block">
 
-                  <span *ngIf="formulario.get('numeroDocumento')?.errors?.['pattern']">
-                    El número de documento solo puede contener números.
-                  </span>
+                    @if (tieneError('numeroDocumento', 'required')) {
+                      <span>
+                        El número de documento es obligatorio.
+                      </span>
+                    }
 
-                  <span *ngIf="formulario.get('numeroDocumento')?.errors?.['maxlength']">
-                    El número de documento no puede superar 30 caracteres.
-                  </span>
-                </div>
+                    @if (tieneError('numeroDocumento', 'pattern')) {
+                      <span>
+                        El número de documento solo puede contener números.
+                      </span>
+                    }
+
+                    @if (tieneError('numeroDocumento', 'maxlength')) {
+                      <span>
+                        El número de documento no puede superar 30 caracteres.
+                      </span>
+                    }
+
+                  </div>
+                }
+
               </div>
 
               <!-- Nombre -->
               <div class="col-12 col-md-6">
+
                 <label class="form-label">
                   Nombre <span class="text-danger">*</span>
                 </label>
@@ -102,26 +112,37 @@
                   class="form-control"
                   formControlName="nombre"
                   placeholder="Nombre completo"
-                  [class.is-invalid]="campoInvalido('nombre')"
-                >
+                  [class.is-invalid]="campoInvalido('nombre')">
 
-                <div class="invalid-feedback" *ngIf="campoInvalido('nombre')">
-                  <span *ngIf="formulario.get('nombre')?.errors?.['required']">
-                    El nombre es obligatorio.
-                  </span>
+                @if (campoInvalido('nombre')) {
+                  <div class="invalid-feedback d-block">
 
-                  <span *ngIf="formulario.get('nombre')?.errors?.['minlength']">
-                    El nombre debe tener mínimo 3 caracteres.
-                  </span>
+                    @if (tieneError('nombre', 'required')) {
+                      <span>
+                        El nombre es obligatorio.
+                      </span>
+                    }
 
-                  <span *ngIf="formulario.get('nombre')?.errors?.['maxlength']">
-                    El nombre no puede superar 150 caracteres.
-                  </span>
-                </div>
+                    @if (tieneError('nombre', 'minlength')) {
+                      <span>
+                        El nombre debe tener mínimo 3 caracteres.
+                      </span>
+                    }
+
+                    @if (tieneError('nombre', 'maxlength')) {
+                      <span>
+                        El nombre no puede superar 150 caracteres.
+                      </span>
+                    }
+
+                  </div>
+                }
+
               </div>
 
               <!-- Correo -->
               <div class="col-12 col-md-6">
+
                 <label class="form-label">
                   Correo electrónico
                 </label>
@@ -131,22 +152,31 @@
                   class="form-control"
                   formControlName="correo"
                   placeholder="cliente@correo.com"
-                  [class.is-invalid]="campoInvalido('correo')"
-                >
+                  [class.is-invalid]="campoInvalido('correo')">
 
-                <div class="invalid-feedback" *ngIf="campoInvalido('correo')">
-                  <span *ngIf="formulario.get('correo')?.errors?.['email']">
-                    El correo electrónico no es válido.
-                  </span>
+                @if (campoInvalido('correo')) {
+                  <div class="invalid-feedback d-block">
 
-                  <span *ngIf="formulario.get('correo')?.errors?.['maxlength']">
-                    El correo no puede superar 150 caracteres.
-                  </span>
-                </div>
+                    @if (tieneError('correo', 'email')) {
+                      <span>
+                        El correo electrónico no es válido.
+                      </span>
+                    }
+
+                    @if (tieneError('correo', 'maxlength')) {
+                      <span>
+                        El correo no puede superar 150 caracteres.
+                      </span>
+                    }
+
+                  </div>
+                }
+
               </div>
 
               <!-- Teléfono -->
               <div class="col-12 col-md-6">
+
                 <label class="form-label">
                   Teléfono
                 </label>
@@ -156,16 +186,21 @@
                   class="form-control"
                   formControlName="telefono"
                   placeholder="Ej: 3001234567"
-                  [class.is-invalid]="campoInvalido('telefono')"
-                >
+                  [class.is-invalid]="campoInvalido('telefono')">
 
-                <div class="invalid-feedback" *ngIf="campoInvalido('telefono')">
-                  <span *ngIf="formulario.get('telefono')?.errors?.['maxlength']">
-                    El teléfono no puede superar 30 caracteres.
-                  </span>
-                </div>
+                @if (campoInvalido('telefono')) {
+                  <div class="invalid-feedback d-block">
+
+                    @if (tieneError('telefono', 'maxlength')) {
+                      <span>
+                        El teléfono no puede superar 30 caracteres.
+                      </span>
+                    }
+
+                  </div>
+                }
+
               </div>
-
 
             </div>
 
@@ -176,24 +211,28 @@
                 type="button"
                 class="btn btn-outline-secondary"
                 (click)="volverPanelClientes()"
-                [disabled]="guardando"
-              >
+                [disabled]="guardando">
                 Cancelar
               </button>
 
               <button
                 type="submit"
                 class="btn btn-primary"
-                [disabled]="guardando"
-              >
-                <span *ngIf="!guardando">
-                  <i class="bi bi-save me-1"></i>
-                  Guardar cliente
-                </span>
+                [disabled]="guardando">
 
-                <span *ngIf="guardando">
-                  Guardando...
-                </span>
+                @if (!guardando) {
+                  <span>
+                    <i class="bi bi-save me-1"></i>
+                    Guardar cliente
+                  </span>
+                }
+
+                @if (guardando) {
+                  <span>
+                    Guardando...
+                  </span>
+                }
+
               </button>
 
             </div>

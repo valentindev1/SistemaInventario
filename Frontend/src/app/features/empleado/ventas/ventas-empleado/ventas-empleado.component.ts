@@ -3,7 +3,8 @@ import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
-import { InventarioService } from '../../../../core/services/inventario/inventario.service';
+import { AuthService } from '../../../../core/services/auth/auth.service';
+import { EmpleadoInventarioService } from '../../../../core/services/empleado/empleado-inventario.service';
 import { ClienteService } from '../../../../core/services/cliente/cliente.service';
 import { EmpleadoVentaService } from '../../../../core/services/empleado/empleado-venta.service';
 
@@ -42,15 +43,13 @@ interface ItemVentaTemporal {
 export class VentasEmpleadoComponent implements OnInit {
 
   sucursalId!: number;
+  empresaId!: number;
 
   inventario: InventarioEmpleadoDTO[] = [];
 
   productoSeleccionadoId = '';
   cantidadSeleccionada = 1;
   observacion = '';
-
-
-
 
   descuento = 0;
   porcentajesDescuento = [5, 10, 15, 20, 25, 30];
@@ -74,10 +73,6 @@ export class VentasEmpleadoComponent implements OnInit {
   mensajeError = '';
   mensajeExito = '';
 
-
-
-
-
   ventaGenerada: FacturaVentaEmpleadoDTO | null = null;
 
   ventaHabilitada = false;
@@ -85,24 +80,17 @@ export class VentasEmpleadoComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private inventarioService: InventarioService,
+    private authService: AuthService,
+    private empleadoInventarioService: EmpleadoInventarioService,
     private empleadoVentaService: EmpleadoVentaService,
     private clienteService: ClienteService
   ) {}
 
   ngOnInit(): void {
 
-    const sucursalIdParam = this.route.snapshot.paramMap.get('sucursalId');
+    const accesoValido = this.validarAccesoEmpleado();
 
-    if (!sucursalIdParam) {
-      this.mensajeError = 'No se pudo identificar la sucursal.';
-      return;
-    }
-
-    this.sucursalId = Number(sucursalIdParam);
-
-    if (!this.sucursalId) {
-      this.mensajeError = 'El identificador de la sucursal no es válido.';
+    if (!accesoValido) {
       return;
     }
 
@@ -116,6 +104,94 @@ export class VentasEmpleadoComponent implements OnInit {
     this.cargarClientesDisponibles();
   }
 
+  private validarAccesoEmpleado(): boolean {
+
+    this.mensajeError = '';
+
+    if (!this.authService.estaAutenticado()) {
+      this.router.navigate(['/login']);
+      return false;
+    }
+
+    const rol = this.authService.obtenerRol();
+    const empresaIdUsuario = this.authService.obtenerEmpresaId();
+    const sucursalIdUsuario = this.authService.obtenerSucursalId();
+
+    if (!rol) {
+      this.router.navigate(['/login']);
+      return false;
+    }
+
+    if (rol !== 'EMPLEADO') {
+      this.router.navigate(['/acceso-denegado']);
+      return false;
+    }
+
+    if (!empresaIdUsuario || !sucursalIdUsuario) {
+      this.mensajeError = 'No se pudo identificar la empresa o sucursal del empleado.';
+      this.router.navigate(['/login']);
+      return false;
+    }
+
+    const sucursalIdParam = this.obtenerSucursalIdDesdeRuta();
+
+    if (!sucursalIdParam) {
+      this.router.navigate([
+        '/empleado',
+        'sucursal',
+        sucursalIdUsuario,
+        'ventas',
+        'generar'
+      ]);
+
+      return false;
+    }
+
+    const sucursalIdRuta = Number(sucursalIdParam);
+
+    if (
+      Number.isNaN(sucursalIdRuta) ||
+      sucursalIdRuta <= 0
+    ) {
+      this.router.navigate([
+        '/empleado',
+        'sucursal',
+        sucursalIdUsuario,
+        'ventas',
+        'generar'
+      ]);
+
+      return false;
+    }
+
+    if (sucursalIdRuta !== sucursalIdUsuario) {
+      this.router.navigate([
+        '/empleado',
+        'sucursal',
+        sucursalIdUsuario,
+        'ventas',
+        'generar'
+      ]);
+
+      return false;
+    }
+
+    this.empresaId = empresaIdUsuario;
+    this.sucursalId = sucursalIdUsuario;
+
+    return true;
+  }
+
+  private obtenerSucursalIdDesdeRuta(): string | null {
+    return (
+      this.route.snapshot.paramMap.get('sucursalId') ??
+      this.route.parent?.snapshot.paramMap.get('sucursalId') ??
+      this.route.parent?.parent?.snapshot.paramMap.get('sucursalId') ??
+      this.route.parent?.parent?.parent?.snapshot.paramMap.get('sucursalId') ??
+      null
+    );
+  }
+
   get clienteVentaSeleccionado(): boolean {
     return this.clienteSeleccionado !== null &&
       this.clienteSeleccionado.id !== null &&
@@ -127,7 +203,7 @@ export class VentasEmpleadoComponent implements OnInit {
     this.cargandoInventario = true;
     this.mensajeError = '';
 
-    this.inventarioService.listarPorSucursal(this.sucursalId)
+    this.empleadoInventarioService.listarInventarioPorSucursal(this.sucursalId)
       .subscribe({
         next: (data) => {
           this.inventario = (data || [])
@@ -138,10 +214,12 @@ export class VentasEmpleadoComponent implements OnInit {
         error: (error) => {
           this.cargandoInventario = false;
 
-          this.mensajeError =
-            error?.error?.message ||
-            error?.error ||
-            'No se pudo cargar el inventario de la sucursal.';
+          this.mensajeError = this.obtenerMensajeError(
+            error,
+            'No se pudo cargar el inventario de la sucursal.'
+          );
+
+          console.error(error);
         }
       });
   }
@@ -158,7 +236,11 @@ export class VentasEmpleadoComponent implements OnInit {
       },
       error: (error) => {
         console.error(error);
-        this.mensajeError = 'No se pudieron cargar los clientes para búsqueda.';
+
+        this.mensajeError = this.obtenerMensajeError(
+          error,
+          'No se pudieron cargar los clientes para búsqueda.'
+        );
       }
     });
   }
@@ -531,7 +613,6 @@ export class VentasEmpleadoComponent implements OnInit {
     this.mensajeError = '';
   }
 
-
   private validarDescuentoActual(): void {
 
     const subtotal = this.calcularSubtotal();
@@ -552,7 +633,6 @@ export class VentasEmpleadoComponent implements OnInit {
       this.actualizarDescuentoManual();
     }
   }
-
 
   generarVenta(): void {
 
@@ -627,10 +707,10 @@ export class VentasEmpleadoComponent implements OnInit {
 
           this.guardando = false;
 
-          this.mensajeError =
-            error?.error?.message ||
-            error?.error ||
-            'No se pudo generar la venta.';
+          this.mensajeError = this.obtenerMensajeError(
+            error,
+            'No se pudo generar la venta.'
+          );
         }
       });
   }
@@ -650,5 +730,26 @@ export class VentasEmpleadoComponent implements OnInit {
 
     this.productoSeleccionadoId = '';
     this.cantidadSeleccionada = 1;
+  }
+
+  private obtenerMensajeError(error: any, mensajeDefecto: string): string {
+
+    if (Array.isArray(error?.error?.errores)) {
+      return error.error.errores.join(', ');
+    }
+
+    if (typeof error?.error === 'string') {
+      return error.error;
+    }
+
+    if (error?.error?.message) {
+      return error.error.message;
+    }
+
+    if (error?.error?.error) {
+      return error.error.error;
+    }
+
+    return mensajeDefecto;
   }
 }

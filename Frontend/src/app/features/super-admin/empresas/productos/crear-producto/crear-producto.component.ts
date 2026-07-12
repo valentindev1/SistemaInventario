@@ -21,6 +21,8 @@ import { CategoriaObtenerDTO } from '../../../../../core/models/producto/detalle
 import { GeneroObtenerDTO } from '../../../../../core/models/producto/detalles/genero.model';
 import { TallaObtenerDTO } from '../../../../../core/models/producto/detalles/talla.model';
 
+import { AuthService } from '../../../../../core/services/auth/auth.service';
+
 @Component({
   selector: 'app-crear-producto',
   standalone: true,
@@ -60,7 +62,8 @@ export class CrearProductoComponent implements OnInit {
     private colorService: ColorService,
     private categoriaService: CategoriaService,
     private generoService: GeneroService,
-    private tallaService: TallaService
+    private tallaService: TallaService,
+    private authService: AuthService
   ) {
     this.formularioProducto = this.fb.group({
       nombre: ['', [Validators.required, Validators.maxLength(150)]],
@@ -75,7 +78,7 @@ export class CrearProductoComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    const empresaIdParam = this.route.snapshot.paramMap.get('empresaId');
+    const empresaIdParam = this.obtenerEmpresaIdDesdeRuta();
 
     if (!empresaIdParam) {
       this.mensajeError = 'ID de empresa no válido';
@@ -84,8 +87,46 @@ export class CrearProductoComponent implements OnInit {
 
     this.empresaId = Number(empresaIdParam);
 
+    if (Number.isNaN(this.empresaId)) {
+      this.mensajeError = 'ID de empresa no válido';
+      return;
+    }
+
     this.cargarEmpresa();
     this.cargarDetallesProducto();
+  }
+
+  private obtenerEmpresaIdDesdeRuta(): string | null {
+    return (
+      this.route.snapshot.paramMap.get('empresaId') ??
+      this.route.parent?.snapshot.paramMap.get('empresaId') ??
+      this.route.parent?.parent?.snapshot.paramMap.get('empresaId') ??
+      null
+    );
+  }
+
+  esSuperAdmin(): boolean {
+    return this.authService.obtenerRol() === 'SUPER_ADMIN';
+  }
+
+  esAdmin(): boolean {
+    return this.authService.obtenerRol() === 'ADMIN';
+  }
+
+  rutaProductos(): any[] {
+    if (this.esSuperAdmin()) {
+      return [
+        '/super-admin/empresas',
+        this.empresaId,
+        'productos'
+      ];
+    }
+
+    return [
+      '/admin/empresa',
+      this.empresaId,
+      'productos'
+    ];
   }
 
   cargarEmpresa(): void {
@@ -109,11 +150,23 @@ export class CrearProductoComponent implements OnInit {
     this.cargandoDetalles = true;
     this.mensajeError = '';
 
+    let pendientes = 4;
+
+    const finalizarCarga = () => {
+      pendientes--;
+
+      if (pendientes === 0) {
+        this.cargandoDetalles = false;
+      }
+    };
+
     this.colorService.listarPorEmpresa(this.empresaId).subscribe({
       next: (colores) => {
         this.colores = colores;
+        finalizarCarga();
       },
       error: (error) => {
+        finalizarCarga();
         this.mostrarErroresBackend(error, 'No se pudieron cargar los colores');
         console.error(error);
       }
@@ -122,8 +175,10 @@ export class CrearProductoComponent implements OnInit {
     this.categoriaService.listarPorEmpresa(this.empresaId).subscribe({
       next: (categorias) => {
         this.categorias = categorias;
+        finalizarCarga();
       },
       error: (error) => {
+        finalizarCarga();
         this.mostrarErroresBackend(error, 'No se pudieron cargar las categorías');
         console.error(error);
       }
@@ -132,8 +187,10 @@ export class CrearProductoComponent implements OnInit {
     this.generoService.listarPorEmpresa(this.empresaId).subscribe({
       next: (generos) => {
         this.generos = generos;
+        finalizarCarga();
       },
       error: (error) => {
+        finalizarCarga();
         this.mostrarErroresBackend(error, 'No se pudieron cargar los géneros');
         console.error(error);
       }
@@ -142,10 +199,10 @@ export class CrearProductoComponent implements OnInit {
     this.tallaService.listarPorEmpresa(this.empresaId).subscribe({
       next: (tallas) => {
         this.tallas = tallas;
-        this.cargandoDetalles = false;
+        finalizarCarga();
       },
       error: (error) => {
-        this.cargandoDetalles = false;
+        finalizarCarga();
         this.mostrarErroresBackend(error, 'No se pudieron cargar las tallas');
         console.error(error);
       }
@@ -170,9 +227,9 @@ export class CrearProductoComponent implements OnInit {
     }
 
     const dto: ProductoCrearDTO = {
-      nombre: this.formularioProducto.value.nombre,
-      codigo: this.formularioProducto.value.codigo,
-      descripcion: this.formularioProducto.value.descripcion,
+      nombre: this.formularioProducto.value.nombre.trim(),
+      codigo: this.formularioProducto.value.codigo.trim(),
+      descripcion: this.formularioProducto.value.descripcion.trim(),
 
       empresaId: this.empresaId,
 
@@ -195,11 +252,7 @@ export class CrearProductoComponent implements OnInit {
           confirmButtonText: 'Continuar',
           confirmButtonColor: '#0d6efd'
         }).then(() => {
-          this.router.navigate([
-            '/super-admin/empresas',
-            this.empresaId,
-            'productos'
-          ]);
+          this.router.navigate(this.rutaProductos());
         });
       },
       error: (error) => {
@@ -212,6 +265,7 @@ export class CrearProductoComponent implements OnInit {
 
   campoInvalido(campo: string): boolean {
     const control = this.formularioProducto.get(campo);
+
     return !!control && control.invalid && (control.dirty || control.touched);
   }
 
