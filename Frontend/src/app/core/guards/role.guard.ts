@@ -20,13 +20,13 @@ export const roleGuard: CanActivateFn = (
 
   const rolesPermitidos = route.data?.['roles'] as string[] | undefined;
 
-  console.log('ROLE GUARD');
-  console.log('token:', token);
-  console.log('rol localStorage:', rol);
-  console.log('roles permitidos:', rolesPermitidos);
-
   if (!token || !rol) {
-    console.warn('ROLE GUARD: sin token o sin rol');
+    authService.cerrarSesion();
+    return router.createUrlTree(['/login']);
+  }
+
+  if (tokenExpirado(token)) {
+    authService.cerrarSesion();
     return router.createUrlTree(['/login']);
   }
 
@@ -36,17 +36,47 @@ export const roleGuard: CanActivateFn = (
 
   const rolNormalizado = rol.replace('ROLE_', '').trim().toUpperCase();
 
-  const rolesPermitidosNormalizados = rolesPermitidos.map(
-    role => role.replace('ROLE_', '').trim().toUpperCase()
+  const rolesPermitidosNormalizados = rolesPermitidos.map(role =>
+    role.replace('ROLE_', '').trim().toUpperCase()
   );
 
-  console.log('rol normalizado:', rolNormalizado);
-  console.log('roles permitidos normalizados:', rolesPermitidosNormalizados);
-
   if (!rolesPermitidosNormalizados.includes(rolNormalizado)) {
-    console.warn('ROLE GUARD: rol no permitido');
     return router.createUrlTree(['/acceso-denegado']);
   }
 
   return true;
 };
+
+function tokenExpirado(token: string): boolean {
+  try {
+    const partes = token.split('.');
+
+    if (partes.length !== 3) {
+      return true;
+    }
+
+    const payloadBase64 = partes[1]
+      .replace(/-/g, '+')
+      .replace(/_/g, '/');
+
+    const payloadJson = decodeURIComponent(
+      atob(payloadBase64)
+        .split('')
+        .map(char => {
+          return '%' + ('00' + char.charCodeAt(0).toString(16)).slice(-2);
+        })
+        .join('')
+    );
+
+    const payload = JSON.parse(payloadJson);
+
+    if (!payload.exp) {
+      return true;
+    }
+
+    return Date.now() >= payload.exp * 1000;
+
+  } catch {
+    return true;
+  }
+}

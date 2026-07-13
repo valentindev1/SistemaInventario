@@ -17,7 +17,8 @@ public class CorsConfig {
         CorsConfiguration config = new CorsConfiguration();
 
         config.setAllowedOrigins(List.of(
-                "http://localhost:4200"
+                "http://localhost:4200",
+                "https://inventario.vhela.com.co"
         ));
 
         config.setAllowedMethods(List.of(
@@ -35,7 +36,10 @@ public class CorsConfig {
                 "Authorization"
         ));
 
-        config.setAllowCredentials(true);
+        // Correcto para JWT en header Authorization
+        config.setAllowCredentials(false);
+
+        config.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
 
