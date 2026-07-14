@@ -1,0 +1,71 @@
+services:
+  inventario-mysql:
+    image: mysql:8.0
+    container_name: inventario-mysql
+    restart: always
+
+    env_file:
+      - .env
+
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+
+    healthcheck:
+      test: ["CMD-SHELL", "mysql -h 127.0.0.1 -u$${MYSQL_USER} -p$${MYSQL_PASSWORD} -e 'SELECT 1' $${MYSQL_DATABASE}"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 45s
+
+    volumes:
+      - inventario_mysql_data:/var/lib/mysql
+
+    networks:
+      - inventario-network
+
+  inventario-api:
+    build:
+      context: ./Backend/inventario
+      dockerfile: Dockerfile
+
+    container_name: inventario-api
+    restart: always
+
+    env_file:
+      - .env
+
+    depends_on:
+      inventario-mysql:
+        condition: service_healthy
+
+    entrypoint: ["sh", "-c", "until mysqladmin ping -h inventario-mysql -u$${DB_USERNAME} -p$${DB_PASSWORD} --silent; do echo Esperando MySQL; sleep 5; done; java -jar app.jar"]
+
+    networks:
+      - inventario-network
+
+  inventario-frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+
+    container_name: inventario-frontend
+    restart: always
+
+    ports:
+      - "80:80"
+
+    depends_on:
+      - inventario-api
+
+    networks:
+      - inventario-network
+
+volumes:
+  inventario_mysql_data:
+
+networks:
+  inventario-network:
+    driver: bridge

@@ -1,0 +1,71 @@
+# ==========================
+# VARIABLES DE ENTORNO
+# ==========================
+.env
+.env.local
+.env.dev
+.env.prod
+.env.production
+.env.development
+.env.test
+
+# IMPORTANTE:
+# .env.example sí debe subirse al repositorio
+
+
+# ==========================
+# ANGULAR / FRONTEND
+# ==========================
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+frontend/.cache/
+
+
+# ==========================
+# SPRING BOOT / BACKEND
+# ==========================
+Backend/inventario/target/
+
+Backend/inventario/src/main/resources/application.properties
+Backend/inventario/src/main/resources/application-local.properties
+Backend/inventario/src/main/resources/application-dev.properties
+Backend/inventario/src/main/resources/application-prod.properties
+
+Backend/inventario/src/main/resources/application-local.yml
+Backend/inventario/src/main/resources/application-dev.yml
+Backend/inventario/src/main/resources/application-prod.yml
+
+
+# ==========================
+# IDEs
+# ==========================
+.idea/
+.vscode/
+
+Backend/inventario/.idea/
+frontend/.idea/
+
+Backend/inventario/.vscode/
+frontend/.vscode/
+
+
+# ==========================
+# ARCHIVOS DE SISTEMA
+# ==========================
+.DS_Store
+Thumbs.db
+
+
+# ==========================
+# LOGS Y TEMPORALES
+# ==========================
+logs/
+tmp/
+temp/
+
+
+# ==========================
+# ARCHIVOS DE PROYECTO IDE
+# ==========================
+Backend/inventario/inventario.iml

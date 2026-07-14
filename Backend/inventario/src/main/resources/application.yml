@@ -30,4 +30,5 @@ app:
   root:
     name: ${ROOT_USER_NAME:Super Admin}
     username: ${ROOT_USER_USERNAME:root}
-    password: ${ROOT_USER_PASSWORD:}0000}
+    password: ${ROOT_USER_PASSWORD:}
+    force-reset-password: ${ROOT_USER_FORCE_RESET_PASSWORD:false}

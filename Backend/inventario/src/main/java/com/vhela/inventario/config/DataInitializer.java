@@ -25,30 +25,44 @@ public class DataInitializer implements CommandLineRunner {
     @Value("${app.root.password}")
     private String rootPassword;
 
+    @Value("${app.root.force-reset-password:false}")
+    private boolean forceResetPassword;
+
     @Override
     public void run(String... args) {
 
-        if (usuarioRepositorio.count() > 0) {
-            return;
-        }
-
         if (rootPassword == null || rootPassword.isBlank()) {
-            System.out.println("Usuario ROOT no creado. ROOT_USER_PASSWORD no esta configurada.");
+            System.out.println("Usuario ROOT no creado ni actualizado. ROOT_USER_PASSWORD no esta configurada.");
             return;
         }
 
-        Usuario root = new Usuario();
+        usuarioRepositorio.findByUsername(rootUsername).ifPresentOrElse(
+                usuarioExistente -> {
 
-        root.setNombre(rootName);
-        root.setUsername(rootUsername);
-        root.setPassword(passwordEncoder.encode(rootPassword));
-        root.setRol(RolEnum.SUPER_ADMIN);
+                    if (forceResetPassword) {
+                        usuarioExistente.setPassword(passwordEncoder.encode(rootPassword));
+                        usuarioRepositorio.save(usuarioExistente);
 
-        root.setEmpresa(null);
-        root.setSucursal(null);
+                        System.out.println("Password del usuario ROOT actualizado desde variable de entorno.");
+                    } else {
+                        System.out.println("Usuario ROOT ya existe. No se actualizo password.");
+                    }
+                },
+                () -> {
+                    Usuario root = new Usuario();
 
-        usuarioRepositorio.save(root);
+                    root.setNombre(rootName);
+                    root.setUsername(rootUsername);
+                    root.setPassword(passwordEncoder.encode(rootPassword));
+                    root.setRol(RolEnum.SUPER_ADMIN);
 
-        System.out.println("Usuario ROOT creado automaticamente con password encriptado.");
+                    root.setEmpresa(null);
+                    root.setSucursal(null);
+
+                    usuarioRepositorio.save(root);
+
+                    System.out.println("Usuario ROOT creado automaticamente con password encriptado.");
+                }
+        );
     }
 }
