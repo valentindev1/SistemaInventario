@@ -4,7 +4,7 @@ WORKDIR /app
 
 COPY package.json package-lock.json ./
 
-RUN npm install
+RUN npm ci
 
 COPY . .
 
@@ -18,6 +18,6 @@ RUN find /usr/share/nginx/html -mindepth 1 -delete
 
 COPY --from=build /app/dist/frontend/browser/ /usr/share/nginx/html/
 
-RUN cp /usr/share/nginx/html/index.csr.html /usr/share/nginx/html/index.html
+RUN if [ -f /usr/share/nginx/html/index.csr.html ]; then cp /usr/share/nginx/html/index.csr.html /usr/share/nginx/html/index.html; fi
 
 EXPOSE 80

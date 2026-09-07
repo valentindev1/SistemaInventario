@@ -12,6 +12,9 @@ public class MovimientoInventarioDTO {
 
     private String tipo;
 
+    /** INVENTARIO para movimientos de stock o CATALOGO para actividades del catálogo. */
+    private String origen;
+
     private Long productoId;
     private String productoCodigo;
     private String productoNombre;
@@ -35,4 +38,8 @@ public class MovimientoInventarioDTO {
     private Long referenciaId;
 
     private LocalDateTime fecha;
+
+    private Boolean puedeRevertirse;
+    private Boolean revertido;
+    private Long movimientoReversionId;
 }

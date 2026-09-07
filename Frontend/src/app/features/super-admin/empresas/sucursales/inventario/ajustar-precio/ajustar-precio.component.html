@@ -1,0 +1,355 @@
+<div class="price-page">
+
+  <header class="price-header">
+    <div>
+      <button
+        type="button"
+        class="back-link"
+        (click)="volverAlPanel()">
+        <i class="bi bi-arrow-left me-1"></i>
+        Volver al panel de inventario
+      </button>
+
+      <span class="page-eyebrow">
+        <i class="bi bi-tags me-1"></i>
+        Gestión de referencias
+      </span>
+
+      <h1>Ajustar precio de un producto</h1>
+
+      <p>
+        Elige el ajuste por porcentaje o dinero, calcula el precio en vivo y actualiza la regla propia de la referencia.
+      </p>
+    </div>
+
+    <div class="header-icon">
+      <i class="bi bi-currency-dollar"></i>
+    </div>
+  </header>
+
+  @if (mensajeExito) {
+    <div class="alert alert-success">
+      <i class="bi bi-check-circle me-2"></i>
+      {{ mensajeExito }}
+    </div>
+  }
+
+  @if (mensajeError) {
+    <div class="alert alert-danger">
+      <i class="bi bi-exclamation-triangle me-2"></i>
+      {{ mensajeError }}
+    </div>
+  }
+
+  <section class="price-card">
+    <div class="card-heading">
+      <div class="heading-icon">
+        <i class="bi bi-pencil-square"></i>
+      </div>
+
+      <div>
+        <h2>Selecciona una referencia</h2>
+        <p>Busca por código o nombre para consultar el costo, la utilidad y modificar sus valores.</p>
+      </div>
+    </div>
+
+    <div class="scope-notice">
+      <i class="bi bi-info-circle"></i>
+      <span>
+        Este cambio se guarda en la referencia maestra y se reflejará en todas las sucursales de la empresa.
+      </span>
+    </div>
+
+    @if (cargandoProductos) {
+      <div class="loading-state">
+        <div class="spinner-border text-primary"></div>
+        <span>Cargando referencias...</span>
+      </div>
+    }
+
+    @if (!cargandoProductos) {
+      <div class="product-field">
+        <label for="producto-trigger">Producto o referencia</label>
+
+        <div class="product-picker" (click)="$event.stopPropagation()">
+          <button
+            id="producto-trigger"
+            type="button"
+            class="product-picker-trigger"
+            [class.has-value]="productoSeleccionado"
+            [attr.aria-expanded]="productoSelectorAbierto"
+            aria-haspopup="listbox"
+            aria-controls="lista-referencias-precio"
+            (click)="toggleProductoSelector()">
+
+            <span class="product-picker-icon">
+              <i class="bi bi-box-seam"></i>
+            </span>
+
+            @if (productoSeleccionado; as producto) {
+              <span class="product-picker-value">
+                <strong>{{ producto.codigo }}</strong>
+                <small>{{ producto.nombre }}</small>
+              </span>
+            } @else {
+              <span class="product-picker-placeholder">
+                Busca y selecciona una referencia
+              </span>
+            }
+
+            <i
+              class="bi bi-chevron-down product-picker-chevron"
+              [class.rotated]="productoSelectorAbierto"></i>
+          </button>
+
+          @if (productoSelectorAbierto) {
+            <div
+              id="lista-referencias-precio"
+              class="product-picker-menu"
+              role="listbox">
+
+              <div class="product-search">
+                <i class="bi bi-search"></i>
+                <input
+                  id="buscarReferenciaPrecio"
+                  name="buscarReferenciaPrecio"
+                  type="search"
+                  autocomplete="off"
+                  placeholder="Filtrar por nombre o código..."
+                  [(ngModel)]="busquedaProducto"
+                  (keydown)="manejarTeclaSelector($event)">
+              </div>
+
+              <div class="product-options">
+                @for (producto of productosFiltrados; track producto.id) {
+                  <button
+                    type="button"
+                    class="product-option"
+                    [class.is-selected]="productoSeleccionadoId === producto.id"
+                    [attr.aria-selected]="productoSeleccionadoId === producto.id"
+                    (click)="seleccionarProducto(producto)">
+                    <span class="product-option-main">
+                      <strong>{{ producto.codigo }}</strong>
+                      <span>{{ producto.nombre }}</span>
+                    </span>
+
+                    <span class="product-option-price">
+                      {{ producto.precioVenta | currency:'COP':'symbol-narrow':'1.0-0' }}
+                    </span>
+
+                    @if (productoSeleccionadoId === producto.id) {
+                      <i class="bi bi-check2 product-option-check"></i>
+                    }
+                  </button>
+                } @empty {
+                  <div class="product-empty">
+                    <i class="bi bi-search"></i>
+                    No encontramos referencias con esa búsqueda.
+                  </div>
+                }
+              </div>
+
+              <div class="product-picker-footer">
+                {{ productosFiltrados.length }} referencia(s) encontrada(s)
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      @if (productoSeleccionado; as producto) {
+        <div class="selected-product">
+          <div class="selected-product-icon">
+            <i class="bi bi-tag"></i>
+          </div>
+
+          <div class="selected-product-data">
+            <span>Referencia seleccionada</span>
+            <strong>{{ producto.codigo }} · {{ producto.nombre }}</strong>
+          </div>
+
+          <div class="selected-product-metrics">
+            <div class="current-cost">
+              <span>Costo registrado</span>
+              <strong>{{ producto.costoUnitario | currency:'COP':'symbol-narrow':'1.0-0' }}</strong>
+            </div>
+
+            <div class="current-price">
+              <span>Precio actual</span>
+              <strong>{{ producto.precioVenta | currency:'COP':'symbol-narrow':'1.0-0' }}</strong>
+            </div>
+          </div>
+        </div>
+      }
+
+      <div class="price-form">
+        <div class="cost-input-field">
+          <label for="nuevoCosto">Costo unitario</label>
+
+          <div class="price-input-wrapper" [class.is-disabled]="!actualizarCosto">
+            <span>$</span>
+            <input
+              id="nuevoCosto"
+              name="nuevoCosto"
+              type="number"
+              min="0"
+              step="0.01"
+              [(ngModel)]="nuevoCosto"
+              [disabled]="!productoSeleccionado || !actualizarCosto">
+          </div>
+
+          <label class="cost-update-option">
+            <input
+              type="checkbox"
+              name="actualizarCosto"
+              [(ngModel)]="actualizarCosto"
+              [disabled]="!productoSeleccionado">
+            <span>También actualizar el costo registrado</span>
+          </label>
+        </div>
+
+        <div class="adjustment-mode-field">
+          <label>Aplicar ajuste por</label>
+
+          <div class="adjustment-mode-switch" role="group" aria-label="Modo de ajuste de precio">
+            <button
+              type="button"
+              [class.active]="modoAjuste === 'PORCENTAJE'"
+              [disabled]="!productoSeleccionado"
+              (click)="cambiarModoAjuste('PORCENTAJE')">
+              <i class="bi bi-percent me-1"></i>
+              Porcentaje
+            </button>
+
+            <button
+              type="button"
+              [class.active]="modoAjuste === 'DINERO'"
+              [disabled]="!productoSeleccionado"
+              (click)="cambiarModoAjuste('DINERO')">
+              <i class="bi bi-cash-coin me-1"></i>
+              Dinero
+            </button>
+          </div>
+        </div>
+
+        <div class="adjustment-value-field">
+          <label for="valorAjuste">
+            {{ modoAjuste === 'PORCENTAJE' ? 'Utilidad proyectada (%)' : 'Utilidad fija ($)' }}
+          </label>
+
+          <div class="price-input-wrapper">
+            <span>{{ modoAjuste === 'PORCENTAJE' ? '%' : '$' }}</span>
+            <input
+              id="valorAjuste"
+              name="valorAjuste"
+              type="number"
+              min="0"
+              step="0.01"
+              [(ngModel)]="valorAjuste"
+              [disabled]="!productoSeleccionado"
+              (ngModelChange)="recalcularNuevoPrecio()">
+          </div>
+        </div>
+
+        <div class="price-input-field">
+          <label for="nuevoPrecio">Nuevo precio de venta calculado</label>
+          <div class="price-input-wrapper calculated-price-wrapper">
+            <span>$</span>
+            <input
+              id="nuevoPrecio"
+              name="nuevoPrecio"
+              type="text"
+              readonly
+              [value]="nuevoPrecio | currency:'COP':'symbol-narrow':'1.0-0'">
+          </div>
+        </div>
+
+        <button
+          type="button"
+          class="btn btn-primary update-button"
+          [disabled]="guardando || !productoSeleccionado"
+          (click)="actualizarPrecio()">
+          @if (guardando) {
+            <span class="spinner-border spinner-border-sm me-2"></span>
+            Guardando...
+          } @else {
+            <i class="bi bi-check2-circle me-2"></i>
+            {{ actualizarCosto ? 'Actualizar costo y precio' : 'Actualizar precio' }}
+          }
+        </button>
+      </div>
+
+      @if (productoSeleccionado) {
+        <div class="profit-preview" aria-live="polite">
+          <div class="profit-preview-heading">
+            <div>
+              <span class="preview-eyebrow">Cálculo en vivo</span>
+              <h3>Precio y regla propia que se guardarán</h3>
+            </div>
+
+            <span class="rule-pill">
+              <i class="bi bi-bookmark-star me-1"></i>
+              Regla propia · {{ porcentajeReglaPropia | number:'1.0-2' }}%
+            </span>
+          </div>
+
+          <div class="profit-preview-grid">
+            <div class="profit-metric">
+              <span>Costo usado</span>
+              <strong>{{ costoParaCalculo | currency:'COP':'symbol-narrow':'1.0-0' }}</strong>
+              <small>{{ actualizarCosto ? 'Nuevo costo' : 'Costo registrado' }}</small>
+            </div>
+
+            <div class="profit-metric highlight-blue">
+              <span>Nuevo precio de venta</span>
+              <strong>{{ nuevoPrecio | currency:'COP':'symbol-narrow':'1.0-0' }}</strong>
+              <small>Valor que se guardará</small>
+            </div>
+
+            <div class="profit-metric highlight-green">
+              <span>Ganancia en dinero</span>
+              <strong [class.negative-value]="utilidadEnDinero < 0">
+                {{ utilidadEnDinero | currency:'COP':'symbol-narrow':'1.0-0' }}
+              </strong>
+              <small>Precio menos costo</small>
+            </div>
+
+            <div class="profit-metric highlight-purple">
+              <span>Regla propia equivalente</span>
+              <strong [class.negative-value]="utilidadEnPorcentaje < 0">
+                {{ utilidadEnPorcentaje | number:'1.0-2' }}%
+              </strong>
+                <small>Sobre el costo</small>
+            </div>
+          </div>
+
+          <div class="rule-preview-note">
+            <i class="bi bi-lightbulb"></i>
+            <span>
+              @if (modoAjuste === 'DINERO') {
+                El valor fijo equivale a
+                <strong>{{ porcentajeReglaPropia | number:'1.0-2' }}%</strong>
+                sobre el costo. Al guardar, se creará o actualizará la regla propia del artículo con ese porcentaje.
+              } @else {
+                Al guardar, se creará o actualizará la regla propia del artículo con
+                <strong>{{ porcentajeReglaPropia | number:'1.0-2' }}%</strong>
+                sobre el costo.
+              }
+            </span>
+          </div>
+        </div>
+      }
+    }
+  </section>
+
+  <section class="history-note">
+    <i class="bi bi-shield-check"></i>
+    <div>
+      <strong>¿Qué se actualiza?</strong>
+      <p>
+        El costo y el precio vigente de la referencia se actualizan para futuras ventas y consultas. Los valores guardados en ventas y movimientos anteriores conservan su historial.
+      </p>
+    </div>
+  </section>
+
+</div>

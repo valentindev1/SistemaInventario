@@ -3,6 +3,9 @@ export interface IngresoInventarioItemDTO {
   cantidad: number;
   costoUnitario: number;
   precioVenta: number;
+  modoUtilidad?: 'PORCENTAJE' | 'DINERO';
+  valorUtilidad?: number;
+  reglaUtilidadModificada?: boolean;
 }
 
 export interface IngresoInventarioDTO {
@@ -70,6 +73,7 @@ export interface MovimientoInventarioDTO {
   id: number;
 
   tipo: string;
+  origen?: 'INVENTARIO' | 'CATALOGO' | string;
 
   productoId: number;
   productoCodigo: string;
@@ -93,6 +97,10 @@ export interface MovimientoInventarioDTO {
   referenciaId?: number;
 
   fecha: string;
+
+  puedeRevertirse?: boolean;
+  revertido?: boolean;
+  movimientoReversionId?: number;
 }
 
 export interface ResumenInventarioSucursalDTO {

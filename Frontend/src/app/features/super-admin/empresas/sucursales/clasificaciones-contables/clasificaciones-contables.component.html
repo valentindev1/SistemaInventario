@@ -1,0 +1,55 @@
+<main class="classification-page">
+  <header class="classification-hero">
+    <div>
+      <a class="classification-back" [routerLink]="volverReportesContables()">
+        <i class="bi bi-arrow-left me-2"></i>Volver a reportes contables
+      </a>
+      <span class="classification-eyebrow"><i class="bi bi-diagram-3 me-1"></i>Catálogo contable</span>
+      <h1>Administrar clasificaciones</h1>
+      <p>Gestiona las clasificaciones de gastos y costos indirectos de {{ empresaNombre }}.</p>
+    </div>
+    <div class="classification-hero-icon"><i class="bi bi-sliders2"></i></div>
+  </header>
+
+  <div *ngIf="mensajeError" class="classification-alert"><i class="bi bi-exclamation-triangle me-2"></i>{{ mensajeError }}</div>
+
+  <section class="classification-card classification-form-card">
+    <div class="classification-section-heading"><span class="classification-heading-icon"><i class="bi bi-plus-circle"></i></span><div><h2>{{ editandoId === null ? 'Crear clasificación' : 'Editar clasificación' }}</h2><p>Agrega nombres claros para organizar los conceptos contables.</p></div></div>
+
+    <div class="classification-form-grid">
+      <label>Nombre de la clasificación<input type="text" [(ngModel)]="nombre" maxlength="120" placeholder="Ej. Mantenimiento de maquinaria"></label>
+      <div class="classification-type-field"><span class="classification-type-label">Aplica para</span><div class="classification-type-selector">
+        <button type="button" class="classification-type-trigger" [class.is-open]="selectorTipoAbierto" [disabled]="editandoId !== null" (click)="alternarSelectorTipo()"><span class="classification-type-trigger-icon" [class.cost-icon]="tipo === 'COSTO'"><i class="bi" [class.bi-receipt]="tipo === 'GASTO'" [class.bi-diagram-3]="tipo === 'COSTO'"></i></span><span class="classification-type-trigger-text"><strong>{{ tipo === 'GASTO' ? 'Concepto de gasto' : 'Costo indirecto de producción' }}</strong><small>{{ tipo === 'GASTO' ? 'Operativo, administrativo o de ventas' : 'Costos compartidos de la producción' }}</small></span><i class="bi" [class.bi-chevron-down]="!selectorTipoAbierto" [class.bi-chevron-up]="selectorTipoAbierto"></i></button>
+        <div *ngIf="selectorTipoAbierto" class="classification-type-menu">
+          <button type="button" [class.selected]="tipo === 'GASTO'" (click)="seleccionarTipo('GASTO')"><span class="type-option-icon expense-option"><i class="bi bi-receipt"></i></span><span><strong>Concepto de gasto</strong><small>Operativo, administrativo o de ventas</small></span><i class="bi bi-check-circle-fill" *ngIf="tipo === 'GASTO'"></i></button>
+          <button type="button" [class.selected]="tipo === 'COSTO'" (click)="seleccionarTipo('COSTO')"><span class="type-option-icon cost-option"><i class="bi bi-diagram-3"></i></span><span><strong>Costo indirecto de producción</strong><small>Costos compartidos relacionados con la producción</small></span><i class="bi bi-check-circle-fill" *ngIf="tipo === 'COSTO'"></i></button>
+        </div>
+      </div></div>
+    </div>
+    <div class="classification-form-actions">
+      <button type="button" class="classification-button classification-button-light" (click)="limpiarFormulario()">{{ editandoId === null ? 'Limpiar' : 'Cancelar edición' }}</button>
+      <button type="button" class="classification-button classification-button-primary" [disabled]="guardando" (click)="guardar()"><i class="bi" [class.bi-check2-circle]="!guardando" [class.bi-hourglass-split]="guardando"></i>{{ editandoId === null ? 'Crear clasificación' : 'Actualizar clasificación' }}</button>
+    </div>
+  </section>
+
+  <section class="classification-card">
+    <div class="classification-section-heading classification-list-heading"><div class="classification-title-with-icon"><span class="classification-heading-icon classification-heading-icon-purple"><i class="bi bi-list-check"></i></span><div><h2>Clasificaciones existentes</h2><p>Consulta, filtra y administra las clasificaciones de la empresa.</p></div></div><span class="classification-count">{{ clasificacionesFiltradas.length }} resultado{{ clasificacionesFiltradas.length === 1 ? '' : 's' }}</span></div>
+
+    <div class="classification-filters">
+      <label>Buscar por nombre<span class="classification-search"><i class="bi bi-search"></i><input type="search" [(ngModel)]="filtroNombre" placeholder="Ej. arriendo, nómina, ventas..." autocomplete="off"></span></label>
+      <label>Tipo<select [(ngModel)]="filtroTipo"><option value="TODOS">Todos</option><option value="GASTO">Gastos</option><option value="COSTO">Costos indirectos</option></select></label>
+      <button type="button" class="classification-button classification-button-light classification-clear" (click)="filtroNombre = ''; filtroTipo = 'TODOS'"><i class="bi bi-eraser me-1"></i>Limpiar filtros</button>
+    </div>
+
+    <div *ngIf="cargando" class="classification-empty"><i class="bi bi-arrow-repeat"></i><p>Cargando clasificaciones...</p></div>
+    <div *ngIf="!cargando && clasificacionesFiltradas.length === 0" class="classification-empty"><i class="bi bi-search"></i><h3>No hay clasificaciones para mostrar</h3><p>Crea una clasificación o cambia los filtros de búsqueda.</p></div>
+    <div *ngIf="!cargando && clasificacionesFiltradas.length > 0" class="classification-table-wrap">
+      <table class="classification-table">
+        <thead><tr><th>Nombre</th><th>Aplica para</th><th>Estado</th><th class="text-end">Acciones</th></tr></thead>
+        <tbody><tr *ngFor="let clasificacion of clasificacionesFiltradas"><td><div class="classification-name"><span><i class="bi" [class.bi-receipt]="clasificacion.tipo === 'GASTO'" [class.bi-diagram-3]="clasificacion.tipo === 'COSTO'"></i></span><strong>{{ clasificacion.nombre }}</strong></div></td><td><span class="classification-type" [class.classification-type-cost]="clasificacion.tipo === 'COSTO'">{{ etiquetaTipo(clasificacion.tipo) }}</span></td><td><span class="classification-status" [class.classification-status-inactive]="!clasificacion.activo">{{ clasificacion.activo ? 'Activa' : 'Eliminada' }}</span></td><td class="text-end"><button type="button" class="classification-action" [disabled]="!clasificacion.activo" (click)="editar(clasificacion)" title="Editar"><i class="bi bi-pencil"></i></button><button type="button" class="classification-action classification-action-delete" [disabled]="!clasificacion.activo" (click)="eliminar(clasificacion)" title="Eliminar"><i class="bi bi-trash3"></i></button></td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <aside class="classification-note"><i class="bi bi-shield-check"></i><div><strong>Eliminación segura</strong><p>Al eliminar una clasificación, los conceptos y movimientos históricos conservan su información. Si creas nuevamente el mismo nombre y tipo, la clasificación original se reactiva.</p></div></aside>
+</main>

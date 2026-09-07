@@ -131,14 +131,34 @@
                   </p>
                 </div>
 
-                <button
-                  type="button"
-                  class="btn btn-sm btn-outline-secondary"
-                  (click)="cerrarDetalle()">
+                <div class="d-flex gap-2 flex-wrap justify-content-end">
 
-                  Cerrar
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-success"
+                    (click)="generarSoportePdf(facturaSeleccionada)"
+                    [disabled]="generandoSoporteId === facturaSeleccionada.id">
 
-                </button>
+                    @if (generandoSoporteId === facturaSeleccionada.id) {
+                      <span class="spinner-border spinner-border-sm me-1"></span>
+                      Generando...
+                    } @else {
+                      <i class="bi bi-file-earmark-pdf me-1"></i>
+                      Descargar PDF
+                    }
+
+                  </button>
+
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-secondary"
+                    (click)="cerrarDetalle()">
+
+                    Cerrar
+
+                  </button>
+
+                </div>
 
               </div>
 
@@ -269,17 +289,37 @@
 
               </div>
 
-              @if (puedeGenerarDevolucion(facturaSeleccionada.estado)) {
+              <div class="d-flex flex-column flex-md-row gap-2 mt-3">
+
                 <button
                   type="button"
-                  class="btn btn-warning w-100 mt-3"
-                  (click)="irGenerarDevolucion(facturaSeleccionada.numeroVenta)">
+                  class="btn btn-outline-success w-100"
+                  (click)="generarSoportePdf(facturaSeleccionada)"
+                  [disabled]="generandoSoporteId === facturaSeleccionada.id">
 
-                  <i class="bi bi-arrow-counterclockwise me-1"></i>
-                  Generar devolución
+                  @if (generandoSoporteId === facturaSeleccionada.id) {
+                    <span class="spinner-border spinner-border-sm me-1"></span>
+                    Generando soporte...
+                  } @else {
+                    <i class="bi bi-file-earmark-pdf me-1"></i>
+                    Descargar soporte PDF
+                  }
 
                 </button>
-              }
+
+                @if (puedeGenerarDevolucion(facturaSeleccionada.estado)) {
+                  <button
+                    type="button"
+                    class="btn btn-warning w-100"
+                    (click)="irGenerarDevolucion(facturaSeleccionada.numeroVenta)">
+
+                    <i class="bi bi-arrow-counterclockwise me-1"></i>
+                    Generar devolución
+
+                  </button>
+                }
+
+              </div>
 
             </div>
           </div>
@@ -384,6 +424,22 @@
                               (click)="verDetalleFactura(factura.id)">
 
                               Ver
+
+                            </button>
+
+                            <button
+                              type="button"
+                              class="btn btn-sm btn-outline-success"
+                              (click)="generarSoportePdf(factura)"
+                              [disabled]="generandoSoporteId === factura.id">
+
+                              @if (generandoSoporteId === factura.id) {
+                                <span class="spinner-border spinner-border-sm me-1"></span>
+                                PDF...
+                              } @else {
+                                <i class="bi bi-file-earmark-pdf me-1"></i>
+                                PDF
+                              }
 
                             </button>
 

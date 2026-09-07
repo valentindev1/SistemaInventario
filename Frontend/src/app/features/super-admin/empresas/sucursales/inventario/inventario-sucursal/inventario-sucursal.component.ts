@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, HostListener, OnInit } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 
@@ -16,6 +16,8 @@ import {
 
 type FiltroStock = 'TODOS' | 'BAJO' | 'NORMAL' | 'ALTO' | 'AGOTADO';
 type OrdenStock = 'MENOR_MAYOR' | 'MAYOR_MENOR' | 'NOMBRE_ASC';
+type ColumnaOrdenInventario = 'STOCK' | 'NOMBRE' | 'CATEGORIA' | 'COLOR';
+type DireccionOrden = 'ASC' | 'DESC';
 
 @Component({
   selector: 'app-inventario-sucursal',
@@ -38,6 +40,10 @@ export class InventarioSucursalComponent implements OnInit {
   textoBusqueda = '';
   filtroStock: FiltroStock = 'TODOS';
   ordenStock: OrdenStock = 'MENOR_MAYOR';
+  columnaOrden: ColumnaOrdenInventario = 'STOCK';
+  direccionOrden: DireccionOrden = 'ASC';
+  filtroStockAbierto = false;
+  ordenStockAbierto = false;
 
   stockBajoLimite = 5;
   stockAltoLimite = 20;
@@ -327,6 +333,17 @@ export class InventarioSucursalComponent implements OnInit {
     return stock * precioVenta;
   }
 
+  calcularPorcentajeGanancia(item: InventarioAdminDTO): number | null {
+    const costo = Number(item.costoUnitario || 0);
+    const precioVenta = Number(item.precioVenta || 0);
+
+    if (costo <= 0) {
+      return null;
+    }
+
+    return (precioVenta - costo) / costo * 100;
+  }
+
   calcularValorCostoTotal(): number {
     return this.obtenerInventarioFiltradoSinPaginacion().reduce(
       (total, item) => total + this.calcularValorCostoItem(item),
@@ -364,6 +381,36 @@ export class InventarioSucursalComponent implements OnInit {
     }
 
     resultado.sort((a, b) => {
+      if (this.columnaOrden === 'NOMBRE') {
+        return this.compararTextoOrdenado(a.nombre, b.nombre);
+      }
+
+      if (this.columnaOrden === 'CATEGORIA') {
+        const porCategoria = this.compararTextoOrdenado(a.categoria, b.categoria);
+
+        if (porCategoria !== 0) {
+          return porCategoria;
+        }
+
+        const porColor = this.compararTextoOrdenado(a.color, b.color, false);
+
+        if (porColor !== 0) {
+          return porColor;
+        }
+
+        return this.compararTextoOrdenado(a.nombre, b.nombre, false);
+      }
+
+      if (this.columnaOrden === 'COLOR') {
+        const porColor = this.compararTextoOrdenado(a.color, b.color);
+
+        if (porColor !== 0) {
+          return porColor;
+        }
+
+        return this.compararTextoOrdenado(a.nombre, b.nombre, false);
+      }
+
       const stockA = a.stockActual || 0;
       const stockB = b.stockActual || 0;
 
@@ -520,7 +567,130 @@ export class InventarioSucursalComponent implements OnInit {
     this.textoBusqueda = '';
     this.filtroStock = 'TODOS';
     this.ordenStock = 'MENOR_MAYOR';
+    this.columnaOrden = 'STOCK';
+    this.direccionOrden = 'ASC';
     this.paginaActual = 1;
+    this.filtroStockAbierto = false;
+    this.ordenStockAbierto = false;
+  }
+
+  alternarFiltroStock(): void {
+    this.filtroStockAbierto = !this.filtroStockAbierto;
+    this.ordenStockAbierto = false;
+  }
+
+  alternarOrdenStock(): void {
+    this.ordenStockAbierto = !this.ordenStockAbierto;
+    this.filtroStockAbierto = false;
+  }
+
+  seleccionarFiltroStock(filtro: FiltroStock): void {
+    this.filtroStock = filtro;
+    this.filtroStockAbierto = false;
+    this.reiniciarPaginacion();
+  }
+
+  seleccionarOrdenStock(orden: OrdenStock): void {
+    this.ordenStock = orden;
+    this.ordenStockAbierto = false;
+
+    if (orden === 'NOMBRE_ASC') {
+      this.columnaOrden = 'NOMBRE';
+      this.direccionOrden = 'ASC';
+    } else {
+      this.columnaOrden = 'STOCK';
+      this.direccionOrden = orden === 'MAYOR_MENOR' ? 'DESC' : 'ASC';
+    }
+
+    this.reiniciarPaginacion();
+  }
+
+  alternarOrdenColumna(columna: Exclude<ColumnaOrdenInventario, 'STOCK'>): void {
+    if (this.columnaOrden === columna) {
+      this.direccionOrden = this.direccionOrden === 'ASC' ? 'DESC' : 'ASC';
+    } else {
+      this.columnaOrden = columna;
+      this.direccionOrden = 'ASC';
+    }
+
+    this.reiniciarPaginacion();
+  }
+
+  obtenerClaseIconoOrden(columna: Exclude<ColumnaOrdenInventario, 'STOCK'>): string {
+    if (this.columnaOrden !== columna) {
+      return 'bi bi-arrow-down-up';
+    }
+
+    return this.direccionOrden === 'ASC' ? 'bi bi-arrow-up' : 'bi bi-arrow-down';
+  }
+
+  obtenerAriaOrden(columna: Exclude<ColumnaOrdenInventario, 'STOCK'>): string {
+    if (this.columnaOrden !== columna) {
+      return 'none';
+    }
+
+    return this.direccionOrden === 'ASC' ? 'ascending' : 'descending';
+  }
+
+  private compararTextoOrdenado(
+    valorA: string | null | undefined,
+    valorB: string | null | undefined,
+    aplicarDireccion = true
+  ): number {
+    const resultado = (valorA || '').localeCompare(valorB || '', 'es', {
+      sensitivity: 'base',
+      numeric: true
+    });
+
+    if (!aplicarDireccion) {
+      return resultado;
+    }
+
+    return this.direccionOrden === 'ASC' ? resultado : resultado * -1;
+  }
+
+  obtenerNombreFiltroStock(): string {
+    switch (this.filtroStock) {
+      case 'BAJO':
+        return 'Bajo stock';
+      case 'NORMAL':
+        return 'Stock normal';
+      case 'ALTO':
+        return 'Alto inventario';
+      case 'AGOTADO':
+        return 'Agotado';
+      default:
+        return 'Todos';
+    }
+  }
+
+  obtenerNombreOrdenStock(): string {
+    if (this.columnaOrden === 'NOMBRE') {
+      return this.direccionOrden === 'ASC' ? 'Producto A-Z' : 'Producto Z-A';
+    }
+
+    if (this.columnaOrden === 'CATEGORIA') {
+      return this.direccionOrden === 'ASC' ? 'Categoría A-Z' : 'Categoría Z-A';
+    }
+
+    if (this.columnaOrden === 'COLOR') {
+      return this.direccionOrden === 'ASC' ? 'Color A-Z' : 'Color Z-A';
+    }
+
+    switch (this.ordenStock) {
+      case 'MAYOR_MENOR':
+        return 'Mayor stock primero';
+      case 'NOMBRE_ASC':
+        return 'Nombre A-Z';
+      default:
+        return 'Menor stock primero';
+    }
+  }
+
+  @HostListener('document:click')
+  cerrarSelectores(): void {
+    this.filtroStockAbierto = false;
+    this.ordenStockAbierto = false;
   }
 
   volverAlPanel(): void {

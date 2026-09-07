@@ -78,4 +78,26 @@ export class InventarioService {
       { params }
     );
   }
+
+  listarMovimientosPorEmpresa(empresaId: number): Observable<MovimientoInventarioDTO[]> {
+    const params = this.obtenerUsuarioIdComoParam();
+
+    return this.http.get<MovimientoInventarioDTO[]>(
+      `${this.apiUrl}/empresa/${empresaId}/movimientos`,
+      { params }
+    );
+  }
+
+  revertirMovimiento(
+    empresaId: number,
+    movimientoId: number
+  ): Observable<MovimientoInventarioDTO> {
+    const params = this.obtenerUsuarioIdComoParam();
+
+    return this.http.post<MovimientoInventarioDTO>(
+      `${this.apiUrl}/empresa/${empresaId}/movimientos/${movimientoId}/revertir`,
+      {},
+      { params }
+    );
+  }
 }

@@ -1,4 +1,17 @@
 
+export type TipoCostoProducto = 'MANUAL' | 'DESGLOSE';
+
+export interface ProductoCostoDetalleCrearDTO {
+  atributoCostoId?: number | null;
+  concepto: string;
+  valor: number;
+}
+
+export interface ProductoCostoDetalleDTO extends ProductoCostoDetalleCrearDTO {
+  id: number;
+  orden: number;
+}
+
 export interface ProductoCrearDTO {
   nombre: string;
   codigo: string;
@@ -8,6 +21,17 @@ export interface ProductoCrearDTO {
   categoriaId: number;
   tallaId: number;
   generoId: number;
+
+  tipoCosto?: TipoCostoProducto;
+  costoPersonalizado?: boolean;
+  costoUnitario?: number;
+  desgloseCosto?: ProductoCostoDetalleCrearDTO[];
+}
+
+export interface ProductoActualizarCostoDTO {
+  tipoCosto: TipoCostoProducto;
+  costoUnitario?: number;
+  desgloseCosto?: ProductoCostoDetalleCrearDTO[];
 }
 
 
@@ -38,6 +62,11 @@ export interface ProductoAdminObtenerDTO {
 
   categoriaId: number;
   categoriaNombre: string;
+  categoriaTipoGanancia?: 'PORCENTAJE' | 'DINERO' | null;
+  categoriaValorGanancia?: number | null;
+  categoriaPorcentajeGanancia?: number | null;
+  tipoGananciaProducto?: 'PORCENTAJE' | 'DINERO' | null;
+  valorGananciaProducto?: number | null;
 
   tallaId: number;
   tallaNombre: string;
@@ -47,6 +76,10 @@ export interface ProductoAdminObtenerDTO {
 
   costoUnitario: number;
   precioVenta: number;
+
+  tipoCosto?: TipoCostoProducto | null;
+  costoPersonalizado?: boolean;
+  desgloseCosto?: ProductoCostoDetalleDTO[];
 
   puedeModificar?: boolean;
   motivoBloqueo?: string | null;

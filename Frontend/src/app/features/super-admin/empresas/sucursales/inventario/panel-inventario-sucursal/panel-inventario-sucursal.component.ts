@@ -175,6 +175,50 @@ export class PanelInventarioSucursalComponent implements OnInit {
     ];
   }
 
+  rutaAjustarPrecio(): any[] {
+    if (this.esSuperAdmin()) {
+      return [
+        '/super-admin/empresas',
+        this.empresaId,
+        'sucursales',
+        this.sucursalId,
+        'inventario',
+        'ajustar-precio'
+      ];
+    }
+
+    return [
+      '/admin/empresa',
+      this.empresaId,
+      'sucursales',
+      this.sucursalId,
+      'inventario',
+      'ajustar-precio'
+    ];
+  }
+
+  rutaConfigurarPorcentajes(): any[] {
+    if (this.esSuperAdmin()) {
+      return [
+        '/super-admin/empresas',
+        this.empresaId,
+        'sucursales',
+        this.sucursalId,
+        'inventario',
+        'configurar-porcentajes'
+      ];
+    }
+
+    return [
+      '/admin/empresa',
+      this.empresaId,
+      'sucursales',
+      this.sucursalId,
+      'inventario',
+      'configurar-porcentajes'
+    ];
+  }
+
   rutaResumenInventario(): any[] {
     if (this.esSuperAdmin()) {
       return [

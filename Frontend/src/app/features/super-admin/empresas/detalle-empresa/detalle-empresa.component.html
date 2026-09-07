@@ -145,7 +145,7 @@
       <div class="row g-4">
 
         @if (empresa) {
-          <div class="col-12 col-md-6 col-xl-4">
+          <div class="col-12 col-md-6 col-xl-3">
             <div class="option-card option-dashboard h-100">
 
               <div class="option-icon primary">
@@ -171,7 +171,7 @@
           </div>
         }
 
-        <div class="col-12 col-md-6 col-xl-4">
+        <div class="col-12 col-md-6 col-xl-3">
           <div class="option-card option-products h-100">
 
             <div class="option-icon info">
@@ -191,6 +191,56 @@
               class="btn btn-option-info w-100">
               <i class="bi bi-box-arrow-in-right me-2"></i>
               Ingresar
+            </a>
+
+          </div>
+        </div>
+
+        <div class="col-12 col-md-6 col-xl-3">
+          <div class="option-card option-reports h-100">
+
+            <div class="option-icon reports">
+              <i class="bi bi-file-earmark-bar-graph"></i>
+            </div>
+
+            <div class="option-content">
+              <h5>Informes</h5>
+
+              <p>
+                Prepara reportes contables y administrativos por rangos de fecha personalizados.
+              </p>
+            </div>
+
+            <a
+              [routerLink]="rutaInformes()"
+              class="btn btn-option-reports w-100">
+              <i class="bi bi-bar-chart-line me-2"></i>
+              Abrir informes
+            </a>
+
+          </div>
+        </div>
+
+        <div class="col-12 col-md-6 col-xl-3">
+          <div class="option-card option-activity h-100">
+
+            <div class="option-icon activity">
+              <i class="bi bi-arrow-left-right"></i>
+            </div>
+
+            <div class="option-content">
+              <h5>Movimientos a nivel de empresa</h5>
+
+              <p>
+                Consulta ventas, ingresos, devoluciones, ajustes y actividades del catálogo con su usuario responsable.
+              </p>
+            </div>
+
+            <a
+              [routerLink]="rutaMovimientosEmpresa()"
+              class="btn btn-option-activity w-100">
+              <i class="bi bi-clock-history me-2"></i>
+              Ver movimientos
             </a>
 
           </div>

@@ -7,6 +7,7 @@ import com.vhela.inventario.dto.producto.producto.RankingProductosVentasDTO;
 import com.vhela.inventario.dto.venta.*;
 import com.vhela.inventario.dto.venta.empleado.venta.FacturaVentaEmpleadoDTO;
 import com.vhela.inventario.dto.venta.empleado.venta.VentaHistorialEmpleadoDTO;
+import com.vhela.inventario.dto.venta.soporte.SoporteVentaDTO;
 
 public interface VentaServicio {
 
@@ -81,6 +82,8 @@ public interface VentaServicio {
             Long usuarioId,
             String numeroVenta
     );
+
+    SoporteVentaDTO generarSoporteVenta(Long usuarioId, Long ventaId);
 
 
 }

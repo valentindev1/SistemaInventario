@@ -32,7 +32,7 @@
 
           <p>
             Administra el catálogo de productos de la empresa, sus atributos reutilizables,
-            códigos, colores, categorías, tallas y géneros.
+            códigos, categorías, costos unitarios y sus desgloses.
           </p>
         </div>
 
@@ -211,6 +211,28 @@
         </div>
       </div>
 
+      <div class="col-12 col-md-6 col-xl-3">
+        <div class="catalog-card catalog-card-purple h-100">
+
+          <div class="catalog-icon">
+            <i class="bi bi-diagram-3"></i>
+          </div>
+
+          <div class="catalog-content">
+            <h4>Atributos de costo</h4>
+            <p>Administra tela, mano de obra, hilo y demás costos por categoría.</p>
+          </div>
+
+          <a
+            [routerLink]="rutaAtributosCosto()"
+            class="btn btn-catalog">
+            <span>Administrar</span>
+            <i class="bi bi-arrow-right"></i>
+          </a>
+
+        </div>
+      </div>
+
     </div>
 
   </section>
@@ -366,6 +388,7 @@
             <th>Descripción</th>
             <th>Color</th>
             <th>Categoría</th>
+            <th>Costo unitario</th>
             <th>Talla</th>
             <th>Género</th>
             <th>Fecha creación</th>
@@ -462,6 +485,34 @@
                   </option>
                 </select>
               </ng-template>
+            </td>
+
+            <!-- Costo unitario -->
+            <td>
+              <div class="cost-cell">
+                <div class="cost-cell-main">
+                  <strong>{{ producto.costoUnitario | currency:'COP':'symbol-narrow':'1.0-0' }}</strong>
+                  <span
+                    [class.cost-breakdown-label]="producto.tipoCosto === 'DESGLOSE'"
+                    [class.cost-custom-label]="producto.costoPersonalizado">
+                    {{ producto.costoPersonalizado
+                      ? 'Referencia personalizada'
+                      : producto.tipoCosto === 'DESGLOSE'
+                      ? (producto.desgloseCosto?.length || 0) + ' componentes'
+                      : 'Costo manual' }}
+                  </span>
+                </div>
+
+                <button
+                  *ngIf="puedeEditarCosto(producto)"
+                  type="button"
+                  class="btn-edit-manual-cost"
+                  (click)="iniciarEdicionCosto(producto)"
+                  title="Editar desglose del costo">
+                  <i class="bi bi-pencil-square"></i>
+                  Editar costo
+                </button>
+              </div>
             </td>
 
             <!-- Talla -->
@@ -635,5 +686,175 @@
     </div>
 
   </section>
+
+  <div
+    *ngIf="costoProductoEditando"
+    class="cost-editor-backdrop"
+    (click)="cancelarEdicionCosto()">
+    <section
+      class="cost-editor-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="tituloEditorCosto"
+      (click)="$event.stopPropagation()">
+
+      <div class="cost-editor-header">
+        <div class="cost-editor-heading">
+          <span class="cost-editor-icon"><i class="bi bi-calculator"></i></span>
+          <div>
+            <span class="cost-editor-kicker">Actualizar costo del producto</span>
+            <h2 id="tituloEditorCosto">{{ costoProductoEditando.nombre }}</h2>
+            <p>{{ costoProductoEditando.codigo }} · {{ costoProductoEditando.categoriaNombre }}</p>
+          </div>
+        </div>
+        <button
+          type="button"
+          class="cost-editor-close"
+          (click)="cancelarEdicionCosto()"
+          [disabled]="guardandoCostoProductoId !== null"
+          title="Cerrar">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <div class="cost-editor-body">
+        <div class="cost-editor-note">
+          <i class="bi bi-shield-check"></i>
+          <span>Solo se actualizará el costo actual. La referencia, el inventario y los registros históricos se conservarán.</span>
+        </div>
+
+        <div class="cost-editor-modes" role="tablist" aria-label="Tipo de costo">
+          <button
+            type="button"
+            [class.active]="tipoCostoEdicion === 'MANUAL'"
+            (click)="cambiarTipoCostoEdicion('MANUAL')">
+            <i class="bi bi-pencil-square"></i>
+            <span><strong>Costo manual</strong><small>Un valor definido directamente</small></span>
+            <i *ngIf="tipoCostoEdicion === 'MANUAL'" class="bi bi-check-circle-fill"></i>
+          </button>
+          <button
+            type="button"
+            [class.active]="tipoCostoEdicion === 'DESGLOSE'"
+            (click)="cambiarTipoCostoEdicion('DESGLOSE')">
+            <i class="bi bi-diagram-3"></i>
+            <span><strong>Desglose por atributos</strong><small>La suma de tela, hilo, mano de obra y más</small></span>
+            <i *ngIf="tipoCostoEdicion === 'DESGLOSE'" class="bi bi-check-circle-fill"></i>
+          </button>
+        </div>
+
+        <div *ngIf="tipoCostoEdicion === 'MANUAL'" class="cost-editor-manual-panel">
+          <label [for]="'costo-manual-editor-' + costoProductoEditando.id">Costo unitario manual</label>
+          <div class="cost-editor-money-input">
+            <span>$</span>
+            <input
+              [id]="'costo-manual-editor-' + costoProductoEditando.id"
+              type="text"
+              inputmode="numeric"
+              autocomplete="off"
+              [value]="costoManualEditandoTexto"
+              (input)="actualizarCostoManualTexto($event)"
+              placeholder="Ej: 600.000">
+          </div>
+          <small>Este valor reemplazará únicamente el costo actual del producto.</small>
+        </div>
+
+        <div *ngIf="tipoCostoEdicion === 'DESGLOSE'" class="cost-editor-breakdown-panel">
+          <div class="cost-editor-breakdown-toolbar">
+            <div>
+              <strong>Desglose del costo</strong>
+              <small>Selecciona los atributos de costo de {{ costoProductoEditando.categoriaNombre }}.</small>
+            </div>
+            <div class="cost-editor-toolbar-actions">
+              <a [routerLink]="rutaAtributosCosto()" class="cost-editor-manage-link">
+                <i class="bi bi-sliders"></i>
+                Administrar atributos
+              </a>
+              <button type="button" class="cost-editor-add-link" (click)="agregarComponenteCostoEdicion()">
+                <i class="bi bi-plus-circle"></i>
+                Agregar atributo
+              </button>
+            </div>
+          </div>
+
+          <div *ngIf="cargandoAtributosCostoEdicion" class="cost-editor-loading">
+            <span class="spinner-border spinner-border-sm"></span>
+            Cargando atributos de costo...
+          </div>
+
+          <div *ngIf="!cargandoAtributosCostoEdicion && atributosCostoEdicion.length === 0" class="cost-editor-empty">
+            <i class="bi bi-info-circle"></i>
+            <span>Esta categoría no tiene atributos activos. <a [routerLink]="rutaAtributosCosto()">Crear atributos de costo</a></span>
+          </div>
+
+          <div class="cost-editor-rows">
+            <div *ngFor="let componente of desgloseCostoEdicion; let indice = index" class="cost-editor-row">
+              <span class="cost-editor-row-number">{{ indice + 1 }}</span>
+
+              <div class="cost-editor-field cost-editor-attribute-field">
+                <label [for]="'atributo-editor-' + indice">Atributo de costo</label>
+                <select
+                  [id]="'atributo-editor-' + indice"
+                  [value]="componente.atributoCostoId ?? ''"
+                  (change)="cambiarAtributoCostoEdicion(indice, $event)">
+                  <option value="">Selecciona un atributo</option>
+                  <option *ngFor="let atributo of atributosCostoEdicion" [value]="atributo.id">
+                    {{ atributo.nombre }}
+                  </option>
+                </select>
+              </div>
+
+              <div class="cost-editor-field cost-editor-value-field">
+                <label [for]="'valor-editor-' + indice">Valor</label>
+                <div class="cost-editor-money-input compact">
+                  <span>$</span>
+                  <input
+                    [id]="'valor-editor-' + indice"
+                    type="text"
+                    inputmode="numeric"
+                    autocomplete="off"
+                    [value]="componente.valorTexto"
+                    (input)="actualizarValorCostoEdicion(indice, $event)"
+                    placeholder="Ej: 80.000">
+                </div>
+              </div>
+
+              <button
+                type="button"
+                class="cost-editor-remove-row"
+                (click)="eliminarComponenteCostoEdicion(indice)"
+                [disabled]="desgloseCostoEdicion.length === 1"
+                title="Quitar atributo">
+                <i class="bi bi-trash3"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="cost-editor-total">
+            <span>Costo unitario calculado</span>
+            <strong>{{ totalCostoEdicion() | currency:'COP':'symbol-narrow':'1.0-0' }}</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="cost-editor-footer">
+        <button
+          type="button"
+          class="btn-cost-editor-cancel"
+          (click)="cancelarEdicionCosto()"
+          [disabled]="guardandoCostoProductoId !== null">
+          Cancelar
+        </button>
+        <button
+          type="button"
+          class="btn-cost-editor-save"
+          (click)="guardarCostoProducto()"
+          [disabled]="guardandoCostoProductoId !== null">
+          <span *ngIf="guardandoCostoProductoId !== null" class="spinner-border spinner-border-sm me-2"></span>
+          <i *ngIf="guardandoCostoProductoId === null" class="bi bi-check2-circle me-2"></i>
+          Guardar costo
+        </button>
+      </div>
+    </section>
+  </div>
 
 </div>

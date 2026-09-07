@@ -152,6 +152,38 @@ export class DetalleEmpresaComponent implements OnInit {
     ];
   }
 
+  rutaInformes(): any[] {
+    if (this.esSuperAdmin()) {
+      return [
+        '/super-admin/empresas',
+        this.empresaId,
+        'informes'
+      ];
+    }
+
+    return [
+      '/admin/empresa',
+      this.empresaId,
+      'informes'
+    ];
+  }
+
+  rutaMovimientosEmpresa(): any[] {
+    if (this.esSuperAdmin()) {
+      return [
+        '/super-admin/empresas',
+        this.empresaId,
+        'movimientos'
+      ];
+    }
+
+    return [
+      '/admin/empresa',
+      this.empresaId,
+      'movimientos'
+    ];
+  }
+
   rutaEditarEmpresa(): any[] {
     if (this.esSuperAdmin()) {
       return [

@@ -30,8 +30,8 @@
           </h1>
 
           <p>
-            Registra un nuevo producto dentro del catálogo global de la empresa.
-            Luego podrás asignar costos, precios e inventario desde las sucursales.
+            Registra un nuevo producto dentro del catálogo global de la empresa y define
+            su costo unitario manualmente o mediante un desglose detallado.
           </p>
         </div>
 
@@ -192,123 +192,291 @@
             </div>
           </div>
 
-          <!-- Color -->
-          <div class="col-12 col-md-6 col-xl-3">
+          <!-- Atributos -->
+          <div
+            *ngFor="let selector of selectoresAtributos"
+            class="col-12 col-md-6 col-xl-3">
             <div class="form-field">
 
-              <label>Color</label>
+              <label [for]="'selector-' + selector.tipo">{{ selector.etiqueta }}</label>
 
-              <div class="select-shell">
-                <i class="bi bi-palette"></i>
+              <div
+                class="attribute-picker"
+                (click)="$event.stopPropagation()">
+                <button
+                  [id]="'selector-' + selector.tipo"
+                  type="button"
+                  class="attribute-picker-trigger"
+                  [class.has-value]="obtenerValorAtributo(selector.tipo) !== null"
+                  [class.is-open]="selectorAtributoAbierto === selector.tipo"
+                  [class.is-invalid]="campoInvalido(selector.campo)"
+                  [attr.aria-expanded]="selectorAtributoAbierto === selector.tipo"
+                  aria-haspopup="listbox"
+                  (click)="toggleSelectorAtributo(selector.tipo)">
+                  <span class="attribute-picker-icon">
+                    <i class="bi" [ngClass]="selector.icono"></i>
+                  </span>
 
-                <select
-                  formControlName="colorId"
-                  [class.is-invalid]="campoInvalido('colorId')">
-                  <option value="">Seleccione un color</option>
+                  <span class="attribute-picker-value">
+                    <strong *ngIf="obtenerValorAtributo(selector.tipo) !== null">
+                      {{ obtenerNombreAtributo(selector.tipo) }}
+                    </strong>
+                    <span *ngIf="obtenerValorAtributo(selector.tipo) === null">
+                      {{ selector.placeholder }}
+                    </span>
+                  </span>
 
-                  <option
-                    *ngFor="let color of colores"
-                    [value]="color.id">
-                    {{ color.nombre }}
-                  </option>
-                </select>
+                  <i
+                    class="bi bi-chevron-down attribute-picker-chevron"
+                    [class.rotated]="selectorAtributoAbierto === selector.tipo"></i>
+                </button>
+
+                <input type="hidden" [formControlName]="selector.campo">
+
+                <div
+                  *ngIf="selectorAtributoAbierto === selector.tipo"
+                  class="attribute-picker-menu"
+                  role="listbox">
+                  <div class="attribute-picker-search">
+                    <i class="bi bi-search"></i>
+                    <input
+                      type="search"
+                      autocomplete="off"
+                      [placeholder]="'Buscar ' + selector.etiqueta.toLocaleLowerCase() + '...'"
+                      [value]="busquedasAtributos[selector.tipo]"
+                      (input)="actualizarBusquedaAtributo(selector.tipo, $event)">
+                  </div>
+
+                  <div class="attribute-picker-options">
+                    <button
+                      *ngFor="let opcion of obtenerOpcionesFiltradas(selector.tipo)"
+                      type="button"
+                      class="attribute-picker-option"
+                      [class.is-selected]="obtenerValorAtributo(selector.tipo) === opcion.id"
+                      (click)="seleccionarAtributo(selector.tipo, opcion)">
+                      <span class="attribute-option-icon">
+                        <i class="bi" [ngClass]="selector.icono"></i>
+                      </span>
+                      <span class="attribute-option-main">
+                        <strong>{{ opcion.nombre }}</strong>
+                        <small>ID #{{ opcion.id }}</small>
+                      </span>
+                      <i
+                        *ngIf="obtenerValorAtributo(selector.tipo) === opcion.id"
+                        class="bi bi-check2 attribute-option-check"></i>
+                    </button>
+
+                    <div
+                      *ngIf="obtenerOpcionesFiltradas(selector.tipo).length === 0"
+                      class="attribute-picker-empty">
+                      <i class="bi bi-search"></i>
+                      <span>No encontramos resultados.</span>
+                    </div>
+                  </div>
+
+                  <div class="attribute-picker-footer">
+                    {{ obtenerOpcionesFiltradas(selector.tipo).length }} opción(es) disponible(s)
+                  </div>
+                </div>
               </div>
 
-              <div *ngIf="campoInvalido('colorId')" class="field-error">
-                Debes seleccionar un color.
-              </div>
-
-            </div>
-          </div>
-
-          <!-- Categoría -->
-          <div class="col-12 col-md-6 col-xl-3">
-            <div class="form-field">
-
-              <label>Categoría</label>
-
-              <div class="select-shell">
-                <i class="bi bi-grid"></i>
-
-                <select
-                  formControlName="categoriaId"
-                  [class.is-invalid]="campoInvalido('categoriaId')">
-                  <option value="">Seleccione una categoría</option>
-
-                  <option
-                    *ngFor="let categoria of categorias"
-                    [value]="categoria.id">
-                    {{ categoria.nombre }}
-                  </option>
-                </select>
-              </div>
-
-              <div *ngIf="campoInvalido('categoriaId')" class="field-error">
-                Debes seleccionar una categoría.
-              </div>
-
-            </div>
-          </div>
-
-          <!-- Talla -->
-          <div class="col-12 col-md-6 col-xl-3">
-            <div class="form-field">
-
-              <label>Talla</label>
-
-              <div class="select-shell">
-                <i class="bi bi-rulers"></i>
-
-                <select
-                  formControlName="tallaId"
-                  [class.is-invalid]="campoInvalido('tallaId')">
-                  <option value="">Seleccione una talla</option>
-
-                  <option
-                    *ngFor="let talla of tallas"
-                    [value]="talla.id">
-                    {{ talla.nombre }}
-                  </option>
-                </select>
-              </div>
-
-              <div *ngIf="campoInvalido('tallaId')" class="field-error">
-                Debes seleccionar una talla.
-              </div>
-
-            </div>
-          </div>
-
-          <!-- Género -->
-          <div class="col-12 col-md-6 col-xl-3">
-            <div class="form-field">
-
-              <label>Género</label>
-
-              <div class="select-shell">
-                <i class="bi bi-person-badge"></i>
-
-                <select
-                  formControlName="generoId"
-                  [class.is-invalid]="campoInvalido('generoId')">
-                  <option value="">Seleccione un género</option>
-
-                  <option
-                    *ngFor="let genero of generos"
-                    [value]="genero.id">
-                    {{ genero.nombre }}
-                  </option>
-                </select>
-              </div>
-
-              <div *ngIf="campoInvalido('generoId')" class="field-error">
-                Debes seleccionar un género.
+              <div *ngIf="campoInvalido(selector.campo)" class="field-error">
+                {{ selector.error }}
               </div>
 
             </div>
           </div>
 
         </div>
+
+        <!-- COSTO DEL PRODUCTO -->
+        <section class="cost-section mt-4" aria-labelledby="cost-section-title">
+
+          <div class="cost-section-header">
+            <div class="cost-section-icon">
+              <i class="bi bi-calculator"></i>
+            </div>
+
+            <div>
+              <h4 id="cost-section-title">Desglose del costo de esta referencia</h4>
+              <p>
+                Define cuánto cuesta fabricar una unidad de
+                <strong>{{ obtenerNombreAtributo('categoria') }}</strong>.
+                Puedes conservar el ingreso manual si todavía no deseas detallarlo.
+              </p>
+            </div>
+          </div>
+
+          <div class="cost-mode-switch" role="group" aria-label="Forma de calcular el costo">
+            <button
+              type="button"
+              class="cost-mode-option"
+              [class.active]="tipoCosto === 'MANUAL'"
+              (click)="cambiarTipoCosto('MANUAL')">
+              <span class="cost-mode-icon manual-icon">
+                <i class="bi bi-pencil-square"></i>
+              </span>
+              <span>
+                <strong>Ingreso manual</strong>
+                <small>Escribe el costo unitario directamente.</small>
+              </span>
+              <i *ngIf="tipoCosto === 'MANUAL'" class="bi bi-check-circle-fill cost-mode-check"></i>
+            </button>
+
+            <button
+              type="button"
+              class="cost-mode-option"
+              [class.active]="tipoCosto === 'DESGLOSE'"
+              (click)="cambiarTipoCosto('DESGLOSE')">
+              <span class="cost-mode-icon breakdown-icon">
+                <i class="bi bi-diagram-3"></i>
+              </span>
+              <span>
+                <strong>Calcular con desglose</strong>
+                <small>Suma mano de obra, tela, hilo, resorte y más.</small>
+              </span>
+              <i *ngIf="tipoCosto === 'DESGLOSE'" class="bi bi-check-circle-fill cost-mode-check"></i>
+            </button>
+          </div>
+
+          <div *ngIf="tipoCosto === 'MANUAL'" class="manual-cost-panel">
+            <div class="form-field">
+              <label for="costoManual">Costo unitario manual</label>
+
+              <div class="input-shell money-input-shell">
+                <span class="money-prefix">$</span>
+                <input
+                  id="costoManual"
+                  type="text"
+                  inputmode="numeric"
+                  autocomplete="off"
+                  [value]="costoManualTexto"
+                  (input)="actualizarCostoManual($event)"
+                  placeholder="Ej: 600.000">
+              </div>
+
+              <small class="field-help">
+                Este valor se conservará como costo inicial y también podrás ajustarlo desde inventario.
+              </small>
+            </div>
+          </div>
+
+          <div *ngIf="tipoCosto === 'DESGLOSE'" class="breakdown-panel">
+            <div class="breakdown-toolbar">
+              <div>
+                <strong>Componentes del costo</strong>
+                <small>Selecciona los atributos disponibles para la categoría del producto.</small>
+              </div>
+
+              <div class="breakdown-toolbar-actions">
+                <a
+                  class="btn-manage-cost-attributes"
+                  [routerLink]="rutaAtributosCosto()">
+                  <i class="bi bi-sliders"></i>
+                  Administrar atributos
+                </a>
+                <button
+                  type="button"
+                  class="btn-add-component"
+                  (click)="agregarComponenteCosto()">
+                  <i class="bi bi-plus-circle"></i>
+                  Agregar componente
+                </button>
+              </div>
+            </div>
+
+            <div *ngIf="cargandoAtributosCosto" class="cost-attributes-loading">
+              <span class="spinner-border spinner-border-sm"></span>
+              Cargando atributos de costo de la categoría...
+            </div>
+
+            <div *ngIf="!cargandoAtributosCosto && atributosCosto.length === 0" class="cost-attributes-empty">
+              <i class="bi bi-info-circle"></i>
+              <span>
+                Esta categoría todavía no tiene atributos de costo configurados.
+                <a [routerLink]="rutaAtributosCosto()">Crear atributos de costo</a>
+              </span>
+            </div>
+
+            <label class="custom-cost-toggle">
+              <input
+                type="checkbox"
+                [checked]="costoPersonalizado"
+                (change)="cambiarPersonalizacionCosto($event)">
+              <span class="custom-cost-toggle-icon">
+                <i class="bi bi-stars"></i>
+              </span>
+              <span class="custom-cost-toggle-copy">
+                <strong>Referencia personalizada</strong>
+                <small>
+                  Sus costos propios no modificarán las demás prendas de la categoría.
+                </small>
+              </span>
+              <span class="custom-cost-toggle-status">
+                {{ costoPersonalizado ? 'Activa' : 'Opcional' }}
+              </span>
+            </label>
+
+            <div class="breakdown-list">
+              <div
+                *ngFor="let componente of desgloseCosto; let indice = index"
+                class="breakdown-row">
+                <span class="breakdown-index">{{ indice + 1 }}</span>
+
+                <div class="breakdown-field component-name-field">
+                  <label [for]="'componente-' + indice">Atributo de costo</label>
+                  <select
+                    [id]="'componente-' + indice"
+                    [value]="componente.atributoCostoId ?? ''"
+                    (change)="cambiarAtributoCosto(indice, $event)">
+                    <option value="">Selecciona un atributo</option>
+                    <option *ngFor="let atributo of atributosCosto" [value]="atributo.id">
+                      {{ atributo.nombre }}
+                    </option>
+                  </select>
+                </div>
+
+                <div class="breakdown-field component-value-field">
+                  <label [for]="'valor-componente-' + indice">Valor</label>
+                  <div class="input-shell money-input-shell">
+                    <span class="money-prefix">$</span>
+                    <input
+                      [id]="'valor-componente-' + indice"
+                      type="text"
+                      inputmode="numeric"
+                      autocomplete="off"
+                      [value]="componente.valorTexto"
+                      (input)="actualizarValorComponente(indice, $event)"
+                      placeholder="Ej: 80.000">
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  class="btn-remove-component"
+                  (click)="eliminarComponenteCosto(indice)"
+                  [disabled]="desgloseCosto.length === 1"
+                  title="Quitar componente">
+                  <i class="bi bi-trash3"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="breakdown-total">
+              <div>
+                <span>Costo unitario calculado</span>
+                <small>La suma de todos los componentes registrados.</small>
+              </div>
+              <strong>{{ totalDesgloseCosto() | currency:'COP':'symbol-narrow':'1.0-0' }}</strong>
+            </div>
+
+            <div *ngIf="mostrarErrorDesglose" class="breakdown-error">
+              <i class="bi bi-exclamation-circle"></i>
+              Selecciona un atributo de costo y agrega un valor mayor que cero en cada componente.
+            </div>
+          </div>
+
+        </section>
 
         <!-- INFO -->
         <div class="info-box mt-4">
@@ -323,8 +491,12 @@
             <p>
               Este producto quedará registrado en el catálogo global de la empresa
               <strong>{{ empresa.nombre }}</strong>.
-              El costo unitario y el precio de venta iniciarán en
-              <strong>$0</strong> y se actualizarán cuando ingreses mercancía al inventario.
+              <ng-container *ngIf="tipoCosto === 'DESGLOSE'; else informacionCostoManual">
+                El costo unitario será la suma del desglose y podrás actualizarlo cuando ingreses mercancía.
+              </ng-container>
+              <ng-template #informacionCostoManual>
+                El costo unitario se guardará con el valor manual indicado y podrás ajustarlo cuando ingreses mercancía.
+              </ng-template>
             </p>
           </div>
 

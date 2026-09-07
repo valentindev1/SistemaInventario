@@ -75,4 +75,25 @@ public class InventarioControlador {
                 inventarioServicio.listarMovimientosPorSucursal(usuarioId, sucursalId)
         );
     }
+
+    @GetMapping("/empresa/{empresaId}/movimientos")
+    public ResponseEntity<List<MovimientoInventarioDTO>> listarMovimientosPorEmpresa(
+            @RequestParam Long usuarioId,
+            @PathVariable Long empresaId) {
+
+        return ResponseEntity.ok(
+                inventarioServicio.listarMovimientosPorEmpresa(usuarioId, empresaId)
+        );
+    }
+
+    @PostMapping("/empresa/{empresaId}/movimientos/{movimientoId}/revertir")
+    public ResponseEntity<MovimientoInventarioDTO> revertirMovimiento(
+            @RequestParam Long usuarioId,
+            @PathVariable Long empresaId,
+            @PathVariable Long movimientoId) {
+
+        return ResponseEntity.ok(
+                inventarioServicio.revertirMovimiento(usuarioId, empresaId, movimientoId)
+        );
+    }
 }

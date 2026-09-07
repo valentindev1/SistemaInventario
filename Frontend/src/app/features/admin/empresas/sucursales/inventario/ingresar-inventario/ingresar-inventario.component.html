@@ -54,19 +54,81 @@
 
       <div class="form-group producto-select">
         <label for="producto">Producto</label>
-        <select
-          id="producto"
-          name="producto"
-          [(ngModel)]="productoSeleccionadoId"
-          (change)="onProductoSeleccionado()">
-          <option value="">Seleccione un producto</option>
 
-          <option
-            *ngFor="let producto of productos"
-            [value]="producto.id">
-            {{ producto.codigo }} - {{ producto.nombre }}
-          </option>
-        </select>
+        <div class="product-picker" (click)="$event.stopPropagation()">
+          <button
+            type="button"
+            class="product-picker-trigger"
+            [class.has-value]="productoSeleccionado"
+            [attr.aria-expanded]="productoSelectorAbierto"
+            aria-haspopup="listbox"
+            aria-controls="lista-productos"
+            (click)="toggleProductoSelector()">
+
+            <span class="product-picker-icon">
+              <i class="bi bi-box-seam"></i>
+            </span>
+
+            <span class="product-picker-value" *ngIf="productoSeleccionado as producto; else productoSinSeleccionar">
+              <strong>{{ producto.codigo }}</strong>
+              <small>{{ producto.nombre }}</small>
+            </span>
+
+            <ng-template #productoSinSeleccionar>
+              <span class="product-picker-placeholder">Busca y selecciona un producto</span>
+            </ng-template>
+
+            <i class="bi bi-chevron-down product-picker-chevron" [class.rotated]="productoSelectorAbierto"></i>
+          </button>
+
+          <div
+            *ngIf="productoSelectorAbierto"
+            id="lista-productos"
+            class="product-picker-menu"
+            role="listbox">
+
+            <div class="product-search">
+              <i class="bi bi-search"></i>
+              <input
+                id="buscarProducto"
+                name="buscarProducto"
+                type="search"
+                autocomplete="off"
+                placeholder="Buscar por código o nombre..."
+                [(ngModel)]="busquedaProducto"
+                (keydown)="manejarTeclaSelector($event)">
+            </div>
+
+            <div class="product-options">
+              <button
+                *ngFor="let producto of productosFiltrados"
+                type="button"
+                class="product-option"
+                [class.is-selected]="productoSeleccionadoId === producto.id"
+                [attr.aria-selected]="productoSeleccionadoId === producto.id"
+                (click)="seleccionarProducto(producto)">
+                <span class="product-option-main">
+                  <strong>{{ producto.codigo }}</strong>
+                  <span>{{ producto.nombre }}</span>
+                </span>
+                <span class="product-option-prices">
+                  <small>Costo {{ producto.costoUnitario | currency:'COP':'symbol-narrow':'1.0-0' }}</small>
+                  <small>Venta {{ producto.precioVenta | currency:'COP':'symbol-narrow':'1.0-0' }}</small>
+                </span>
+                <i *ngIf="productoSeleccionadoId === producto.id" class="bi bi-check2 product-option-check"></i>
+              </button>
+
+              <div *ngIf="productosFiltrados.length === 0" class="product-empty">
+                <i class="bi bi-search"></i>
+                <span>No encontramos productos con esa búsqueda.</span>
+              </div>
+            </div>
+
+            <div class="product-picker-footer">
+              {{ productosFiltrados.length }} producto(s) disponible(s)
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="form-group">
@@ -76,7 +138,8 @@
           name="cantidad"
           type="number"
           min="1"
-          [(ngModel)]="cantidad">
+          [(ngModel)]="cantidad"
+          (focus)="ponerEnCeroAlEnfocar('cantidad', $event)">
       </div>
 
       <div class="form-group">
@@ -86,7 +149,8 @@
           name="costoUnitario"
           type="number"
           min="0"
-          [(ngModel)]="costoUnitario">
+          [(ngModel)]="costoUnitario"
+          (focus)="ponerEnCeroAlEnfocar('costoUnitario', $event)">
       </div>
 
       <div class="form-group">
@@ -96,7 +160,8 @@
           name="precioVenta"
           type="number"
           min="0"
-          [(ngModel)]="precioVenta">
+          [(ngModel)]="precioVenta"
+          (focus)="ponerEnCeroAlEnfocar('precioVenta', $event)">
       </div>
 
     </div>

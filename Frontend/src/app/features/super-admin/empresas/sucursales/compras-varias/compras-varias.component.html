@@ -1,0 +1,253 @@
+<main class="compras-varias-page">
+  <section class="page-hero">
+    <div class="hero-copy">
+      <a class="back-link" [routerLink]="volverSucursal()">
+        <i class="bi bi-arrow-left"></i>
+        Volver a la sucursal
+      </a>
+      <div class="eyebrow">Registro auxiliar · {{ empresaNombre }} / {{ sucursalNombre }}</div>
+      <h1>Compras varias</h1>
+      <p>Registra entradas y salidas auxiliares con tu propio concepto. Este módulo es independiente del inventario, las ventas y la contabilidad.</p>
+    </div>
+    <div class="hero-icon"><i class="bi bi-bag-plus"></i></div>
+  </section>
+
+  <div *ngIf="mensajeError" class="alert alert-danger page-alert" role="alert">
+    <i class="bi bi-exclamation-circle me-2"></i>{{ mensajeError }}
+  </div>
+
+  <section class="summary-grid" aria-label="Totales del período">
+    <article class="summary-card summary-net">
+      <div class="summary-icon"><i class="bi bi-calculator"></i></div>
+      <div>
+        <span>Neto del período</span>
+        <strong [class.value-negative]="totalNeto < 0">{{ formatearValor(totalNeto) }}</strong>
+        <small>{{ etiquetaPeriodo() }}</small>
+      </div>
+    </article>
+    <article class="summary-card summary-positive">
+      <div class="summary-icon"><i class="bi bi-arrow-down-left"></i></div>
+      <div>
+        <span>Valores positivos</span>
+        <strong>{{ formatearValor(totalPositivo) }}</strong>
+        <small>Entradas registradas</small>
+      </div>
+    </article>
+    <article class="summary-card summary-negative">
+      <div class="summary-icon"><i class="bi bi-arrow-up-right"></i></div>
+      <div>
+        <span>Valores negativos</span>
+        <strong>{{ formatearValor(totalNegativo) }}</strong>
+        <small>Salidas registradas</small>
+      </div>
+    </article>
+    <article class="summary-card summary-count">
+      <div class="summary-icon"><i class="bi bi-list-check"></i></div>
+      <div>
+        <span>Registros filtrados</span>
+        <strong>{{ registrosFiltrados.length }}</strong>
+        <small>Máximo 40 por página</small>
+      </div>
+    </article>
+  </section>
+
+  <section class="content-card register-card">
+    <div class="section-heading">
+      <div class="heading-icon"><i class="bi bi-plus-lg"></i></div>
+      <div>
+        <h2>Agregar registro</h2>
+        <p>Escribe un concepto y usa valores positivos o negativos según corresponda.</p>
+      </div>
+    </div>
+
+    <form (ngSubmit)="registrar()" novalidate>
+      <div class="form-grid form-grid-main">
+        <div class="field field-concept">
+          <label for="compraConcepto">Concepto</label>
+          <input id="compraConcepto" name="concepto" type="text" maxlength="160"
+            [(ngModel)]="concepto" placeholder="Ej. Compra de papelería" autocomplete="off">
+        </div>
+        <div class="field field-value">
+          <label for="compraValor">Valor</label>
+          <div class="input-prefix-wrap">
+            <span>$</span>
+            <input id="compraValor" name="valor" type="text" inputmode="decimal"
+              [value]="valorTexto" (input)="actualizarValorDesdeTexto($event)"
+              (blur)="formatearValorIngresado()" placeholder="+30.000 o -30.000"
+              autocomplete="off">
+          </div>
+          <small class="field-hint"><i class="bi bi-info-circle"></i> Acepta entradas (+) y salidas (-).</small>
+        </div>
+      </div>
+      <div class="form-grid form-grid-secondary">
+        <div class="field">
+          <label for="compraFecha">Fecha</label>
+          <div class="calendar-picker">
+            <button type="button" id="compraFecha" class="calendar-trigger"
+              [class.is-open]="mostrarCalendario" [class.is-empty]="!fecha"
+              [attr.aria-expanded]="mostrarCalendario" aria-haspopup="dialog"
+              (click)="alternarCalendario(); $event.stopPropagation()">
+              <span>
+                <small>Fecha del registro</small>
+                <strong>{{ fechaRegistroVisible }}</strong>
+              </span>
+              <i class="bi bi-calendar3"></i>
+            </button>
+            <div *ngIf="mostrarCalendario" class="calendar-menu" role="dialog" aria-label="Seleccionar fecha"
+              (click)="$event.stopPropagation()">
+              <div class="calendar-header">
+                <button type="button" (click)="cambiarMesCalendario(-1)" aria-label="Mes anterior">
+                  <i class="bi bi-chevron-left"></i>
+                </button>
+                <strong>{{ etiquetaMesCalendario }}</strong>
+                <button type="button" (click)="cambiarMesCalendario(1)" aria-label="Mes siguiente">
+                  <i class="bi bi-chevron-right"></i>
+                </button>
+              </div>
+              <div class="calendar-weekdays">
+                <span *ngFor="let nombreDia of nombresDias">{{ nombreDia }}</span>
+              </div>
+              <div class="calendar-days">
+                <button type="button" *ngFor="let dia of diasCalendario"
+                  [class.other-month]="dia.otroMes" [class.today]="dia.hoy"
+                  [class.selected-day]="dia.seleccionada"
+                  (click)="seleccionarFechaCalendario(dia.fecha)">
+                  {{ dia.dia }}
+                </button>
+              </div>
+              <div class="calendar-footer">
+                <button type="button" (click)="limpiarFecha()">Limpiar</button>
+                <button type="button" (click)="seleccionarHoy()">Hoy</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="field">
+          <label for="compraDescripcion">Descripción <span>(opcional)</span></label>
+          <textarea id="compraDescripcion" name="descripcion" maxlength="400" rows="2"
+            [(ngModel)]="descripcion" placeholder="Agrega una nota o referencia"></textarea>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn btn-light" (click)="limpiarFormulario()" [disabled]="guardando">Limpiar</button>
+        <button type="submit" class="btn btn-primary btn-save" [disabled]="guardando">
+          <span *ngIf="guardando" class="spinner-border spinner-border-sm me-2"></span>
+          <i *ngIf="!guardando" class="bi bi-check2-circle me-2"></i>
+          {{ guardando ? 'Guardando...' : 'Guardar registro' }}
+        </button>
+      </div>
+    </form>
+  </section>
+
+  <section class="content-card list-card">
+    <div class="list-header">
+      <div class="section-heading compact-heading">
+        <div class="heading-icon list-heading-icon"><i class="bi bi-receipt"></i></div>
+        <div>
+          <h2>Registros de compras varias</h2>
+          <p>Consulta, filtra y elimina únicamente los registros de este módulo.</p>
+        </div>
+      </div>
+      <span class="record-badge">{{ registrosFiltrados.length }} encontrados</span>
+    </div>
+
+    <div class="filters-panel">
+      <div class="field filter-search">
+        <label for="filtroConcepto"><i class="bi bi-search"></i> Filtrar por nombre</label>
+        <input id="filtroConcepto" name="filtroConcepto" type="search"
+          [(ngModel)]="filtroConcepto" (ngModelChange)="actualizarFiltros()"
+          placeholder="Busca por concepto o descripción" autocomplete="off">
+      </div>
+      <div class="field filter-mode">
+        <label for="modoFiltro">Período</label>
+        <select id="modoFiltro" name="modoFiltro" [(ngModel)]="modoFiltro" (ngModelChange)="actualizarFiltros()">
+          <option value="MES">Mes</option>
+          <option value="DIA">Día</option>
+          <option value="RANGO">Rango personalizado</option>
+        </select>
+      </div>
+      <div class="field filter-period" *ngIf="modoFiltro === 'MES'">
+        <label for="filtroMes">Mes</label>
+        <input id="filtroMes" name="filtroMes" type="month" [(ngModel)]="filtroMes" (ngModelChange)="actualizarFiltros()">
+      </div>
+      <div class="field filter-period" *ngIf="modoFiltro === 'DIA'">
+        <label for="filtroDia">Día</label>
+        <input id="filtroDia" name="filtroDia" type="date" [(ngModel)]="filtroDia" (ngModelChange)="actualizarFiltros()">
+      </div>
+      <ng-container *ngIf="modoFiltro === 'RANGO'">
+        <div class="field filter-period">
+          <label for="filtroDesde">Desde</label>
+          <input id="filtroDesde" name="filtroDesde" type="date" [(ngModel)]="filtroDesde" (ngModelChange)="actualizarFiltros()">
+        </div>
+        <div class="field filter-period">
+          <label for="filtroHasta">Hasta</label>
+          <input id="filtroHasta" name="filtroHasta" type="date" [(ngModel)]="filtroHasta" (ngModelChange)="actualizarFiltros()">
+        </div>
+      </ng-container>
+      <button type="button" class="filter-clear" (click)="limpiarFiltros()">
+        <i class="bi bi-eraser"></i> Limpiar filtros
+      </button>
+    </div>
+
+    <div class="results-toolbar">
+      <div>
+        <h3>{{ etiquetaPeriodo() }}</h3>
+        <span>Los totales y el listado usan los filtros seleccionados.</span>
+      </div>
+      <span *ngIf="!cargando" class="page-indicator">Página {{ paginaActual }} de {{ totalPaginas }}</span>
+    </div>
+
+    <div *ngIf="cargando" class="empty-state">
+      <span class="spinner-border text-primary"></span>
+      <p>Cargando registros...</p>
+    </div>
+
+    <div *ngIf="!cargando && registrosFiltrados.length === 0" class="empty-state">
+      <div class="empty-icon"><i class="bi bi-inbox"></i></div>
+      <h3>No hay registros para mostrar</h3>
+      <p>Agrega una compra o ajusta los filtros del período.</p>
+    </div>
+
+    <div *ngIf="!cargando && registrosFiltrados.length > 0" class="table-wrap">
+      <table class="records-table">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Concepto</th>
+            <th>Descripción</th>
+            <th>Registrado por</th>
+            <th class="text-end">Valor</th>
+            <th class="actions-col">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let registro of registrosPaginados">
+            <td><span class="date-chip">{{ fechaVisible(registro.fecha) }}</span></td>
+            <td>
+              <div class="concept-cell"><span class="concept-icon"><i class="bi bi-bag"></i></span><strong>{{ registro.concepto }}</strong></div>
+              <small class="movement-type" [class.type-out]="registro.valor < 0">{{ textoValor(registro.valor) }}</small>
+            </td>
+            <td class="description-cell">{{ registro.descripcion || 'Sin descripción' }}</td>
+            <td class="user-cell"><i class="bi bi-person-circle"></i>{{ registro.usuarioNombre || 'Usuario' }}</td>
+            <td class="text-end"><strong class="amount" [ngClass]="claseValor(registro.valor)">{{ registro.valor > 0 ? '+' : '' }}{{ formatearValor(registro.valor) }}</strong></td>
+            <td class="actions-col">
+              <button type="button" class="delete-button" (click)="eliminar(registro)" [disabled]="eliminandoId === registro.id" title="Eliminar registro">
+                <span *ngIf="eliminandoId === registro.id" class="spinner-border spinner-border-sm"></span>
+                <i *ngIf="eliminandoId !== registro.id" class="bi bi-trash3"></i>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div *ngIf="!cargando && registrosFiltrados.length > 0" class="pagination-bar">
+      <span>Mostrando {{ ((paginaActual - 1) * registrosPorPagina) + 1 }}–{{ Math.min(paginaActual * registrosPorPagina, registrosFiltrados.length) }} de {{ registrosFiltrados.length }} registros</span>
+      <div class="pagination-controls">
+        <button type="button" (click)="cambiarPagina(paginaActual - 1)" [disabled]="paginaActual === 1" aria-label="Página anterior"><i class="bi bi-chevron-left"></i></button>
+        <button type="button" *ngFor="let pagina of paginas" [class.active]="pagina === paginaActual" (click)="cambiarPagina(pagina)">{{ pagina }}</button>
+        <button type="button" (click)="cambiarPagina(paginaActual + 1)" [disabled]="paginaActual === totalPaginas" aria-label="Página siguiente"><i class="bi bi-chevron-right"></i></button>
+      </div>
+    </div>
+  </section>
+</main>

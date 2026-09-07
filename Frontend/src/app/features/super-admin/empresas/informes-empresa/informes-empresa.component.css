@@ -1,0 +1,217 @@
+.reports-page {
+  width: min(1120px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 28px 0 48px;
+  color: #0f172a;
+}
+
+.reports-hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 30px 34px;
+  border-radius: 26px;
+  background: linear-gradient(135deg, #111827, #1d4ed8 70%, #2563eb);
+  color: #ffffff;
+  box-shadow: 0 18px 40px rgba(30, 64, 175, .2);
+}
+
+.reports-back {
+  display: inline-flex;
+  margin-bottom: 16px;
+  color: #dbeafe;
+  font-size: .88rem;
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.reports-back:hover { color: #ffffff; }
+
+.reports-eyebrow {
+  display: block;
+  margin-bottom: 8px;
+  color: #bfdbfe;
+  font-size: .75rem;
+  font-weight: 850;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.reports-hero h1 {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 900;
+  letter-spacing: -.04em;
+}
+
+.reports-hero p {
+  max-width: 650px;
+  margin: 8px 0 0;
+  color: #dbeafe;
+}
+
+.reports-hero-icon {
+  width: 70px;
+  height: 70px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, .13);
+  color: #bfdbfe;
+  font-size: 2rem;
+}
+
+.reports-alert {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 18px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  font-size: .88rem;
+  font-weight: 650;
+}
+
+.reports-alert-error { background: #fef2f2; color: #b91c1c; }
+.reports-alert-info { background: #ecfdf5; color: #047857; }
+
+.reports-filter-card,
+.reports-roadmap-card {
+  margin-top: 20px;
+  padding: 26px;
+  border: 1px solid #e2e8f0;
+  border-radius: 22px;
+  background: #ffffff;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, .06);
+}
+
+.reports-card-heading {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  margin-bottom: 22px;
+}
+
+.reports-heading-icon {
+  width: 46px;
+  height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 15px;
+  background: #dbeafe;
+  color: #2563eb;
+  font-size: 1.25rem;
+}
+
+.reports-heading-icon.roadmap { background: #fef3c7; color: #d97706; }
+
+.reports-card-heading h2 {
+  margin: 0 0 3px;
+  font-size: 1.15rem;
+  font-weight: 850;
+}
+
+.reports-card-heading p {
+  margin: 0;
+  color: #64748b;
+  font-size: .86rem;
+}
+
+.reports-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
+  align-items: end;
+  gap: 14px;
+}
+
+.reports-filter-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  color: #334155;
+  font-size: .82rem;
+  font-weight: 750;
+}
+
+.reports-filter-grid input {
+  min-height: 44px;
+  padding: 8px 11px;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  color: #0f172a;
+  outline: 0;
+}
+
+.reports-filter-grid input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, .12);
+}
+
+.reports-filter-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.reports-button {
+  min-height: 42px;
+  padding: 9px 14px;
+  border: 0;
+  border-radius: 11px;
+  font-size: .82rem;
+  font-weight: 800;
+}
+
+.reports-button-primary { background: #2563eb; color: #ffffff; }
+.reports-button-primary:hover { background: #1d4ed8; }
+.reports-button-light { background: #eff6ff; color: #1d4ed8; }
+.reports-button-link { background: transparent; color: #64748b; }
+
+.reports-roadmap-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 13px;
+}
+
+.reports-roadmap-grid article {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 18px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 16px;
+  background: #f8fafc;
+}
+
+.reports-roadmap-grid article > span {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 11px;
+  background: #e0e7ff;
+  color: #4338ca;
+}
+
+.reports-roadmap-grid strong { font-size: .9rem; }
+.reports-roadmap-grid small { color: #64748b; line-height: 1.45; }
+
+@media (max-width: 820px) {
+  .reports-filter-grid,
+  .reports-roadmap-grid { grid-template-columns: 1fr; }
+
+  .reports-filter-actions { align-items: stretch; }
+}
+
+@media (max-width: 560px) {
+  .reports-page { width: min(100% - 20px, 1120px); padding-top: 14px; }
+  .reports-hero,
+  .reports-filter-card,
+  .reports-roadmap-card { padding: 20px; border-radius: 19px; }
+  .reports-hero-icon { width: 54px; height: 54px; font-size: 1.5rem; }
+}

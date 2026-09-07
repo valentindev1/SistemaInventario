@@ -25,4 +25,20 @@ public class IngresoInventarioItemDTO {
     @NotNull(message = "El precio de venta es obligatorio")
     @DecimalMin(value = "0.00", message = "El precio de venta no puede ser negativo")
     private BigDecimal precioVenta;
+
+    /**
+     * Cuando se informa, el backend recalcula el precio para que el valor
+     * guardado sea consistente con la utilidad mostrada en el formulario.
+     */
+    private String modoUtilidad;
+
+    @DecimalMin(value = "0.00", message = "La utilidad no puede ser negativa")
+    private BigDecimal valorUtilidad;
+
+    /**
+     * Indica que la utilidad fue modificada en el ingreso y debe convertirse
+     * en una regla propia del artículo. Si es false, se conserva la regla
+     * propia existente o la herencia de la categoría.
+     */
+    private Boolean reglaUtilidadModificada;
 }

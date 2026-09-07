@@ -286,6 +286,52 @@
       </div>
     </div>
 
+    <!-- Ajustar precio por referencia -->
+    <div class="col-12 col-md-6 col-xl-3">
+      <div class="inventory-card h-100">
+
+        <div class="inventory-icon icon-price">
+          <i class="bi bi-tags"></i>
+        </div>
+
+        <h5 class="fw-bold mt-3">Ajustar precio de un producto</h5>
+
+        <p class="text-muted small">
+          Cambia el precio de venta de una referencia en todas las sucursales.
+        </p>
+
+        <a
+          class="btn btn-price w-100 mt-auto"
+          [routerLink]="rutaAjustarPrecio()">
+          Ajustar precio
+        </a>
+
+      </div>
+    </div>
+
+    <!-- Configuración de utilidad -->
+    <div class="col-12 col-md-6 col-xl-3">
+      <div class="inventory-card h-100">
+
+        <div class="inventory-icon icon-config">
+          <i class="bi bi-percent"></i>
+        </div>
+
+        <h5 class="fw-bold mt-3">Configurar porcentajes</h5>
+
+        <p class="text-muted small">
+          Define la utilidad por porcentaje sobre el costo o por valor fijo en dinero.
+        </p>
+
+        <a
+          class="btn btn-config w-100 mt-auto"
+          [routerLink]="rutaConfigurarPorcentajes()">
+          Configurar utilidad
+        </a>
+
+      </div>
+    </div>
+
   </div>
 
 </div>

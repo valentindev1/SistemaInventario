@@ -3,6 +3,10 @@ package com.vhela.inventario.controlador.producto;
 import com.vhela.inventario.dto.producto.producto.ProductoAdminObtenerDTO;
 import com.vhela.inventario.dto.producto.producto.ProductoCrearDTO;
 import com.vhela.inventario.dto.producto.producto.ProductoEditarDTO;
+import com.vhela.inventario.dto.producto.producto.ActualizarCostoManualDTO;
+import com.vhela.inventario.dto.producto.producto.ActualizarCostoProductoDTO;
+import com.vhela.inventario.dto.producto.producto.ActualizarPrecioVentaDTO;
+import com.vhela.inventario.dto.producto.producto.ActualizarReglaGananciaDTO;
 import com.vhela.inventario.servicio.producto.ProductoServicio;
 
 import jakarta.validation.Valid;
@@ -65,6 +69,50 @@ public class ProductoControlador {
             @Valid @RequestBody ProductoEditarDTO dto) {
 
         return ResponseEntity.ok(productoServicio.editar(usuarioId, productoId, dto));
+    }
+
+    @PatchMapping("/{productoId}/precio-venta")
+    public ResponseEntity<ProductoAdminObtenerDTO> actualizarPrecioVenta(
+            @RequestParam Long usuarioId,
+            @PathVariable Long productoId,
+            @Valid @RequestBody ActualizarPrecioVentaDTO dto) {
+
+        return ResponseEntity.ok(
+                productoServicio.actualizarPrecioVenta(usuarioId, productoId, dto)
+        );
+    }
+
+    @PatchMapping("/{productoId}/costo-manual")
+    public ResponseEntity<ProductoAdminObtenerDTO> actualizarCostoManual(
+            @RequestParam Long usuarioId,
+            @PathVariable Long productoId,
+            @Valid @RequestBody ActualizarCostoManualDTO dto) {
+
+        return ResponseEntity.ok(
+                productoServicio.actualizarCostoManual(usuarioId, productoId, dto)
+        );
+    }
+
+    @PatchMapping("/{productoId}/costo")
+    public ResponseEntity<ProductoAdminObtenerDTO> actualizarCosto(
+            @RequestParam Long usuarioId,
+            @PathVariable Long productoId,
+            @Valid @RequestBody ActualizarCostoProductoDTO dto) {
+
+        return ResponseEntity.ok(
+                productoServicio.actualizarCosto(usuarioId, productoId, dto)
+        );
+    }
+
+    @PatchMapping("/{productoId}/regla-ganancia")
+    public ResponseEntity<ProductoAdminObtenerDTO> actualizarReglaGanancia(
+            @RequestParam Long usuarioId,
+            @PathVariable Long productoId,
+            @Valid @RequestBody ActualizarReglaGananciaDTO dto) {
+
+        return ResponseEntity.ok(
+                productoServicio.actualizarReglaGanancia(usuarioId, productoId, dto)
+        );
     }
 
     @DeleteMapping("/{productoId}")

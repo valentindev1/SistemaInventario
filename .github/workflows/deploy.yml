@@ -5,6 +5,10 @@ on:
     branches:
       - master
 
+concurrency:
+  group: deploy-production
+  cancel-in-progress: true
+
 jobs:
   deploy:
     name: Deploy to VPS
@@ -19,12 +23,16 @@ jobs:
           port: ${{ secrets.VPS_PORT }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
+            set -e
             cd /opt/InventarioVhela
 
             git fetch origin master
             git reset --hard origin/master
 
-            docker compose up -d --build --force-recreate
+            test -f .env
+            docker compose config --quiet
+
+            docker compose up -d --build --force-recreate --remove-orphans
 
             docker image prune -f
 

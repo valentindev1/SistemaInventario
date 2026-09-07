@@ -41,14 +41,12 @@ services:
       inventario-mysql:
         condition: service_healthy
 
-    entrypoint: ["sh", "-c", "until mysqladmin ping -h inventario-mysql -u$${DB_USERNAME} -p$${DB_PASSWORD} --silent; do echo Esperando MySQL; sleep 5; done; java -jar app.jar"]
-
     networks:
       - inventario-network
 
   inventario-frontend:
     build:
-      context: ./frontend
+      context: ./Frontend
       dockerfile: Dockerfile
 
     container_name: inventario-frontend
@@ -59,6 +57,13 @@ services:
 
     depends_on:
       - inventario-api
+
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
     networks:
       - inventario-network

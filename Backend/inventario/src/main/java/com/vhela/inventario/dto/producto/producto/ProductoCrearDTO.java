@@ -3,10 +3,14 @@ package com.vhela.inventario.dto.producto.producto;
 import java.math.BigDecimal;
 
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import jakarta.validation.Valid;
 import lombok.Data;
+
+import java.util.List;
 
 @Data
 public class ProductoCrearDTO {
@@ -38,5 +42,17 @@ public class ProductoCrearDTO {
     @NotNull(message = "El ID del género es obligatorio")
     private Long generoId;
 
+    /**
+     * MANUAL conserva el flujo actual. DESGLOSE calcula el costo sumando sus componentes.
+     */
+    private String tipoCosto;
+
+    private Boolean costoPersonalizado;
+
+    @DecimalMin(value = "0.00", message = "El costo unitario no puede ser negativo")
+    @Digits(integer = 10, fraction = 2, message = "El costo unitario debe tener máximo 2 decimales")
+    private BigDecimal costoUnitario;
+
+    private List<@Valid ProductoCostoDetalleCrearDTO> desgloseCosto;
 
 }

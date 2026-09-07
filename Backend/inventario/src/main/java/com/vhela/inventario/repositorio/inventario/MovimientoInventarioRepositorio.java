@@ -13,6 +13,8 @@ public interface MovimientoInventarioRepositorio extends JpaRepository<Movimient
 
     List<MovimientoInventario> findBySucursalIdOrderByFechaDesc(Long sucursalId);
 
+    List<MovimientoInventario> findBySucursal_Empresa_IdOrderByFechaDesc(Long empresaId);
+
     List<MovimientoInventario> findByProductoIdOrderByFechaDesc(Long productoId);
 
 

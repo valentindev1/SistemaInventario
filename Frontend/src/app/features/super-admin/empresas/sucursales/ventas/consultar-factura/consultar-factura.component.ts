@@ -48,6 +48,8 @@ export class ConsultarFacturaComponent implements OnInit {
   tamanioPagina = 20;
   totalPaginas = 0;
 
+  generandoSoporte = false;
+
   cancelando = false;
 
   constructor(
@@ -571,5 +573,87 @@ export class ConsultarFacturaComponent implements OnInit {
     }
 
     return 'Ocurrió un error al procesar la solicitud.';
+  }
+
+  generarSoportePdf(factura: FacturaVentaDTO): void {
+    if (!factura || !factura.id) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Factura no disponible',
+        text: 'No hay una factura seleccionada para generar el soporte.',
+        confirmButtonText: 'Entendido',
+        confirmButtonColor: '#0d6efd'
+      });
+
+      return;
+    }
+
+    this.generandoSoporte = true;
+    this.mensajeError = '';
+    this.mensajeExito = '';
+
+    Swal.fire({
+      title: 'Generando soporte PDF...',
+      text: 'Por favor espera mientras se genera el documento.',
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    });
+
+    this.ventaService.generarSoporteVentaPdf(factura.id).subscribe({
+      next: (blob: Blob) => {
+        this.generandoSoporte = false;
+
+        const archivoPdf = new Blob([blob], {
+          type: 'application/pdf'
+        });
+
+        const url = window.URL.createObjectURL(archivoPdf);
+
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `soporte-venta-${factura.numeroVenta}.pdf`;
+        link.click();
+
+        window.URL.revokeObjectURL(url);
+
+        this.mensajeExito =
+          `El soporte de la factura ${factura.numeroVenta} fue generado correctamente en formato PDF.`;
+
+        Swal.fire({
+          icon: 'success',
+          title: 'PDF generado',
+          html: `
+          <p>
+            El soporte de la factura
+            <strong>${factura.numeroVenta}</strong>
+            fue generado correctamente.
+          </p>
+          <p class="text-muted mb-0">
+            El archivo PDF se descargó automáticamente.
+          </p>
+        `,
+          confirmButtonText: 'Entendido',
+          confirmButtonColor: '#0d6efd'
+        });
+      },
+      error: (error) => {
+        this.generandoSoporte = false;
+
+        this.mensajeError = this.obtenerMensajeError(error);
+
+        Swal.fire({
+          icon: 'error',
+          title: 'No se pudo generar el PDF',
+          text: this.mensajeError,
+          confirmButtonText: 'Entendido',
+          confirmButtonColor: '#dc3545'
+        });
+
+        console.error('Error generando soporte PDF:', error);
+      }
+    });
   }
 }

@@ -3,6 +3,8 @@ import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
+import Swal from 'sweetalert2';
+
 import { AuthService } from '../../../../core/services/auth/auth.service';
 import { EmpleadoVentaService } from '../../../../core/services/empleado/empleado-venta.service';
 
@@ -41,6 +43,8 @@ export class FacturasEmpleadoComponent implements OnInit {
 
   cargando = false;
   cargandoDetalle = false;
+
+  generandoSoporteId: number | null = null;
 
   mensajeError = '';
   mensajeExito = '';
@@ -332,6 +336,97 @@ export class FacturasEmpleadoComponent implements OnInit {
           );
 
           console.error(error);
+        }
+      });
+  }
+
+  generarSoportePdf(
+    factura: FacturaVentaEmpleadoDTO | VentaHistorialEmpleadoDTO
+  ): void {
+
+    if (!factura || !factura.id) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Factura no disponible',
+        text: 'No hay una factura válida para generar el soporte.',
+        confirmButtonText: 'Entendido',
+        confirmButtonColor: '#0d6efd'
+      });
+
+      return;
+    }
+
+    this.generandoSoporteId = factura.id;
+    this.mensajeError = '';
+    this.mensajeExito = '';
+
+    Swal.fire({
+      title: 'Generando soporte PDF...',
+      text: 'Por favor espera mientras se genera el documento.',
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    });
+
+    this.empleadoVentaService.generarSoporteVentaPdf(factura.id)
+      .subscribe({
+        next: (blob: Blob) => {
+
+          this.generandoSoporteId = null;
+
+          const archivoPdf = new Blob([blob], {
+            type: 'application/pdf'
+          });
+
+          const url = window.URL.createObjectURL(archivoPdf);
+
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `soporte-venta-${factura.numeroVenta}.pdf`;
+          link.click();
+
+          window.URL.revokeObjectURL(url);
+
+          this.mensajeExito =
+            `El soporte de la factura ${factura.numeroVenta} fue generado correctamente en formato PDF.`;
+
+          Swal.fire({
+            icon: 'success',
+            title: 'PDF generado',
+            html: `
+              <p>
+                El soporte de la factura
+                <strong>${factura.numeroVenta}</strong>
+                fue generado correctamente.
+              </p>
+              <p class="text-muted mb-0">
+                El archivo PDF se descargó automáticamente.
+              </p>
+            `,
+            confirmButtonText: 'Entendido',
+            confirmButtonColor: '#0d6efd'
+          });
+        },
+        error: (error) => {
+
+          this.generandoSoporteId = null;
+
+          this.mensajeError = this.obtenerMensajeError(
+            error,
+            'No se pudo generar el soporte PDF.'
+          );
+
+          Swal.fire({
+            icon: 'error',
+            title: 'No se pudo generar el PDF',
+            text: this.mensajeError,
+            confirmButtonText: 'Entendido',
+            confirmButtonColor: '#dc3545'
+          });
+
+          console.error('Error generando soporte PDF:', error);
         }
       });
   }

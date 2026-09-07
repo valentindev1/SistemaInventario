@@ -7,6 +7,7 @@ import { AuthTemporalService } from '../../auth/auth-temporal.service';
 
 import {
   ProductoAdminObtenerDTO,
+  ProductoActualizarCostoDTO,
   ProductoCrearDTO,
   ProductoEditarDTO
 } from '../../../models/producto/producto.model';
@@ -51,6 +52,66 @@ export class ProductoService {
     return this.http.put<ProductoAdminObtenerDTO>(
       `${this.apiUrl}/${productoId}`,
       dto,
+      { params }
+    );
+  }
+
+  actualizarPrecioVenta(
+    productoId: number,
+    datos: {
+      precioVenta: number;
+      costoUnitario?: number;
+      tipoGanancia?: 'PORCENTAJE' | 'DINERO' | null;
+      valorGanancia?: number | null;
+    }
+  ): Observable<ProductoAdminObtenerDTO> {
+    const params = this.obtenerUsuarioIdComoParam();
+
+    return this.http.patch<ProductoAdminObtenerDTO>(
+      `${this.apiUrl}/${productoId}/precio-venta`,
+      datos,
+      { params }
+    );
+  }
+
+  actualizarCostoManual(
+    productoId: number,
+    datos: { costoUnitario: number }
+  ): Observable<ProductoAdminObtenerDTO> {
+    const params = this.obtenerUsuarioIdComoParam();
+
+    return this.http.patch<ProductoAdminObtenerDTO>(
+      `${this.apiUrl}/${productoId}/costo-manual`,
+      datos,
+      { params }
+    );
+  }
+
+  actualizarCosto(
+    productoId: number,
+    datos: ProductoActualizarCostoDTO
+  ): Observable<ProductoAdminObtenerDTO> {
+    const params = this.obtenerUsuarioIdComoParam();
+
+    return this.http.patch<ProductoAdminObtenerDTO>(
+      `${this.apiUrl}/${productoId}/costo`,
+      datos,
+      { params }
+    );
+  }
+
+  actualizarReglaGanancia(
+    productoId: number,
+    datos: {
+      tipoGanancia: 'PORCENTAJE' | 'DINERO' | null;
+      valorGanancia: number | null;
+    }
+  ): Observable<ProductoAdminObtenerDTO> {
+    const params = this.obtenerUsuarioIdComoParam();
+
+    return this.http.patch<ProductoAdminObtenerDTO>(
+      `${this.apiUrl}/${productoId}/regla-ganancia`,
+      datos,
       { params }
     );
   }

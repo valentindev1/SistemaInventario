@@ -1,7 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, HostListener, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import Swal from 'sweetalert2';
 
 import { InventarioService } from '../../../../../../core/services/inventario/inventario.service';
 import { ProductoService } from '../../../../../../core/services/producto/producto/producto.service';
@@ -18,6 +19,13 @@ interface ProductoInventarioOption {
   codigo: string;
   costoUnitario: number;
   precioVenta: number;
+  categoriaId: number;
+  categoriaNombre: string;
+  categoriaTipoGanancia: 'PORCENTAJE' | 'DINERO' | null;
+  categoriaValorGanancia: number | null;
+  tipoGananciaProducto: 'PORCENTAJE' | 'DINERO' | null;
+  valorGananciaProducto: number | null;
+  categoriaPorcentajeGanancia: number | null;
 }
 
 @Component({
@@ -41,14 +49,25 @@ export class IngresarInventarioComponent implements OnInit {
   motivo = '';
 
   productoSeleccionadoId: number | null = null;
-  cantidad = 1;
-  costoUnitario = 0;
+  busquedaProducto = '';
+  productoSelectorAbierto = false;
+  cantidad: number | null = 1;
+  costoUnitario: number | null = 0;
+  costoUnitarioTexto = '';
   precioVenta = 0;
+
+  modoUtilidad: 'PORCENTAJE' | 'DINERO' = 'PORCENTAJE';
+  valorUtilidad: number | null = 0;
+  reglaCategoriaActiva = false;
+  reglaArticuloActiva = false;
+  asignarReglaManual = false;
 
   items: IngresoInventarioItemDTO[] = [];
 
   cargandoProductos = false;
   guardando = false;
+
+  private camposNumericosEnfocados = new Set<string>();
 
   mensajeExito = '';
   mensajeError = '';
@@ -59,7 +78,10 @@ export class IngresarInventarioComponent implements OnInit {
     productoId: 0,
     cantidad: 1,
     costoUnitario: 0,
-    precioVenta: 0
+    precioVenta: 0,
+    modoUtilidad: 'PORCENTAJE',
+    valorUtilidad: 0,
+    reglaUtilidadModificada: false
   };
 
   constructor(
@@ -183,6 +205,28 @@ export class IngresarInventarioComponent implements OnInit {
     ];
   }
 
+  rutaConfigurarPorcentajes(): any[] {
+    if (this.esSuperAdmin()) {
+      return [
+        '/super-admin/empresas',
+        this.empresaId,
+        'sucursales',
+        this.sucursalId,
+        'inventario',
+        'configurar-porcentajes'
+      ];
+    }
+
+    return [
+      '/admin/empresa',
+      this.empresaId,
+      'sucursales',
+      this.sucursalId,
+      'inventario',
+      'configurar-porcentajes'
+    ];
+  }
+
   cargarProductos(): void {
     this.cargandoProductos = true;
     this.mensajeError = '';
@@ -194,7 +238,14 @@ export class IngresarInventarioComponent implements OnInit {
           nombre: producto.nombre,
           codigo: producto.codigo,
           costoUnitario: Number(producto.costoUnitario ?? 0),
-          precioVenta: Number(producto.precioVenta ?? 0)
+          precioVenta: Number(producto.precioVenta ?? 0),
+          categoriaId: producto.categoriaId,
+          categoriaNombre: producto.categoriaNombre,
+          categoriaTipoGanancia: producto.categoriaTipoGanancia ?? null,
+          categoriaValorGanancia: producto.categoriaValorGanancia ?? producto.categoriaPorcentajeGanancia ?? null,
+          tipoGananciaProducto: producto.tipoGananciaProducto ?? null,
+          valorGananciaProducto: producto.valorGananciaProducto ?? null,
+          categoriaPorcentajeGanancia: producto.categoriaPorcentajeGanancia ?? null
         }));
 
         this.cargandoProductos = false;
@@ -212,9 +263,13 @@ export class IngresarInventarioComponent implements OnInit {
   }
 
   onProductoSeleccionado(): void {
+    this.camposNumericosEnfocados.clear();
+
     if (!this.productoSeleccionadoId) {
       this.costoUnitario = 0;
+      this.costoUnitarioTexto = '';
       this.precioVenta = 0;
+      this.asignarReglaManual = false;
       return;
     }
 
@@ -224,12 +279,226 @@ export class IngresarInventarioComponent implements OnInit {
 
     if (!producto) {
       this.costoUnitario = 0;
+      this.costoUnitarioTexto = '';
       this.precioVenta = 0;
+      this.asignarReglaManual = false;
       return;
     }
 
     this.costoUnitario = producto.costoUnitario;
-    this.precioVenta = producto.precioVenta;
+    this.costoUnitarioTexto = this.formatearNumero(producto.costoUnitario);
+
+    this.reglaArticuloActiva = producto.tipoGananciaProducto !== null
+      && producto.valorGananciaProducto !== null;
+    this.reglaCategoriaActiva = !this.reglaArticuloActiva
+      && producto.categoriaTipoGanancia !== null
+      && producto.categoriaValorGanancia !== null;
+    this.asignarReglaManual = this.reglaArticuloActiva;
+
+    if (this.reglaArticuloActiva || this.reglaCategoriaActiva) {
+      this.modoUtilidad = this.reglaArticuloActiva
+        ? producto.tipoGananciaProducto ?? 'PORCENTAJE'
+        : producto.categoriaTipoGanancia ?? 'PORCENTAJE';
+      this.valorUtilidad = this.reglaArticuloActiva
+        ? producto.valorGananciaProducto ?? 0
+        : producto.categoriaValorGanancia ?? 0;
+    } else {
+      // Si no hay una regla preconfigurada, conservamos como referencia
+      // el porcentaje implícito del precio vigente del producto.
+      this.modoUtilidad = 'PORCENTAJE';
+      const costo = producto.costoUnitario;
+      this.valorUtilidad = costo > 0
+        ? Math.max((producto.precioVenta - costo) / costo * 100, 0)
+        : 0;
+    }
+
+    this.recalcularPrecioVenta();
+  }
+
+  ponerEnCeroAlEnfocar(
+    campo: 'cantidad' | 'costoUnitario' | 'valorUtilidad' | 'precioVenta',
+    evento: FocusEvent
+  ): void {
+    const input = evento.target as HTMLInputElement;
+
+    if (!this.camposNumericosEnfocados.has(campo)) {
+      this.camposNumericosEnfocados.add(campo);
+
+      if (campo === 'cantidad') {
+        this.cantidad = null;
+      } else if (campo === 'costoUnitario') {
+        this.costoUnitario = null;
+        this.costoUnitarioTexto = '';
+        this.recalcularPrecioVenta();
+      } else if (campo === 'valorUtilidad') {
+        this.valorUtilidad = null;
+        this.recalcularPrecioVenta();
+      }
+    }
+
+    input.select();
+  }
+
+  actualizarCostoUnitario(evento: Event): void {
+    const input = evento.target as HTMLInputElement;
+    const digitos = input.value.replace(/\D/g, '');
+
+    if (!digitos) {
+      this.costoUnitario = null;
+      this.costoUnitarioTexto = '';
+      input.value = '';
+      this.recalcularPrecioVenta();
+      return;
+    }
+
+    this.costoUnitario = Number(digitos);
+    this.costoUnitarioTexto = this.formatearNumero(this.costoUnitario);
+    input.value = this.costoUnitarioTexto;
+    this.recalcularPrecioVenta();
+  }
+
+  recalcularPrecioVenta(): void {
+    const costo = Math.max(Number(this.costoUnitario) || 0, 0);
+    const utilidad = Math.max(Number(this.valorUtilidad) || 0, 0);
+    const precio = this.modoUtilidad === 'PORCENTAJE'
+      ? costo + (costo * utilidad / 100)
+      : costo + utilidad;
+
+    this.precioVenta = Number(precio.toFixed(2));
+  }
+
+  cambioManualDeUtilidad(): void {
+    this.recalcularPrecioVenta();
+  }
+
+  cambiarAsignacionReglaManual(asignar: boolean): void {
+    if (!asignar && this.reglaArticuloActiva) {
+      this.asignarReglaManual = true;
+      return;
+    }
+
+    this.asignarReglaManual = asignar;
+
+    if (!asignar) {
+      const producto = this.productoSeleccionado;
+
+      if (producto && this.reglaCategoriaActiva) {
+        this.modoUtilidad = producto.categoriaTipoGanancia ?? 'PORCENTAJE';
+        this.valorUtilidad = producto.categoriaValorGanancia ?? 0;
+      } else if (producto) {
+        this.modoUtilidad = 'PORCENTAJE';
+        const costo = producto.costoUnitario;
+        this.valorUtilidad = costo > 0
+          ? Math.max((producto.precioVenta - costo) / costo * 100, 0)
+          : 0;
+      }
+    }
+
+    this.recalcularPrecioVenta();
+  }
+
+  get reglaUtilidadActiva(): boolean {
+    return this.reglaArticuloActiva || this.reglaCategoriaActiva;
+  }
+
+  cambiarModoUtilidad(modo: 'PORCENTAJE' | 'DINERO'): void {
+    if (!this.asignarReglaManual || modo === this.modoUtilidad) {
+      return;
+    }
+
+    const utilidadActual = this.obtenerUtilidadUnitario();
+    const porcentajeActual = this.obtenerPorcentajeUtilidad();
+
+    this.modoUtilidad = modo;
+    this.valorUtilidad = modo === 'PORCENTAJE' ? porcentajeActual : utilidadActual;
+    this.recalcularPrecioVenta();
+  }
+
+  utilidadModificadaEnEsteIngreso(): boolean {
+    return this.asignarReglaManual;
+  }
+
+  obtenerUtilidadUnitario(): number {
+    return Math.max(Number(this.precioVenta) - Number(this.costoUnitario), 0);
+  }
+
+  obtenerPorcentajeUtilidad(): number {
+    const costo = Number(this.costoUnitario) || 0;
+
+    if (costo <= 0) {
+      return 0;
+    }
+
+    return this.obtenerUtilidadUnitario() / costo * 100;
+  }
+
+  obtenerBeneficioProyectado(): number {
+    return this.obtenerUtilidadUnitario() * (Number(this.cantidad) || 0);
+  }
+
+  get productoSeleccionado(): ProductoInventarioOption | null {
+    return this.productos.find(
+      producto => producto.id === Number(this.productoSeleccionadoId)
+    ) ?? null;
+  }
+
+  get productosFiltrados(): ProductoInventarioOption[] {
+    const termino = this.normalizarTexto(this.busquedaProducto);
+
+    if (!termino) {
+      return this.productos;
+    }
+
+    return this.productos.filter(producto =>
+      this.normalizarTexto(`${producto.codigo} ${producto.nombre}`).includes(termino)
+    );
+  }
+
+  toggleProductoSelector(): void {
+    this.productoSelectorAbierto = !this.productoSelectorAbierto;
+
+    if (!this.productoSelectorAbierto) {
+      this.busquedaProducto = '';
+    }
+  }
+
+  seleccionarProducto(producto: ProductoInventarioOption): void {
+    this.productoSeleccionadoId = producto.id;
+    this.onProductoSeleccionado();
+    this.productoSelectorAbierto = false;
+    this.busquedaProducto = '';
+  }
+
+  manejarTeclaSelector(event: KeyboardEvent): void {
+    if (event.key === 'Escape') {
+      this.productoSelectorAbierto = false;
+      this.busquedaProducto = '';
+      return;
+    }
+
+    if (
+      event.key === 'Enter' &&
+      this.busquedaProducto.trim() &&
+      this.productosFiltrados.length === 1
+    ) {
+      event.preventDefault();
+      this.seleccionarProducto(this.productosFiltrados[0]);
+    }
+  }
+
+  @HostListener('document:click')
+  cerrarSelectorAlHacerClickFuera(): void {
+    if (this.productoSelectorAbierto) {
+      this.productoSelectorAbierto = false;
+      this.busquedaProducto = '';
+    }
+  }
+
+  private normalizarTexto(valor: string): string {
+    return valor
+      .toLocaleLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
   }
 
   agregarItem(): void {
@@ -256,6 +525,8 @@ export class IngresarInventarioComponent implements OnInit {
       return;
     }
 
+    this.recalcularPrecioVenta();
+
     const productoId = Number(this.productoSeleccionadoId);
 
     const yaExiste = this.items.some(item => item.productoId === productoId);
@@ -269,7 +540,10 @@ export class IngresarInventarioComponent implements OnInit {
       productoId,
       cantidad: Number(this.cantidad),
       costoUnitario: Number(this.costoUnitario),
-      precioVenta: Number(this.precioVenta)
+      precioVenta: Number(this.precioVenta),
+      modoUtilidad: this.modoUtilidad,
+      valorUtilidad: Number(this.valorUtilidad) || 0,
+      reglaUtilidadModificada: this.utilidadModificadaEnEsteIngreso()
     });
 
     this.limpiarFormularioProducto();
@@ -282,7 +556,10 @@ export class IngresarInventarioComponent implements OnInit {
       productoId: this.items[index].productoId,
       cantidad: this.items[index].cantidad,
       costoUnitario: this.items[index].costoUnitario,
-      precioVenta: this.items[index].precioVenta
+      precioVenta: this.items[index].precioVenta,
+      modoUtilidad: this.items[index].modoUtilidad,
+      valorUtilidad: this.items[index].valorUtilidad,
+      reglaUtilidadModificada: this.items[index].reglaUtilidadModificada
     };
 
     this.mensajeError = '';
@@ -309,11 +586,16 @@ export class IngresarInventarioComponent implements OnInit {
       return;
     }
 
+    this.recalcularPrecioEdicion();
+
     this.items[this.indiceEditando] = {
       productoId: this.itemEditando.productoId,
       cantidad: Number(this.itemEditando.cantidad),
       costoUnitario: Number(this.itemEditando.costoUnitario),
-      precioVenta: Number(this.itemEditando.precioVenta)
+      precioVenta: Number(this.itemEditando.precioVenta),
+      modoUtilidad: this.itemEditando.modoUtilidad,
+      valorUtilidad: Number(this.itemEditando.valorUtilidad) || 0,
+      reglaUtilidadModificada: this.itemEditando.reglaUtilidadModificada
     };
 
     this.cancelarEdicion();
@@ -326,7 +608,10 @@ export class IngresarInventarioComponent implements OnInit {
       productoId: 0,
       cantidad: 1,
       costoUnitario: 0,
-      precioVenta: 0
+      precioVenta: 0,
+      modoUtilidad: 'PORCENTAJE',
+      valorUtilidad: 0,
+      reglaUtilidadModificada: false
     };
 
     this.mensajeError = '';
@@ -387,15 +672,46 @@ export class IngresarInventarioComponent implements OnInit {
     this.inventarioService.ingresarMercancia(dto).subscribe({
       next: () => {
         this.guardando = false;
-        this.mensajeExito = 'Mercancía ingresada correctamente.';
+        const cantidadProductos = this.items.length;
+        const cantidadUnidades = this.items.reduce(
+          (total, item) => total + item.cantidad,
+          0
+        );
+        const totalCosto = this.calcularTotalCosto();
+        const totalVenta = this.calcularTotalVenta();
 
         this.items = [];
         this.motivo = '';
         this.limpiarFormularioProducto();
 
-        setTimeout(() => {
+        Swal.fire({
+          icon: 'success',
+          title: '¡Ingreso registrado!',
+          html: `
+            <div class="inventory-success-content">
+              <p>La mercancía se agregó correctamente al inventario.</p>
+              <div class="inventory-success-summary">
+                <div>
+                  <span>Referencias</span>
+                  <strong>${cantidadProductos}</strong>
+                </div>
+                <div>
+                  <span>Unidades</span>
+                  <strong>${cantidadUnidades}</strong>
+                </div>
+              </div>
+              <p class="inventory-success-totals">
+                Costo registrado: <strong>${this.formatearMoneda(totalCosto)}</strong><br>
+                Venta proyectada: <strong>${this.formatearMoneda(totalVenta)}</strong>
+              </p>
+            </div>
+          `,
+          confirmButtonText: 'Continuar',
+          confirmButtonColor: '#2563eb',
+          allowOutsideClick: false
+        }).then(() => {
           this.volverADetalleSucursal();
-        }, 800);
+        });
       },
       error: (error) => {
         this.guardando = false;
@@ -409,6 +725,34 @@ export class IngresarInventarioComponent implements OnInit {
     });
   }
 
+  recalcularPrecioEdicion(): void {
+    const costo = Math.max(Number(this.itemEditando.costoUnitario) || 0, 0);
+    const utilidad = Math.max(Number(this.itemEditando.valorUtilidad) || 0, 0);
+    const precio = this.itemEditando.modoUtilidad === 'PORCENTAJE'
+      ? costo + costo * utilidad / 100
+      : costo + utilidad;
+
+    this.itemEditando.precioVenta = Number(precio.toFixed(2));
+  }
+
+  private formatearMoneda(valor: number): string {
+    return new Intl.NumberFormat('es-CO', {
+      style: 'currency',
+      currency: 'COP',
+      maximumFractionDigits: 0
+    }).format(valor);
+  }
+
+  private formatearNumero(valor: number | null | undefined): string {
+    if (valor === null || valor === undefined || !Number.isFinite(Number(valor))) {
+      return '';
+    }
+
+    return new Intl.NumberFormat('es-CO', {
+      maximumFractionDigits: 0
+    }).format(Number(valor));
+  }
+
   volverADetalleSucursal(): void {
     this.router.navigate(this.rutaDetalleSucursal());
   }
@@ -418,9 +762,18 @@ export class IngresarInventarioComponent implements OnInit {
   }
 
   private limpiarFormularioProducto(): void {
+    this.camposNumericosEnfocados.clear();
     this.productoSeleccionadoId = null;
+    this.busquedaProducto = '';
+    this.productoSelectorAbierto = false;
     this.cantidad = 1;
     this.costoUnitario = 0;
+    this.costoUnitarioTexto = '';
     this.precioVenta = 0;
+    this.reglaCategoriaActiva = false;
+    this.reglaArticuloActiva = false;
+    this.modoUtilidad = 'PORCENTAJE';
+    this.valorUtilidad = 0;
+    this.asignarReglaManual = false;
   }
 }

@@ -5,6 +5,9 @@ import java.time.LocalDate;
 
 import com.vhela.inventario.dto.producto.producto.RankingProductosVentasDTO;
 import com.vhela.inventario.dto.venta.*;
+import com.vhela.inventario.modelo.usuario.Usuario;
+import com.vhela.inventario.servicio.venta.SoporteVentaPdfServicio;
+import com.vhela.inventario.servicio.venta.UsuarioAutenticadoServicio;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,13 +18,23 @@ import com.vhela.inventario.servicio.venta.VentaServicio;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import com.vhela.inventario.dto.venta.soporte.SoporteVentaDTO;
 
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 @RestController
 @RequestMapping("/api/ventas")
 @RequiredArgsConstructor
 public class VentaControlador {
 
     private final VentaServicio ventaServicio;
+    private final UsuarioAutenticadoServicio usuarioAutenticadoServicio;
+
+    private final SoporteVentaPdfServicio soporteVentaPdfServicio;
 
     @PostMapping
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
@@ -168,6 +181,27 @@ public class VentaControlador {
                         fecha
                 )
         );
+    }
+
+    @GetMapping("/{ventaId}/soporte/pdf")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'EMPLEADO')")
+    public ResponseEntity<byte[]> generarSoporteVentaPdf(
+            @PathVariable Long ventaId,
+            Authentication authentication
+    ) {
+
+        Long usuarioId = usuarioAutenticadoServicio.obtenerUsuarioId(authentication);
+
+        SoporteVentaDTO soporte = ventaServicio.generarSoporteVenta(usuarioId, ventaId);
+
+        byte[] pdf = soporteVentaPdfServicio.generarPdf(soporte);
+
+        String nombreArchivo = "soporte-venta-" + soporte.getNumeroVenta() + ".pdf";
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=" + nombreArchivo)
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdf);
     }
 
 }

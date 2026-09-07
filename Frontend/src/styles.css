@@ -1,1 +1,96 @@
 /* You can add global styles to this file, and also import other style files */
+
+.utility-rule-alert-content {
+  color: #475467;
+  font-size: .92rem;
+  line-height: 1.5;
+}
+
+.utility-rule-alert-intro {
+  margin: 0 0 14px;
+}
+
+.utility-rule-alert-preview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border: 1px solid #dbeafe;
+  border-radius: 13px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  text-align: left;
+}
+
+.utility-rule-alert-preview span {
+  font-size: .78rem;
+  font-weight: 700;
+}
+
+.utility-rule-alert-preview strong {
+  font-size: .95rem;
+}
+
+.utility-rule-alert-help {
+  margin: 0;
+  color: #667085;
+  font-size: .82rem;
+}
+
+.inventory-success-content {
+  color: #475467;
+  font-size: .92rem;
+  line-height: 1.5;
+}
+
+.inventory-success-content > p:first-child {
+  margin: 0 0 16px;
+}
+
+.inventory-success-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.inventory-success-summary > div {
+  padding: 12px;
+  border: 1px solid #dcfce7;
+  border-radius: 13px;
+  background: #f0fdf4;
+  text-align: left;
+}
+
+.inventory-success-summary span {
+  display: block;
+  color: #15803d;
+  font-size: .72rem;
+  font-weight: 750;
+  text-transform: uppercase;
+}
+
+.inventory-success-summary strong {
+  display: block;
+  margin-top: 3px;
+  color: #166534;
+  font-size: 1.1rem;
+}
+
+.inventory-success-totals {
+  margin: 0;
+  color: #667085;
+  font-size: .82rem;
+}
+
+.swal2-actions .swal2-confirm,
+.swal2-actions .swal2-deny,
+.swal2-actions .swal2-cancel {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border-radius: 10px;
+  font-weight: 700;
+}

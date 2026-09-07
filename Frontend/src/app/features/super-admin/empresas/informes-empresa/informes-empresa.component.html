@@ -1,0 +1,99 @@
+<main class="reports-page">
+  <header class="reports-hero">
+    <div>
+      <a class="reports-back" [routerLink]="volverDetalleEmpresa()">
+        <i class="bi bi-arrow-left me-1"></i>
+        Volver a {{ empresaNombre }}
+      </a>
+
+      <span class="reports-eyebrow">
+        <i class="bi bi-file-earmark-bar-graph me-1"></i>
+        Herramientas de gestión
+      </span>
+
+      <h1>Informes</h1>
+      <p>Prepara reportes contables y administrativos con rangos de fecha personalizados.</p>
+    </div>
+
+    <div class="reports-hero-icon">
+      <i class="bi bi-bar-chart-line"></i>
+    </div>
+  </header>
+
+  <div *ngIf="mensajeError" class="reports-alert reports-alert-error">
+    <i class="bi bi-exclamation-triangle"></i>
+    {{ mensajeError }}
+  </div>
+
+  <div *ngIf="mensajeInfo" class="reports-alert reports-alert-info">
+    <i class="bi bi-check-circle"></i>
+    {{ mensajeInfo }}
+  </div>
+
+  <section class="reports-filter-card">
+    <div class="reports-card-heading">
+      <span class="reports-heading-icon"><i class="bi bi-calendar3"></i></span>
+      <div>
+        <h2>Rango del informe</h2>
+        <p>Define el periodo que utilizarán los próximos reportes contables.</p>
+      </div>
+    </div>
+
+    <div class="reports-filter-grid">
+      <label>
+        Fecha inicial
+        <input type="date" [(ngModel)]="fechaInicio">
+      </label>
+
+      <label>
+        Fecha final
+        <input type="date" [(ngModel)]="fechaFin">
+      </label>
+
+      <div class="reports-filter-actions">
+        <button type="button" class="reports-button reports-button-primary" (click)="prepararConsulta()">
+          <i class="bi bi-arrow-right-circle me-2"></i>
+          Preparar informe
+        </button>
+
+        <button type="button" class="reports-button reports-button-light" (click)="establecerMesActual()">
+          Este mes
+        </button>
+
+        <button type="button" class="reports-button reports-button-link" (click)="limpiarRango()">
+          Limpiar
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <section class="reports-roadmap-card">
+    <div class="reports-card-heading">
+      <span class="reports-heading-icon roadmap"><i class="bi bi-pie-chart"></i></span>
+      <div>
+        <h2>Reportes disponibles próximamente</h2>
+        <p>Esta base queda preparada para conectar los módulos contables de la empresa.</p>
+      </div>
+    </div>
+
+    <div class="reports-roadmap-grid">
+      <article>
+        <span><i class="bi bi-cash-stack"></i></span>
+        <strong>Resumen financiero</strong>
+        <small>Ingresos, costos, utilidad y rentabilidad.</small>
+      </article>
+
+      <article>
+        <span><i class="bi bi-receipt"></i></span>
+        <strong>Ventas y movimientos</strong>
+        <small>Consulta consolidada por periodo y sucursal.</small>
+      </article>
+
+      <article>
+        <span><i class="bi bi-box-seam"></i></span>
+        <strong>Inventario valorizado</strong>
+        <small>Existencias, costos y valor comercial.</small>
+      </article>
+    </div>
+  </section>
+</main>

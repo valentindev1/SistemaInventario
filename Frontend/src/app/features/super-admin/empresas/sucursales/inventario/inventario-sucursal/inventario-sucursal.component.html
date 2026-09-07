@@ -356,47 +356,109 @@
     <div class="card border-0 shadow-sm mb-4">
       <div class="card-body p-4">
 
-        <h5 class="fw-bold mb-3">Filtros y organización</h5>
+        <div class="filter-card-heading">
+          <div class="filter-heading-icon">
+            <i class="bi bi-sliders2"></i>
+          </div>
+          <div>
+            <h5>Filtros y organización</h5>
+            <p>Encuentra referencias y ordena el inventario rápidamente.</p>
+          </div>
+        </div>
 
         <div class="row g-3">
 
           <div class="col-12 col-lg-4">
             <label class="form-label">Buscar referencia</label>
 
-            <input
-              type="text"
-              class="form-control"
-              [(ngModel)]="textoBusqueda"
-              (ngModelChange)="reiniciarPaginacion()"
-              placeholder="Buscar por código, nombre, categoría, color, talla o género">
+            <div class="search-field">
+              <i class="bi bi-search"></i>
+              <input
+                type="text"
+                [(ngModel)]="textoBusqueda"
+                (ngModelChange)="reiniciarPaginacion()"
+                placeholder="Código, nombre, categoría, color, talla o género">
+            </div>
           </div>
 
           <div class="col-12 col-md-6 col-lg-3">
             <label class="form-label">Estado de stock</label>
 
-            <select
-              class="form-select"
-              [(ngModel)]="filtroStock"
-              (ngModelChange)="reiniciarPaginacion()">
-              <option value="TODOS">Todos</option>
-              <option value="BAJO">Bajo stock</option>
-              <option value="NORMAL">Stock normal</option>
-              <option value="ALTO">Alto inventario</option>
-              <option value="AGOTADO">Agotado</option>
-            </select>
+            <div class="custom-filter-select" (click)="$event.stopPropagation()">
+              <button
+                type="button"
+                class="custom-select-trigger"
+                [class.is-open]="filtroStockAbierto"
+                [attr.aria-expanded]="filtroStockAbierto"
+                (click)="alternarFiltroStock()">
+                <span>
+                  <i class="bi bi-box-seam"></i>
+                  {{ obtenerNombreFiltroStock() }}
+                </span>
+                <i class="bi bi-chevron-down" [class.rotated]="filtroStockAbierto"></i>
+              </button>
+
+              @if (filtroStockAbierto) {
+                <div class="custom-select-menu">
+                  <button type="button" [class.active]="filtroStock === 'TODOS'" (click)="seleccionarFiltroStock('TODOS')">
+                    <i class="bi bi-grid"></i>
+                    Todos
+                  </button>
+                  <button type="button" [class.active]="filtroStock === 'BAJO'" (click)="seleccionarFiltroStock('BAJO')">
+                    <i class="bi bi-arrow-down-circle"></i>
+                    Bajo stock
+                  </button>
+                  <button type="button" [class.active]="filtroStock === 'NORMAL'" (click)="seleccionarFiltroStock('NORMAL')">
+                    <i class="bi bi-check-circle"></i>
+                    Stock normal
+                  </button>
+                  <button type="button" [class.active]="filtroStock === 'ALTO'" (click)="seleccionarFiltroStock('ALTO')">
+                    <i class="bi bi-arrow-up-circle"></i>
+                    Alto inventario
+                  </button>
+                  <button type="button" [class.active]="filtroStock === 'AGOTADO'" (click)="seleccionarFiltroStock('AGOTADO')">
+                    <i class="bi bi-exclamation-circle"></i>
+                    Agotado
+                  </button>
+                </div>
+              }
+            </div>
           </div>
 
           <div class="col-12 col-md-6 col-lg-3">
             <label class="form-label">Ordenar por</label>
 
-            <select
-              class="form-select"
-              [(ngModel)]="ordenStock"
-              (ngModelChange)="reiniciarPaginacion()">
-              <option value="MENOR_MAYOR">Menor stock primero</option>
-              <option value="MAYOR_MENOR">Mayor stock primero</option>
-              <option value="NOMBRE_ASC">Nombre A-Z</option>
-            </select>
+            <div class="custom-filter-select" (click)="$event.stopPropagation()">
+              <button
+                type="button"
+                class="custom-select-trigger"
+                [class.is-open]="ordenStockAbierto"
+                [attr.aria-expanded]="ordenStockAbierto"
+                (click)="alternarOrdenStock()">
+                <span>
+                  <i class="bi bi-sort-down"></i>
+                  {{ obtenerNombreOrdenStock() }}
+                </span>
+                <i class="bi bi-chevron-down" [class.rotated]="ordenStockAbierto"></i>
+              </button>
+
+              @if (ordenStockAbierto) {
+                <div class="custom-select-menu">
+                  <button type="button" [class.active]="columnaOrden === 'STOCK' && ordenStock === 'MENOR_MAYOR'" (click)="seleccionarOrdenStock('MENOR_MAYOR')">
+                    <i class="bi bi-sort-numeric-down"></i>
+                    Menor stock primero
+                  </button>
+                  <button type="button" [class.active]="columnaOrden === 'STOCK' && ordenStock === 'MAYOR_MENOR'" (click)="seleccionarOrdenStock('MAYOR_MENOR')">
+                    <i class="bi bi-sort-numeric-up"></i>
+                    Mayor stock primero
+                  </button>
+                  <button type="button" [class.active]="columnaOrden === 'NOMBRE' && direccionOrden === 'ASC'" (click)="seleccionarOrdenStock('NOMBRE_ASC')">
+                    <i class="bi bi-sort-alpha-down"></i>
+                    Nombre A-Z
+                  </button>
+                </div>
+              }
+            </div>
           </div>
 
           <div class="col-12 col-lg-2 d-flex align-items-end">
@@ -423,14 +485,18 @@
 
         <div class="d-flex flex-column flex-md-row justify-content-md-between gap-2 mb-3">
           <div>
-            <h5 class="fw-bold mb-1">Referencias en inventario</h5>
+            <div class="inventory-list-title">
+              <span class="list-title-icon"><i class="bi bi-boxes"></i></span>
+              <div>
+                <h5>Referencias en inventario</h5>
 
-            <p class="text-muted small mb-0">
-              Listado de productos disponibles en esta sucursal.
-            </p>
+                <p>Listado de productos disponibles en esta sucursal.</p>
+              </div>
+            </div>
           </div>
 
-          <div class="text-muted small">
+          <div class="inventory-list-count">
+            <i class="bi bi-list-check"></i>
             Mostrando {{ obtenerInventarioFiltrado().length }}
             de {{ obtenerInventarioFiltradoSinPaginacion().length }} referencias filtradas
           </div>
@@ -455,9 +521,36 @@
 
               <thead>
               <tr>
-                <th>Producto</th>
-                <th>Categoría</th>
-                <th>Color</th>
+                <th scope="col" [attr.aria-sort]="obtenerAriaOrden('NOMBRE')">
+                  <button
+                    type="button"
+                    class="table-sort-button"
+                    [class.is-active]="columnaOrden === 'NOMBRE'"
+                    (click)="alternarOrdenColumna('NOMBRE')">
+                    <span>Producto</span>
+                    <i [class]="obtenerClaseIconoOrden('NOMBRE')"></i>
+                  </button>
+                </th>
+                <th scope="col" [attr.aria-sort]="obtenerAriaOrden('CATEGORIA')">
+                  <button
+                    type="button"
+                    class="table-sort-button"
+                    [class.is-active]="columnaOrden === 'CATEGORIA'"
+                    (click)="alternarOrdenColumna('CATEGORIA')">
+                    <span>Categoría</span>
+                    <i [class]="obtenerClaseIconoOrden('CATEGORIA')"></i>
+                  </button>
+                </th>
+                <th scope="col" [attr.aria-sort]="obtenerAriaOrden('COLOR')">
+                  <button
+                    type="button"
+                    class="table-sort-button"
+                    [class.is-active]="columnaOrden === 'COLOR'"
+                    (click)="alternarOrdenColumna('COLOR')">
+                    <span>Color</span>
+                    <i [class]="obtenerClaseIconoOrden('COLOR')"></i>
+                  </button>
+                </th>
                 <th>Talla</th>
                 <th>Género</th>
                 <th>Stock</th>
@@ -465,6 +558,7 @@
                 <th>Precio costo</th>
                 <th>Valor costo total</th>
                 <th>Precio venta</th>
+                <th>Porcentaje</th>
                 <th>Valor venta total</th>
               </tr>
               </thead>
@@ -513,6 +607,18 @@
 
                     <td>
                       {{ item.precioVenta | currency:'COP':'symbol-narrow':'1.0-0' }}
+                    </td>
+
+                    <td>
+                      @if (calcularPorcentajeGanancia(item) === null) {
+                        <span class="percentage-value percentage-empty">—</span>
+                      } @else {
+                        <span
+                          class="percentage-value"
+                          [class.percentage-negative]="(calcularPorcentajeGanancia(item) ?? 0) < 0">
+                          {{ calcularPorcentajeGanancia(item) | number:'1.0-2' }}%
+                        </span>
+                      }
                     </td>
 
                     <td class="fw-semibold text-success">

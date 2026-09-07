@@ -4,6 +4,7 @@ package com.vhela.inventario.dto.producto.producto;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
@@ -21,10 +22,18 @@ import lombok.Data;
         "colorNombre",
         "categoriaId",
         "categoriaNombre",
+        "categoriaTipoGanancia",
+        "categoriaValorGanancia",
+        "categoriaPorcentajeGanancia",
+        "tipoGananciaProducto",
+        "valorGananciaProducto",
         "tallaId",
         "tallaNombre",
         "generoId",
         "generoNombre",
+        "tipoCosto",
+        "costoPersonalizado",
+        "desgloseCosto",
         "costoUnitario",
         "precioVenta",
         "fechaCreacion"
@@ -46,11 +55,27 @@ public class ProductoAdminObtenerDTO {
     private Long categoriaId;
     private String categoriaNombre;
 
+    private String categoriaTipoGanancia;
+
+    private BigDecimal categoriaValorGanancia;
+
+    private BigDecimal categoriaPorcentajeGanancia;
+
+    private String tipoGananciaProducto;
+
+    private BigDecimal valorGananciaProducto;
+
     private Long tallaId;
     private String tallaNombre;
 
     private Long generoId;
     private String generoNombre;
+
+    private String tipoCosto;
+
+    private Boolean costoPersonalizado;
+
+    private List<ProductoCostoDetalleDTO> desgloseCosto;
 
     private BigDecimal costoUnitario;
     private BigDecimal precioVenta;

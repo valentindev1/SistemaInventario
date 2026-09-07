@@ -2,6 +2,8 @@ package com.vhela.inventario.modelo.producto;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.vhela.inventario.modelo.empresa.Empresa;
 import com.vhela.inventario.modelo.producto.detalles.Categoria;
@@ -10,6 +12,7 @@ import com.vhela.inventario.modelo.producto.detalles.Genero;
 import com.vhela.inventario.modelo.producto.detalles.Talla;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -17,6 +20,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
@@ -70,7 +75,20 @@ public class Producto {
     @JoinColumn(name = "genero_id", nullable = false)
     private Genero genero;
 
+    @Column(name = "tipo_costo", length = 20)
+    private String tipoCosto;
 
+    @Column(name = "costo_personalizado")
+    private Boolean costoPersonalizado = false;
+
+    @OneToMany(
+            mappedBy = "producto",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true,
+            fetch = FetchType.LAZY
+    )
+    @OrderBy("orden ASC, id ASC")
+    private List<ProductoCostoDetalle> desgloseCosto = new ArrayList<>();
 
     @DecimalMin(value = "0.00")
     @Column(nullable = false, precision = 12, scale = 2)
@@ -79,6 +97,12 @@ public class Producto {
     @DecimalMin(value = "0.00")
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal precioVenta;
+
+    @Column(name = "tipo_ganancia", length = 20)
+    private String tipoGanancia;
+
+    @Column(name = "valor_ganancia", precision = 12, scale = 2)
+    private BigDecimal valorGanancia;
 
 
 

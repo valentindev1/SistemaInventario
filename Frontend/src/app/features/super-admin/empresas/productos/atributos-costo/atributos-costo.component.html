@@ -1,0 +1,307 @@
+<div class="cost-attributes-page">
+
+  <section class="cost-attributes-hero mb-4">
+    <div class="hero-content">
+      <div class="hero-top">
+        <a [routerLink]="rutaProductos()" class="btn-back">
+          <i class="bi bi-arrow-left"></i>
+          Volver a productos
+        </a>
+        <span class="hero-badge">
+          <i class="bi bi-sliders"></i>
+          Catálogo de costos
+        </span>
+      </div>
+
+      <div class="hero-main">
+        <div>
+          <h1><i class="bi bi-diagram-3 me-2"></i>Atributos de costo</h1>
+          <p>
+            Crea los conceptos reutilizables del costo y organízalos por categoría de prenda.
+            Luego estarán disponibles al calcular el costo de cada producto.
+          </p>
+        </div>
+        <div class="hero-stat">
+          <span>{{ atributos.length }}</span>
+          <small>Atributos</small>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div *ngIf="mensajeError" class="app-alert-danger mb-4">
+    <i class="bi bi-exclamation-triangle"></i>
+    <span>{{ mensajeError }}</span>
+  </div>
+
+  <section *ngIf="empresa && !cargandoEmpresa" class="empresa-card mb-4">
+    <div class="empresa-card-header">
+      <div class="empresa-icon"><i class="bi bi-building"></i></div>
+      <div>
+        <h2>{{ empresa.nombre }}</h2>
+        <p>Los atributos se administran dentro del catálogo de esta empresa.</p>
+      </div>
+    </div>
+  </section>
+
+  <div *ngIf="cargandoEmpresa || cargandoDatos" class="loading-state">
+    <div class="spinner-border text-primary"></div>
+    <p>Cargando catálogo de costos...</p>
+  </div>
+
+  <section *ngIf="empresa && !cargandoEmpresa && !cargandoDatos" class="workspace-grid">
+
+    <div class="app-card form-card">
+      <div class="card-topline"></div>
+      <div class="app-card-header">
+        <div class="section-icon"><i class="bi bi-plus-circle"></i></div>
+        <div>
+          <h3>{{ atributoEditando ? 'Editar atributo' : 'Crear atributo' }}</h3>
+          <p>Define un concepto que podrás seleccionar en el desglose del producto.</p>
+        </div>
+      </div>
+
+      <div class="app-card-body">
+        <form [formGroup]="formulario" (ngSubmit)="guardar()">
+          <div class="form-field">
+            <label for="nombreAtributo">Nombre del atributo</label>
+            <div class="input-shell">
+              <i class="bi bi-tag"></i>
+              <input id="nombreAtributo" type="text" formControlName="nombre"
+                     placeholder="Ej: Tela, mano de obra, hilo"
+                     [class.is-invalid]="campoInvalido('nombre')">
+            </div>
+            <div *ngIf="campoInvalido('nombre')" class="field-error">
+              El nombre es obligatorio y no puede superar 120 caracteres.
+            </div>
+          </div>
+
+          <div class="form-field">
+            <label for="categoriaAtributo">Categoría de prenda</label>
+            <div
+              class="category-picker"
+              [class.open]="selectorCategoriaAbierto"
+              [class.is-invalid]="campoInvalido('categoriaId')">
+              <button
+                id="categoriaAtributo"
+                type="button"
+                class="category-picker-trigger"
+                (click)="alternarSelectorCategoria()"
+                [attr.aria-expanded]="selectorCategoriaAbierto">
+                <span class="category-picker-icon"><i class="bi bi-grid"></i></span>
+                <span class="category-picker-copy">
+                  <small>Categoría seleccionada</small>
+                  <strong [class.placeholder]="!categoriaSeleccionada">
+                    {{ categoriaSeleccionada?.nombre || 'Selecciona una categoría' }}
+                  </strong>
+                </span>
+                <i class="bi category-picker-arrow"
+                   [class.bi-chevron-down]="!selectorCategoriaAbierto"
+                   [class.bi-chevron-up]="selectorCategoriaAbierto"></i>
+              </button>
+
+              <div *ngIf="selectorCategoriaAbierto" class="category-picker-panel">
+                <div class="category-picker-search">
+                  <i class="bi bi-search"></i>
+                  <input
+                    type="search"
+                    [value]="busquedaCategoria"
+                    (input)="busquedaCategoria = $any($event.target).value"
+                    placeholder="Filtrar categoría por nombre"
+                    autocomplete="off">
+                </div>
+
+                <div class="category-picker-list">
+                  <button
+                    *ngFor="let categoria of categoriasFiltradas"
+                    type="button"
+                    class="category-picker-option"
+                    [class.selected]="categoriaSeleccionada?.id === categoria.id"
+                    (click)="seleccionarCategoria(categoria)">
+                    <span class="category-option-icon"><i class="bi bi-tags"></i></span>
+                    <span>
+                      <strong>{{ categoria.nombre }}</strong>
+                      <small>Atributos de costo de esta categoría</small>
+                    </span>
+                    <i *ngIf="categoriaSeleccionada?.id === categoria.id"
+                       class="bi bi-check-circle-fill category-option-check"></i>
+                  </button>
+
+                  <div *ngIf="categoriasFiltradas.length === 0" class="category-picker-empty">
+                    <i class="bi bi-search"></i>
+                    No se encontraron categorías con ese nombre.
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div *ngIf="campoInvalido('categoriaId')" class="field-error">
+              Debes seleccionar una categoría.
+            </div>
+          </div>
+
+          <div class="form-field">
+            <label for="descripcionAtributo">Descripción <span>(opcional)</span></label>
+            <textarea id="descripcionAtributo" formControlName="descripcion" rows="3"
+                      placeholder="Ej: Material principal usado en la prenda"></textarea>
+          </div>
+
+          <div class="form-actions">
+            <button *ngIf="atributoEditando" type="button" class="btn btn-cancel"
+                    (click)="cancelarEdicion()">Cancelar</button>
+            <button type="submit" class="btn btn-save" [disabled]="guardando">
+              <span *ngIf="guardando" class="spinner-border spinner-border-sm me-2"></span>
+              <i *ngIf="!guardando" class="bi bi-check2-circle me-2"></i>
+              {{ atributoEditando ? 'Guardar cambios' : 'Crear atributo' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="app-card list-card">
+      <div class="app-card-header list-header">
+        <div>
+          <h3>Listado organizado</h3>
+          <p>Ordenado por categoría y nombre. Máximo 40 registros por página.</p>
+        </div>
+        <div class="count-pill"><i class="bi bi-collection"></i>{{ atributosFiltrados.length }}</div>
+      </div>
+
+      <div class="app-card-body list-body">
+        <div class="filters-bar">
+          <div class="search-shell">
+            <i class="bi bi-search"></i>
+            <input type="search" [value]="filtroNombre"
+                   (input)="actualizarFiltroNombre($any($event.target).value)"
+                   placeholder="Filtrar por nombre o descripción">
+          </div>
+          <div
+            class="filter-category-picker"
+            [class.open]="selectorFiltroCategoriaAbierto">
+            <button
+              type="button"
+              class="filter-category-trigger"
+              (click)="alternarSelectorFiltroCategoria()"
+              [attr.aria-expanded]="selectorFiltroCategoriaAbierto">
+              <span class="filter-category-icon"><i class="bi bi-funnel"></i></span>
+              <span class="filter-category-copy">
+                <small>Filtrar por categoría</small>
+                <strong>{{ nombreFiltroCategoria }}</strong>
+              </span>
+              <i class="bi"
+                 [class.bi-chevron-down]="!selectorFiltroCategoriaAbierto"
+                 [class.bi-chevron-up]="selectorFiltroCategoriaAbierto"></i>
+            </button>
+
+            <div *ngIf="selectorFiltroCategoriaAbierto" class="filter-category-panel">
+              <div class="filter-category-search">
+                <i class="bi bi-search"></i>
+                <input
+                  type="search"
+                  [value]="busquedaFiltroCategoria"
+                  (input)="busquedaFiltroCategoria = $any($event.target).value"
+                  placeholder="Buscar categoría"
+                  autocomplete="off">
+              </div>
+
+              <div class="filter-category-list">
+                <button
+                  type="button"
+                  class="filter-category-option"
+                  [class.selected]="filtroCategoria === 'TODAS'"
+                  (click)="seleccionarFiltroCategoria(null)">
+                  <span class="filter-category-option-icon"><i class="bi bi-grid"></i></span>
+                  <span><strong>Todas las categorías</strong><small>Mostrar todos los atributos</small></span>
+                  <i *ngIf="filtroCategoria === 'TODAS'" class="bi bi-check-circle-fill"></i>
+                </button>
+
+                <button
+                  *ngFor="let categoria of categoriasFiltroFiltradas"
+                  type="button"
+                  class="filter-category-option"
+                  [class.selected]="filtroCategoria === categoria.id"
+                  (click)="seleccionarFiltroCategoria(categoria)">
+                  <span class="filter-category-option-icon"><i class="bi bi-tags"></i></span>
+                  <span><strong>{{ categoria.nombre }}</strong><small>Filtrar atributos de esta categoría</small></span>
+                  <i *ngIf="filtroCategoria === categoria.id" class="bi bi-check-circle-fill"></i>
+                </button>
+
+                <div *ngIf="categoriasFiltroFiltradas.length === 0" class="filter-category-empty">
+                  <i class="bi bi-search"></i>
+                  No se encontraron categorías.
+                </div>
+              </div>
+            </div>
+          </div>
+          <button type="button" class="btn-clear-filters" (click)="limpiarFiltros()">
+            <i class="bi bi-eraser"></i> Limpiar
+          </button>
+        </div>
+
+        <div *ngIf="atributosFiltrados.length === 0" class="empty-state">
+          <div class="empty-icon"><i class="bi bi-diagram-3"></i></div>
+          <h4>No hay atributos de costo</h4>
+          <p>Crea el primero para empezar a construir los desgloses por categoría.</p>
+        </div>
+
+        <div *ngIf="atributosFiltrados.length > 0" class="table-wrapper">
+          <table class="table app-table align-middle mb-0">
+            <thead>
+              <tr>
+                <th>Atributo</th>
+                <th>Categoría</th>
+                <th>Descripción</th>
+                <th>Estado</th>
+                <th class="text-end">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let atributo of atributosPaginados">
+                <td>
+                  <div class="attribute-cell">
+                    <span class="attribute-avatar"><i class="bi bi-tag"></i></span>
+                    <div><strong>{{ atributo.nombre }}</strong><small>ID #{{ atributo.id }}</small></div>
+                  </div>
+                </td>
+                <td><span class="category-badge">{{ atributo.categoriaNombre }}</span></td>
+                <td><span class="description-text">{{ atributo.descripcion || 'Sin descripción' }}</span></td>
+                <td>
+                  <span class="status-badge" [class.inactive]="!atributo.activo">
+                    {{ atributo.activo ? 'Activo' : 'Inactivo' }}
+                  </span>
+                </td>
+                <td class="text-end actions-cell">
+                  <button type="button" class="btn-action edit-action" (click)="iniciarEdicion(atributo)"
+                          title="Editar atributo"><i class="bi bi-pencil"></i></button>
+                  <button *ngIf="atributo.activo" type="button" class="btn-action delete-action"
+                          (click)="eliminar(atributo)" title="Desactivar atributo"><i class="bi bi-trash3"></i></button>
+                  <button *ngIf="!atributo.activo" type="button" class="btn-action activate-action"
+                          (click)="activar(atributo)" title="Activar atributo"><i class="bi bi-arrow-counterclockwise"></i></button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="pagination-wrapper" *ngIf="totalPaginas > 1">
+            <small>Página {{ paginaActual }} de {{ totalPaginas }}</small>
+            <nav aria-label="Paginación de atributos de costo">
+              <ul class="pagination mb-0">
+                <li class="page-item" [class.disabled]="paginaActual === 1">
+                  <button class="page-link" type="button" (click)="cambiarPagina(paginaActual - 1)"
+                          [disabled]="paginaActual === 1">Anterior</button>
+                </li>
+                <li *ngFor="let pagina of paginas" class="page-item" [class.active]="pagina === paginaActual">
+                  <button class="page-link" type="button" (click)="cambiarPagina(pagina)">{{ pagina }}</button>
+                </li>
+                <li class="page-item" [class.disabled]="paginaActual === totalPaginas">
+                  <button class="page-link" type="button" (click)="cambiarPagina(paginaActual + 1)"
+                          [disabled]="paginaActual === totalPaginas">Siguiente</button>
+                </li>
+              </ul>
+            </nav>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>

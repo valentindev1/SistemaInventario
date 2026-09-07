@@ -323,6 +323,90 @@
           </div>
         </div>
 
+        <!-- Gastos y reportes contables -->
+        <div class="col-12 col-md-6 col-xl-4">
+          <div class="option-card option-accounting h-100">
+
+            <div class="option-top">
+              <div class="option-icon accounting">
+                <i class="bi bi-file-earmark-spreadsheet"></i>
+              </div>
+            </div>
+
+            <div class="option-content">
+              <h5>Gastos y conceptos</h5>
+
+              <p>
+                Registra gastos y administra los conceptos que utiliza la sucursal.
+              </p>
+            </div>
+
+            <a
+              class="btn btn-option btn-option-accounting w-100"
+              [routerLink]="rutaReportesContables()">
+              <i class="bi bi-bar-chart-line me-2"></i>
+              Abrir módulo
+            </a>
+
+          </div>
+        </div>
+
+        <!-- Compras varias -->
+        <div class="col-12 col-md-6 col-xl-4">
+          <div class="option-card option-purchases h-100">
+
+            <div class="option-top">
+              <div class="option-icon purchases">
+                <i class="bi bi-bag-plus"></i>
+              </div>
+            </div>
+
+            <div class="option-content">
+              <h5>Compras varias</h5>
+
+              <p>
+                Registra entradas y salidas auxiliares de esta sucursal.
+              </p>
+            </div>
+
+            <a
+              class="btn btn-option btn-option-purchases w-100"
+              [routerLink]="rutaComprasVarias()">
+              <i class="bi bi-bag-check me-2"></i>
+              Abrir módulo
+            </a>
+
+          </div>
+        </div>
+
+        <!-- Movimientos de la tienda -->
+        <div class="col-12 col-md-6 col-xl-4">
+          <div class="option-card option-movements h-100">
+
+            <div class="option-top">
+              <div class="option-icon movements">
+                <i class="bi bi-activity"></i>
+              </div>
+            </div>
+
+            <div class="option-content">
+              <h5>Movimientos de la tienda</h5>
+
+              <p>
+                Consulta ingresos, ajustes, ventas y quién realizó cada operación.
+              </p>
+            </div>
+
+            <a
+              class="btn btn-option btn-option-movements w-100"
+              [routerLink]="rutaMovimientosTienda()">
+              <i class="bi bi-clock-history me-2"></i>
+              Ver movimientos
+            </a>
+
+          </div>
+        </div>
+
       </div>
 
     </div>

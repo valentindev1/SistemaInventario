@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, HostListener, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -11,9 +11,12 @@ import { ProductoService } from '../../../../../core/services/producto/producto/
 import { EmpresaObtenerDTO } from '../../../../../core/models/empresa/empresa.model';
 
 import {
+  ProductoActualizarCostoDTO,
   ProductoAdminObtenerDTO,
+  ProductoCostoDetalleCrearDTO,
   ProductoEditarDTO
 } from '../../../../../core/models/producto/producto.model';
+import { AtributoCostoObtenerDTO } from '../../../../../core/models/producto/atributo-costo.model';
 
 import { ColorService } from '../../../../../core/services/producto/detalles/color/color.service';
 import { CategoriaService } from '../../../../../core/services/producto/detalles/categoria/categoria.service';
@@ -26,6 +29,13 @@ import { TallaObtenerDTO } from '../../../../../core/models/producto/detalles/ta
 import { GeneroObtenerDTO } from '../../../../../core/models/producto/detalles/genero.model';
 
 import { AuthService } from '../../../../../core/services/auth/auth.service';
+import { AtributoCostoService } from '../../../../../core/services/producto/atributo-costo/atributo-costo.service';
+
+interface ComponenteCostoEdicion {
+  atributoCostoId: number | null;
+  concepto: string;
+  valorTexto: string;
+}
 
 @Component({
   selector: 'app-panel-productos-empresa',
@@ -59,6 +69,14 @@ export class PanelProductosEmpresaComponent implements OnInit {
   productoEditandoId: number | null = null;
   productoEditando: ProductoEditarDTO | null = null;
 
+  costoProductoEditando: ProductoAdminObtenerDTO | null = null;
+  tipoCostoEdicion: 'MANUAL' | 'DESGLOSE' = 'MANUAL';
+  costoManualEditandoTexto = '';
+  atributosCostoEdicion: AtributoCostoObtenerDTO[] = [];
+  desgloseCostoEdicion: ComponenteCostoEdicion[] = [];
+  cargandoAtributosCostoEdicion = false;
+  guardandoCostoProductoId: number | null = null;
+
   codigoBusqueda = '';
 
   paginaActual = 1;
@@ -72,7 +90,8 @@ export class PanelProductosEmpresaComponent implements OnInit {
     private categoriaService: CategoriaService,
     private tallaService: TallaService,
     private generoService: GeneroService,
-    private authService: AuthService
+    private authService: AuthService,
+    private atributoCostoService: AtributoCostoService
   ) {}
 
   ngOnInit(): void {
@@ -162,6 +181,24 @@ export class PanelProductosEmpresaComponent implements OnInit {
       'productos',
       'detalles',
       tipo
+    ];
+  }
+
+  rutaAtributosCosto(): any[] {
+    if (this.esSuperAdmin()) {
+      return [
+        '/super-admin/empresas',
+        this.empresaId,
+        'productos',
+        'atributos-costo'
+      ];
+    }
+
+    return [
+      '/admin/empresa',
+      this.empresaId,
+      'productos',
+      'atributos-costo'
     ];
   }
 
@@ -312,6 +349,8 @@ export class PanelProductosEmpresaComponent implements OnInit {
       return;
     }
 
+    this.cancelarEdicionCosto();
+
     this.productoEditandoId = producto.id;
 
     this.productoEditando = {
@@ -327,6 +366,211 @@ export class PanelProductosEmpresaComponent implements OnInit {
   cancelarEdicion(): void {
     this.productoEditandoId = null;
     this.productoEditando = null;
+  }
+
+  puedeEditarCosto(producto: ProductoAdminObtenerDTO): boolean {
+    return true;
+  }
+
+  estaEditandoCosto(producto: ProductoAdminObtenerDTO): boolean {
+    return this.costoProductoEditando?.id === producto.id;
+  }
+
+  iniciarEdicionCosto(producto: ProductoAdminObtenerDTO): void {
+    this.cancelarEdicion();
+    this.costoProductoEditando = producto;
+    this.tipoCostoEdicion = producto.tipoCosto === 'DESGLOSE' ? 'DESGLOSE' : 'MANUAL';
+    this.costoManualEditandoTexto = this.formatearNumero(producto.costoUnitario ?? 0);
+    this.desgloseCostoEdicion = (producto.desgloseCosto || [])
+      .slice()
+      .sort((a, b) => a.orden - b.orden)
+      .map(detalle => ({
+        atributoCostoId: detalle.atributoCostoId ?? null,
+        concepto: detalle.concepto,
+        valorTexto: this.formatearNumero(detalle.valor)
+      }));
+
+    if (this.desgloseCostoEdicion.length === 0) {
+      this.desgloseCostoEdicion.push(this.nuevoComponenteCostoEdicion());
+    }
+
+    this.cargandoAtributosCostoEdicion = true;
+    this.atributoCostoService.listarActivosPorCategoria(producto.categoriaId).subscribe({
+      next: (atributos) => {
+        this.atributosCostoEdicion = atributos
+          .slice()
+          .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' }));
+        this.cargandoAtributosCostoEdicion = false;
+      },
+      error: (error) => {
+        this.cargandoAtributosCostoEdicion = false;
+        this.mostrarErroresBackend(error, 'No se pudieron cargar los atributos de costo');
+      }
+    });
+  }
+
+  cancelarEdicionCosto(): void {
+    this.costoProductoEditando = null;
+    this.costoManualEditandoTexto = '';
+    this.atributosCostoEdicion = [];
+    this.desgloseCostoEdicion = [];
+    this.cargandoAtributosCostoEdicion = false;
+  }
+
+  actualizarCostoManualTexto(evento: Event): void {
+    const input = evento.target as HTMLInputElement;
+    this.costoManualEditandoTexto = this.formatearNumeroDesdeEntrada(input.value);
+    input.value = this.costoManualEditandoTexto;
+  }
+
+  cambiarTipoCostoEdicion(tipo: 'MANUAL' | 'DESGLOSE'): void {
+    this.tipoCostoEdicion = tipo;
+
+    if (tipo === 'DESGLOSE' && this.desgloseCostoEdicion.length === 0) {
+      this.desgloseCostoEdicion.push(this.nuevoComponenteCostoEdicion());
+    }
+  }
+
+  cambiarAtributoCostoEdicion(indice: number, evento: Event): void {
+    const atributoCostoId = Number((evento.target as HTMLSelectElement).value);
+    const atributo = this.atributosCostoEdicion.find(item => item.id === atributoCostoId);
+    const componente = this.desgloseCostoEdicion[indice];
+
+    componente.atributoCostoId = atributo?.id ?? null;
+    componente.concepto = atributo?.nombre ?? '';
+  }
+
+  agregarComponenteCostoEdicion(): void {
+    this.desgloseCostoEdicion.push(this.nuevoComponenteCostoEdicion());
+  }
+
+  eliminarComponenteCostoEdicion(indice: number): void {
+    if (this.desgloseCostoEdicion.length === 1) {
+      this.desgloseCostoEdicion[0] = this.nuevoComponenteCostoEdicion();
+      return;
+    }
+
+    this.desgloseCostoEdicion.splice(indice, 1);
+  }
+
+  actualizarValorCostoEdicion(indice: number, evento: Event): void {
+    const input = evento.target as HTMLInputElement;
+    this.desgloseCostoEdicion[indice].valorTexto = this.formatearNumeroDesdeEntrada(input.value);
+    input.value = this.desgloseCostoEdicion[indice].valorTexto;
+  }
+
+  totalCostoEdicion(): number {
+    return this.desgloseCostoEdicion.reduce(
+      (total, componente) => total + this.obtenerMontoDesdeTexto(componente.valorTexto),
+      0
+    );
+  }
+
+  guardarCostoProducto(): void {
+    if (!this.costoProductoEditando) {
+      return;
+    }
+
+    let dto: ProductoActualizarCostoDTO;
+
+    if (this.tipoCostoEdicion === 'MANUAL') {
+      if (!this.costoManualEditandoTexto.trim()) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Costo obligatorio',
+          text: 'Ingresa el costo unitario del producto.',
+          confirmButtonText: 'Entendido',
+          confirmButtonColor: '#0d6efd'
+        });
+        return;
+      }
+
+      dto = {
+        tipoCosto: 'MANUAL',
+        costoUnitario: this.obtenerMontoDesdeTexto(this.costoManualEditandoTexto),
+        desgloseCosto: []
+      };
+    } else {
+      if (!this.desgloseCostoEdicionValido()) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Desglose incompleto',
+          text: 'Selecciona un atributo diferente y agrega un valor mayor que cero en cada componente.',
+          confirmButtonText: 'Entendido',
+          confirmButtonColor: '#0d6efd'
+        });
+        return;
+      }
+
+      dto = {
+        tipoCosto: 'DESGLOSE',
+        desgloseCosto: this.obtenerDesgloseEdicionParaGuardar()
+      };
+    }
+
+    const productoId = this.costoProductoEditando.id;
+    this.guardandoCostoProductoId = productoId;
+
+    this.productoService.actualizarCosto(productoId, dto).subscribe({
+      next: (actualizado) => {
+        this.productos = this.productos.map(item =>
+          item.id === actualizado.id ? actualizado : item
+        );
+        this.guardandoCostoProductoId = null;
+        this.cancelarEdicionCosto();
+
+        Swal.fire({
+          icon: 'success',
+          title: 'Costo actualizado',
+          text: `El costo de ${actualizado.nombre} quedó establecido en ${this.formatearNumero(actualizado.costoUnitario)}.`,
+          confirmButtonText: 'Continuar',
+          confirmButtonColor: '#0d6efd'
+        });
+      },
+      error: (error) => {
+        this.guardandoCostoProductoId = null;
+        this.mostrarErroresBackend(error, 'No se pudo actualizar el costo del producto');
+        console.error(error);
+      }
+    });
+  }
+
+  private desgloseCostoEdicionValido(): boolean {
+    if (this.desgloseCostoEdicion.length === 0) {
+      return false;
+    }
+
+    const atributos = this.desgloseCostoEdicion.map(componente => componente.atributoCostoId);
+
+    return atributos.every((id, indice) =>
+      id !== null
+      && atributos.indexOf(id) === indice
+      && this.desgloseCostoEdicion[indice].concepto.trim().length > 0
+      && this.obtenerMontoDesdeTexto(this.desgloseCostoEdicion[indice].valorTexto) > 0
+    );
+  }
+
+  private obtenerDesgloseEdicionParaGuardar(): ProductoCostoDetalleCrearDTO[] {
+    return this.desgloseCostoEdicion.map(componente => ({
+      atributoCostoId: componente.atributoCostoId,
+      concepto: componente.concepto.trim(),
+      valor: this.obtenerMontoDesdeTexto(componente.valorTexto)
+    }));
+  }
+
+  private nuevoComponenteCostoEdicion(): ComponenteCostoEdicion {
+    return {
+      atributoCostoId: null,
+      concepto: '',
+      valorTexto: ''
+    };
+  }
+
+  @HostListener('document:keydown.escape')
+  cerrarEdicionCostoConEscape(): void {
+    if (this.costoProductoEditando && this.guardandoCostoProductoId === null) {
+      this.cancelarEdicionCosto();
+    }
   }
 
   guardarEdicion(producto: ProductoAdminObtenerDTO): void {
@@ -434,6 +678,20 @@ export class PanelProductosEmpresaComponent implements OnInit {
         });
       }
     });
+  }
+
+  private formatearNumero(valor: number): string {
+    return Math.round(Number(valor) || 0).toLocaleString('es-CO');
+  }
+
+  private formatearNumeroDesdeEntrada(valor: string): string {
+    const digitos = valor.replace(/\D/g, '');
+    return digitos ? Number(digitos).toLocaleString('es-CO') : '';
+  }
+
+  private obtenerMontoDesdeTexto(valor: string): number {
+    const digitos = valor.replace(/\D/g, '');
+    return digitos ? Number(digitos) : 0;
   }
 
   private obtenerErroresBackend(error: any): string[] {

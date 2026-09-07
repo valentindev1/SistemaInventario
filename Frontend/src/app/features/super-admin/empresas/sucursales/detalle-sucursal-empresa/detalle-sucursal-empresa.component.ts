@@ -239,6 +239,66 @@ export class DetalleSucursalEmpresaComponent implements OnInit {
     ];
   }
 
+  rutaReportesContables(): any[] {
+    if (this.esSuperAdmin()) {
+      return [
+        '/super-admin/empresas',
+        this.empresaId,
+        'sucursales',
+        this.sucursalId,
+        'reportes-contables'
+      ];
+    }
+
+    return [
+      '/admin/empresa',
+      this.empresaId,
+      'sucursales',
+      this.sucursalId,
+      'reportes-contables'
+    ];
+  }
+
+  rutaMovimientosTienda(): any[] {
+    if (this.esSuperAdmin()) {
+      return [
+        '/super-admin/empresas',
+        this.empresaId,
+        'sucursales',
+        this.sucursalId,
+        'movimientos'
+      ];
+    }
+
+    return [
+      '/admin/empresa',
+      this.empresaId,
+      'sucursales',
+      this.sucursalId,
+      'movimientos'
+    ];
+  }
+
+  rutaComprasVarias(): any[] {
+    if (this.esSuperAdmin()) {
+      return [
+        '/super-admin/empresas',
+        this.empresaId,
+        'sucursales',
+        this.sucursalId,
+        'compras-varias'
+      ];
+    }
+
+    return [
+      '/admin/empresa',
+      this.empresaId,
+      'sucursales',
+      this.sucursalId,
+      'compras-varias'
+    ];
+  }
+
   cargarEmpresa(): void {
     this.cargandoEmpresa = true;
     this.mensajeError = '';

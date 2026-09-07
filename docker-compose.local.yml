@@ -1,0 +1,60 @@
+services:
+  inventario-mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    env_file:
+      - .env.local
+    ports:
+      - "3307:3306"
+    healthcheck:
+      test: ["CMD-SHELL", "mysql -h 127.0.0.1 -u$${MYSQL_USER} -p$${MYSQL_PASSWORD} -e 'SELECT 1' $${MYSQL_DATABASE}"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 45s
+    volumes:
+      - inventario_mysql_local_data:/var/lib/mysql
+    networks:
+      - inventario-local-network
+
+  inventario-api:
+    image: maven:3.9-eclipse-temurin-17
+    restart: unless-stopped
+    working_dir: /app
+    env_file:
+      - .env.local
+    command: ["mvn", "-B", "spring-boot:run"]
+    volumes:
+      - ./Backend/inventario:/app
+      - inventario_maven_local_cache:/root/.m2
+    ports:
+      - "8080:8080"
+    depends_on:
+      inventario-mysql:
+        condition: service_healthy
+    networks:
+      - inventario-local-network
+
+  inventario-frontend:
+    image: node:20-alpine
+    working_dir: /app
+    command: ["sh", "-c", "if [ ! -x node_modules/.bin/ng ]; then npm ci; fi; npm run start:docker"]
+    volumes:
+      - ./Frontend:/app
+      - ./proxy.conf.docker.json:/app/proxy.conf.docker.json:ro
+      - inventario_frontend_node_modules:/app/node_modules
+    ports:
+      - "4200:4200"
+    depends_on:
+      - inventario-api
+    networks:
+      - inventario-local-network
+
+volumes:
+  inventario_mysql_local_data:
+  inventario_maven_local_cache:
+  inventario_frontend_node_modules:
+
+networks:
+  inventario-local-network:
+    driver: bridge

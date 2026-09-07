@@ -1,0 +1,307 @@
+<main class="accounting-page">
+  <header class="accounting-hero">
+    <div>
+      <a class="accounting-back" [routerLink]="volverSucursal()">
+        <i class="bi bi-arrow-left me-2"></i>
+        Volver a {{ sucursalNombre }}
+      </a>
+      <span class="accounting-eyebrow">
+        <i class="bi bi-calculator me-1"></i>
+        Gestión financiera de la sucursal
+      </span>
+      <h1>Gastos y reportes contables</h1>
+      <p>Registra los gastos y costos indirectos de {{ empresaNombre }}.</p>
+    </div>
+    <div class="accounting-hero-icon"><i class="bi bi-file-earmark-spreadsheet"></i></div>
+  </header>
+
+  <div *ngIf="mensajeError" class="accounting-alert accounting-alert-error">
+    <i class="bi bi-exclamation-triangle me-2"></i>{{ mensajeError }}
+  </div>
+
+  <section class="accounting-summary-grid">
+    <article class="accounting-summary-card summary-total">
+      <span class="summary-icon"><i class="bi bi-wallet2"></i></span>
+      <div><small>Total registrado {{ etiquetaPeriodoResumen }}</small><strong>{{ formatearValor(totalGeneral) }}</strong></div>
+    </article>
+    <article class="accounting-summary-card summary-cost">
+      <span class="summary-icon"><i class="bi bi-box-seam"></i></span>
+      <div><small>Costos indirectos {{ etiquetaPeriodoResumen }}</small><strong>{{ formatearValor(totalCostos) }}</strong></div>
+    </article>
+    <article class="accounting-summary-card summary-expense">
+      <span class="summary-icon"><i class="bi bi-receipt"></i></span>
+      <div><small>Gastos {{ etiquetaPeriodoResumen }}</small><strong>{{ formatearValor(totalGastos) }}</strong></div>
+    </article>
+    <article class="accounting-summary-card summary-records">
+      <span class="summary-icon"><i class="bi bi-journal-text"></i></span>
+      <div><small>Movimientos contables {{ etiquetaPeriodoResumen }}</small><strong>{{ registrosFiltrados.length }}</strong></div>
+    </article>
+  </section>
+
+  <div *ngIf="mostrarGestionConceptos" class="concept-modal-backdrop" (click)="cerrarGestionConceptos()">
+    <section class="accounting-form-card concept-catalog-card" role="dialog" aria-modal="true" aria-labelledby="concept-catalog-title" (click)="$event.stopPropagation()">
+      <div class="accounting-section-heading">
+        <span class="accounting-heading-icon concept-heading-icon"><i class="bi bi-tags"></i></span>
+        <div>
+          <h2 id="concept-catalog-title">Crear conceptos</h2>
+          <p>Configura los conceptos disponibles para gastos.</p>
+        </div>
+        <button type="button" class="concept-close-button" (click)="cerrarGestionConceptos()" aria-label="Cerrar catálogo de conceptos" title="Cerrar ventana">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <div class="concept-type-picker">
+        <button type="button" [class.selected-concept-expense]="tipoConcepto === 'GASTO'" (click)="seleccionarTipoConcepto('GASTO')">
+          <i class="bi bi-receipt"></i><span><strong>Concepto de gasto</strong><small>Operativo, administrativo o de ventas.</small></span>
+        </button>
+        <button type="button" [class.selected-concept-cost]="tipoConcepto === 'COSTO'" (click)="seleccionarTipoConcepto('COSTO')">
+          <i class="bi bi-diagram-3"></i><span><strong>Concepto de costo indirecto</strong><small>Costos compartidos relacionados con la producción.</small></span>
+        </button>
+      </div>
+
+      <div class="accounting-form-grid concept-form-grid">
+        <label class="accounting-field accounting-field-wide">Nombre del concepto
+          <input type="text" [(ngModel)]="nombreConcepto" maxlength="120" placeholder="Ej. Arriendo de la fábrica">
+        </label>
+        <div class="accounting-field classification-selector-field">
+          <span>Clasificación</span>
+          <div class="classification-selector">
+            <button type="button" class="classification-selector-trigger" [class.is-open]="mostrarSelectorClasificaciones" [disabled]="clasificacionesParaConcepto.length === 0" [attr.aria-expanded]="mostrarSelectorClasificaciones" (click)="alternarSelectorClasificaciones(); $event.stopPropagation()">
+              <span *ngIf="opcionClasificacionSeleccionada as clasificacionSeleccionada; else sinClasificacion" class="classification-selector-selected">
+                <i class="bi" [class.bi-receipt]="tipoConcepto !== 'COSTO'" [class.bi-diagram-3]="tipoConcepto === 'COSTO'"></i>
+                <span><strong>{{ clasificacionSeleccionada.etiqueta }}</strong><small>{{ tipoConcepto === 'COSTO' ? 'Clasificación de costo indirecto' : 'Clasificación de gasto' }}</small></span>
+              </span>
+              <ng-template #sinClasificacion><span class="classification-selector-placeholder">Selecciona una clasificación</span></ng-template>
+              <i class="bi bi-chevron-down"></i>
+            </button>
+
+            <div *ngIf="mostrarSelectorClasificaciones" class="classification-selector-menu" (click)="$event.stopPropagation()">
+              <div class="classification-selector-search">
+                <i class="bi bi-search"></i>
+                <input type="search" [(ngModel)]="filtroSelectorClasificaciones" placeholder="Filtrar por nombre" aria-label="Filtrar clasificaciones por nombre">
+              </div>
+              <div class="classification-selector-options">
+                <button type="button" class="classification-selector-option" *ngFor="let clasificacion of clasificacionesParaConceptoFiltradas" [class.selected]="clasificacion.clave === clasificacionConcepto" (click)="seleccionarClasificacionConcepto(clasificacion)">
+                  <span class="classification-selector-option-icon" [class.cost-option-icon]="tipoConcepto === 'COSTO'"><i class="bi" [class.bi-receipt]="tipoConcepto !== 'COSTO'" [class.bi-diagram-3]="tipoConcepto === 'COSTO'"></i></span>
+                  <span class="classification-selector-option-text"><strong>{{ clasificacion.etiqueta }}</strong><small>{{ tipoConcepto === 'COSTO' ? 'Costo indirecto de producción' : 'Concepto de gasto' }}</small></span>
+                  <i class="bi bi-check2 classification-selector-option-check"></i>
+                </button>
+                <div *ngIf="clasificacionesParaConceptoFiltradas.length === 0" class="classification-selector-empty"><i class="bi bi-search"></i>No hay clasificaciones con ese nombre.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <label class="accounting-field accounting-field-wide">Descripción (opcional)
+          <input type="text" [(ngModel)]="descripcionConcepto" maxlength="300" placeholder="Uso del concepto en los informes">
+        </label>
+      </div>
+
+      <div class="accounting-form-actions concept-form-actions">
+        <button type="button" class="accounting-button accounting-button-light" (click)="limpiarFormularioConcepto()">
+          {{ conceptoEditandoId === null ? 'Limpiar' : 'Cancelar edición' }}
+        </button>
+        <button type="button" class="accounting-button accounting-button-primary" [disabled]="guardandoConcepto" (click)="guardarConcepto()">
+          <i class="bi" [class.bi-check2-circle]="!guardandoConcepto" [class.bi-hourglass-split]="guardandoConcepto"></i>
+          {{ guardandoConcepto ? 'Guardando…' : (conceptoEditandoId === null ? 'Crear concepto' : 'Actualizar concepto') }}
+        </button>
+      </div>
+
+      <div *ngIf="cargandoConceptos" class="accounting-empty"><i class="bi bi-arrow-repeat"></i><p>Cargando conceptos…</p></div>
+      <div *ngIf="!cargandoConceptos && conceptosGasto.length === 0" class="accounting-empty"><i class="bi bi-tags"></i><p>Aún no hay conceptos creados.</p></div>
+
+      <div *ngIf="!cargandoConceptos && conceptosGasto.length > 0" class="concept-list-area">
+        <div class="concept-list-toolbar">
+          <div class="concept-list-summary"><span class="concept-list-icon"><i class="bi bi-collection"></i></span><div><strong>{{ conceptosFiltrados.length }} concepto{{ conceptosFiltrados.length === 1 ? '' : 's' }}</strong><small>Catálogo de la empresa</small></div></div>
+          <label class="concept-search"><span><i class="bi bi-search"></i>Buscar concepto</span><input type="search" [(ngModel)]="filtroConceptos" (ngModelChange)="actualizarPaginacionConceptos()" placeholder="Nombre, descripción o clasificación"></label>
+        </div>
+
+        <div *ngIf="conceptosFiltrados.length === 0" class="concept-filter-empty"><i class="bi bi-search"></i><span>No hay conceptos que coincidan con la búsqueda.</span></div>
+
+        <div *ngIf="conceptosFiltrados.length > 0" class="table-responsive">
+          <table class="accounting-table concepts-table">
+            <thead><tr><th>Concepto</th><th>Tipo</th><th>Clasificación</th><th>Descripción</th><th>Estado</th><th class="text-end">Acciones</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let concepto of conceptosFiltradosPaginados">
+                <td><div class="catalog-concept-name"><span class="catalog-concept-icon"><i class="bi bi-tag"></i></span><strong>{{ concepto.nombre }}</strong></div></td>
+                <td><span class="concept-kind" [class.cost-kind]="concepto.tipo === 'COSTO'" [class.expense-kind]="concepto.tipo !== 'COSTO'"><i class="bi" [class.bi-diagram-3]="concepto.tipo === 'COSTO'" [class.bi-receipt]="concepto.tipo !== 'COSTO'"></i>{{ etiquetaTipoConcepto(concepto.tipo) }}</span></td>
+                <td><span class="concept-classification">{{ nombreClasificacion(concepto) }}</span></td>
+                <td class="description-cell">{{ concepto.descripcion || 'Sin descripción' }}</td>
+                <td><span class="concept-status" [class.inactive-status]="!concepto.activo">{{ concepto.activo ? 'Activo' : 'Inactivo' }}</span></td>
+                <td class="text-end concept-actions">
+                  <button type="button" class="concept-action-button" (click)="editarConcepto(concepto)" title="Editar concepto"><i class="bi bi-pencil"></i></button>
+                  <button type="button" class="concept-action-button concept-delete-button" [disabled]="!concepto.activo" (click)="eliminarConcepto(concepto)" title="Desactivar concepto"><i class="bi bi-slash-circle"></i></button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div *ngIf="conceptosFiltrados.length > 0" class="concept-pagination-meta">
+          Mostrando <strong>{{ conceptosFiltradosPaginados.length }}</strong> de <strong>{{ conceptosFiltrados.length }}</strong> conceptos · máximo 40 por página
+        </div>
+        <nav *ngIf="conceptosFiltrados.length > 0 && totalPaginasConceptos > 1" class="concept-pagination" aria-label="Paginación de conceptos">
+          <button type="button" class="pagination-arrow" (click)="cambiarPaginaConceptos(paginaConceptosActual - 1)" [disabled]="paginaConceptosActual === 1" aria-label="Página anterior"><i class="bi bi-chevron-left"></i></button>
+          <button type="button" *ngFor="let pagina of paginasConceptos" [class.active]="pagina === paginaConceptosActual" (click)="cambiarPaginaConceptos(pagina)">{{ pagina }}</button>
+          <button type="button" class="pagination-arrow" (click)="cambiarPaginaConceptos(paginaConceptosActual + 1)" [disabled]="paginaConceptosActual === totalPaginasConceptos" aria-label="Página siguiente"><i class="bi bi-chevron-right"></i></button>
+        </nav>
+      </div>
+    </section>
+  </div>
+
+  <section class="accounting-form-card">
+    <div class="accounting-section-heading">
+      <span class="accounting-heading-icon"><i class="bi bi-plus-circle"></i></span>
+      <div><h2>Registrar gasto o costo indirecto</h2><p>Guarda cada movimiento con su fecha, valor y concepto.</p></div>
+      <div class="concept-heading-actions">
+        <button type="button" class="accounting-button accounting-button-light concept-toggle-button" (click)="alternarGestionConceptos()">
+          <i class="bi bi-tags me-1"></i>Crear conceptos
+        </button>
+        <button type="button" class="accounting-button classification-shortcut-button" (click)="abrirGestionClasificaciones()">
+          <i class="bi bi-plus-circle me-1"></i>Crear clasificación
+        </button>
+      </div>
+    </div>
+
+    <div class="accounting-type-picker">
+      <button type="button" [class.selected-cost]="tipoSeleccionado === 'COSTO'" (click)="seleccionarTipo('COSTO')">
+        <i class="bi bi-diagram-3"></i><span><strong>Costo indirecto de producción</strong><small>Arriendo, servicios y otros costos compartidos de fábrica.</small></span>
+      </button>
+      <button type="button" [class.selected-expense]="tipoSeleccionado === 'GASTO'" (click)="seleccionarTipo('GASTO')">
+        <i class="bi bi-receipt"></i><span><strong>Gasto</strong><small>Salida administrativa, operativa o de funcionamiento.</small></span>
+      </button>
+    </div>
+
+    <div *ngIf="tipoSeleccionado === 'COSTO'" class="cost-classification-box">
+      <div class="cost-classification-heading"><span class="cost-classification-icon"><i class="bi bi-diagram-3"></i></span><div><strong>Costo indirecto de producción</strong><small>Selecciona un concepto del catálogo para registrar arriendos, servicios y otros costos compartidos de fábrica.</small></div></div>
+      <span class="classification-fixed-badge"><i class="bi bi-check-circle"></i> Clasificación fija</span>
+    </div>
+
+    <div *ngIf="tipoSeleccionado === 'GASTO'" class="expense-classification-box">
+      <div class="expense-classification-heading"><span class="expense-classification-icon"><i class="bi bi-receipt"></i></span><div><strong>Clasificación del gasto</strong><small>Selecciona un concepto del catálogo para registrar gastos operativos, administrativos o de ventas.</small></div></div>
+      <span class="classification-expense-badge"><i class="bi bi-tag"></i> {{ conceptoGastoSeleccionado ? nombreClasificacion(conceptoGastoSeleccionado) : 'Según el concepto' }}</span>
+    </div>
+
+    <div class="accounting-form-grid">
+      <label class="accounting-field accounting-field-wide">{{ tipoSeleccionado === 'GASTO' ? 'Concepto de gasto' : 'Concepto de costo indirecto' }}
+        <div class="concept-selector">
+          <button type="button" class="concept-selector-trigger" [class.is-open]="mostrarSelectorConceptos" [disabled]="conceptosActivos.length === 0" [attr.aria-expanded]="mostrarSelectorConceptos" (click)="alternarSelectorConceptos(); $event.stopPropagation()">
+            <span *ngIf="conceptoGastoSeleccionado" class="concept-selector-selected"><strong>{{ conceptoGastoSeleccionado.nombre }}</strong><small>{{ nombreClasificacion(conceptoGastoSeleccionado) }}</small></span>
+            <span *ngIf="!conceptoGastoSeleccionado" class="concept-selector-placeholder">Selecciona un concepto</span>
+            <i class="bi" [class.bi-chevron-down]="!mostrarSelectorConceptos" [class.bi-chevron-up]="mostrarSelectorConceptos"></i>
+          </button>
+          <div *ngIf="mostrarSelectorConceptos" class="concept-selector-menu" (click)="$event.stopPropagation()">
+            <label class="concept-selector-search"><i class="bi bi-search"></i><input type="search" [(ngModel)]="filtroSelectorConceptos" placeholder="Filtrar por nombre" autocomplete="off"></label>
+            <button type="button" class="concept-selector-option" *ngFor="let conceptoCatalogo of conceptosSelectorFiltrados" (click)="seleccionarConceptoRegistro(conceptoCatalogo)">
+              <span><strong>{{ conceptoCatalogo.nombre }}</strong><small>{{ nombreClasificacion(conceptoCatalogo) }}</small></span><i class="bi bi-chevron-right"></i>
+            </button>
+            <div *ngIf="conceptosSelectorFiltrados.length === 0" class="concept-selector-empty"><i class="bi bi-search"></i>No hay conceptos con ese nombre.</div>
+          </div>
+        </div>
+        <small *ngIf="conceptosActivos.length === 0" class="field-hint">
+          No hay conceptos activos para este tipo. Usa “Crear conceptos de gasto” para crear el primero.
+        </small>
+        <small *ngIf="tipoSeleccionado === 'GASTO' && conceptoGastoSeleccionado" class="field-hint classification-hint">
+          Clasificación: {{ nombreClasificacion(conceptoGastoSeleccionado) }}
+        </small>
+      </label>
+      <label class="accounting-field">Valor
+        <div class="accounting-input-prefix"><span>$</span><input type="number" min="0.01" step="0.01" [(ngModel)]="valor" placeholder="0"></div>
+      </label>
+      <label class="accounting-field">Fecha
+        <div class="calendar-picker">
+          <button type="button" class="calendar-trigger" [class.is-open]="mostrarCalendario" [class.is-empty]="!fecha" [attr.aria-expanded]="mostrarCalendario" (click)="alternarCalendario(); $event.stopPropagation()">
+            <span><small>Fecha del movimiento</small><strong>{{ fechaVisible }}</strong></span><i class="bi bi-calendar3"></i>
+          </button>
+          <div *ngIf="mostrarCalendario" class="calendar-menu" (click)="$event.stopPropagation()">
+            <div class="calendar-header"><button type="button" (click)="cambiarMesCalendario(-1)" aria-label="Mes anterior"><i class="bi bi-chevron-left"></i></button><strong>{{ etiquetaMesCalendario }}</strong><button type="button" (click)="cambiarMesCalendario(1)" aria-label="Mes siguiente"><i class="bi bi-chevron-right"></i></button></div>
+            <div class="calendar-weekdays"><span *ngFor="let nombreDia of nombresDias">{{ nombreDia }}</span></div>
+            <div class="calendar-days"><button type="button" *ngFor="let dia of diasCalendario" [class.other-month]="dia.otroMes" [class.today]="dia.hoy" [class.selected-day]="dia.seleccionada" (click)="seleccionarFechaCalendario(dia.fecha)">{{ dia.dia }}</button></div>
+            <div class="calendar-footer"><button type="button" (click)="limpiarFecha()">Limpiar</button><button type="button" (click)="seleccionarHoy()">Hoy</button></div>
+          </div>
+        </div>
+      </label>
+      <label class="accounting-field accounting-field-wide">Descripción (opcional)
+        <textarea rows="2" maxlength="400" [(ngModel)]="descripcion" placeholder="Agrega una nota o referencia del movimiento"></textarea>
+      </label>
+    </div>
+
+    <div class="accounting-form-actions">
+      <button type="button" class="accounting-button accounting-button-light" (click)="limpiarFormulario()">Limpiar</button>
+      <button type="button" class="accounting-button accounting-button-primary" [disabled]="guardando" (click)="guardarRegistro()">
+        <i class="bi" [class.bi-check2-circle]="!guardando" [class.bi-hourglass-split]="guardando"></i>
+        {{ guardando ? 'Guardando…' : 'Guardar registro' }}
+      </button>
+    </div>
+  </section>
+
+  <section class="accounting-list-card">
+    <div class="accounting-section-heading accounting-list-heading">
+      <div class="accounting-list-title"><span class="accounting-heading-icon list-heading-icon"><i class="bi bi-list-check"></i></span><div><h2>Movimientos registrados</h2><p>Consulta los costos y gastos asociados a esta sucursal.</p></div></div>
+      <span class="accounting-count">{{ registrosFiltrados.length }} de {{ registros.length }}</span>
+    </div>
+
+    <div class="accounting-filters">
+      <label class="filter-name-field">Nombre del concepto
+        <span class="filter-input-wrap"><i class="bi bi-search"></i><input type="search" [(ngModel)]="filtroNombre" (ngModelChange)="actualizarFiltros()" placeholder="Ej. Arriendo, tela, nómina..."></span>
+      </label>
+      <label>Tipo
+        <select [(ngModel)]="filtroTipo" (ngModelChange)="actualizarFiltros()">
+          <option value="TODOS">Todos</option><option value="COSTO">Costos</option><option value="GASTO">Gastos</option>
+        </select>
+      </label>
+      <label>Desde<input type="date" [(ngModel)]="filtroDesde" (ngModelChange)="actualizarFiltros()"></label>
+      <label>Hasta<input type="date" [(ngModel)]="filtroHasta" (ngModelChange)="actualizarFiltros()"></label>
+      <button type="button" class="accounting-button accounting-button-filter" (click)="limpiarFiltros()"><i class="bi bi-eraser me-1"></i>Limpiar</button>
+    </div>
+
+    <div *ngIf="!cargando" class="movement-totals">
+      <div class="movement-totals-heading">
+        <div><strong>Totales del período</strong><small>Valores calculados con los filtros seleccionados</small></div>
+        <span class="movement-period-badge"><i class="bi bi-calendar3"></i>{{ etiquetaPeriodoResumen }}</span>
+      </div>
+      <div class="movement-total-grid">
+        <article class="movement-total-card movement-total-general">
+          <span class="movement-total-icon"><i class="bi bi-wallet2"></i></span>
+          <div><small>Total utilizado</small><strong>{{ formatearValor(totalGeneral) }}</strong><span>{{ registrosFiltrados.length }} movimiento{{ registrosFiltrados.length === 1 ? '' : 's' }}</span></div>
+        </article>
+        <article class="movement-total-card movement-total-cost">
+          <span class="movement-total-icon"><i class="bi bi-box-seam"></i></span>
+          <div><small>Costos indirectos</small><strong>{{ formatearValor(totalCostos) }}</strong><span>Del período filtrado</span></div>
+        </article>
+        <article class="movement-total-card movement-total-expense">
+          <span class="movement-total-icon"><i class="bi bi-receipt"></i></span>
+          <div><small>Gastos</small><strong>{{ formatearValor(totalGastos) }}</strong><span>Del período filtrado</span></div>
+        </article>
+      </div>
+    </div>
+
+    <div *ngIf="cargando" class="accounting-empty"><i class="bi bi-arrow-repeat"></i><p>Cargando registros…</p></div>
+    <div *ngIf="!cargando && registrosFiltrados.length === 0" class="accounting-empty"><i class="bi bi-journal-x"></i><h3>No hay registros para mostrar</h3><p>Agrega el primer costo o gasto de esta sucursal.</p></div>
+
+    <div *ngIf="!cargando && registrosFiltrados.length > 0" class="table-responsive accounting-table-wrapper">
+      <table class="accounting-table">
+        <thead><tr><th>Fecha</th><th>Tipo</th><th>Concepto del movimiento</th><th>Descripción</th><th>Registrado por</th><th class="text-end">Valor registrado</th></tr></thead>
+        <tbody>
+          <tr *ngFor="let registro of registrosPaginados">
+            <td class="date-cell"><span class="date-badge"><strong>{{ registro.fecha | date:'dd' }}</strong><small>{{ registro.fecha | date:'MMM' }}</small></span><span>{{ registro.fecha | date:'yyyy' }}</span></td>
+            <td><span class="accounting-type-badge" [class.cost-badge]="registro.tipo === 'COSTO'" [class.expense-badge]="registro.tipo === 'GASTO'"><i class="bi" [class.bi-box-seam]="registro.tipo === 'COSTO'" [class.bi-receipt]="registro.tipo === 'GASTO'"></i>{{ etiquetaTipo(registro.tipo, registro.clasificacion) }}</span></td>
+            <td><div class="movement-concept"><strong>{{ registro.concepto }}</strong><small *ngIf="registro.clasificacion || registro.clasificacionNombre || registro.clasificacionGasto">{{ nombreClasificacionRegistro(registro) }}</small></div></td>
+            <td class="description-cell">{{ registro.descripcion || 'Sin descripción' }}</td>
+            <td><span class="user-cell"><i class="bi bi-person-circle"></i>{{ registro.usuarioNombre }}</span></td>
+            <td class="value-cell"><strong>{{ formatearValor(registro.valor) }}</strong><small>{{ registro.tipo === 'COSTO' ? 'Costo registrado' : 'Gasto registrado' }}</small></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div *ngIf="!cargando && registrosFiltrados.length > 0" class="accounting-pagination-meta">
+      Mostrando <strong>{{ registrosPaginados.length }}</strong> de <strong>{{ registrosFiltrados.length }}</strong> registros · máximo 40 por página
+    </div>
+    <nav *ngIf="!cargando && registrosFiltrados.length > 0 && totalPaginas > 1" class="accounting-pagination" aria-label="Paginación de registros">
+      <button type="button" class="pagination-arrow" (click)="cambiarPagina(paginaActual - 1)" [disabled]="paginaActual === 1"><i class="bi bi-chevron-left"></i></button>
+      <button type="button" *ngFor="let pagina of paginas" [class.active]="pagina === paginaActual" (click)="cambiarPagina(pagina)">{{ pagina }}</button>
+      <button type="button" class="pagination-arrow" (click)="cambiarPagina(paginaActual + 1)" [disabled]="paginaActual === totalPaginas"><i class="bi bi-chevron-right"></i></button>
+    </nav>
+  </section>
+</main>

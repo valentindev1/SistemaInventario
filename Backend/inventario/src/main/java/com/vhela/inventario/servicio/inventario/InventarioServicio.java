@@ -18,6 +18,14 @@ public interface InventarioServicio {
 
     List<MovimientoInventarioDTO> listarMovimientosPorSucursal(Long usuarioId, Long sucursalId);
 
+    List<MovimientoInventarioDTO> listarMovimientosPorEmpresa(Long usuarioId, Long empresaId);
+
+    MovimientoInventarioDTO revertirMovimiento(
+            Long usuarioId,
+            Long empresaId,
+            Long movimientoId
+    );
+
 
     List<MovimientoInventarioEmpleadoDTO> listarMovimientosPorSucursalEmpleado(
             Long usuarioId,

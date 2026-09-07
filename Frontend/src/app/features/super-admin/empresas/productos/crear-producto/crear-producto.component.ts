@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, HostListener, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -14,7 +14,12 @@ import { GeneroService } from '../../../../../core/services/producto/detalles/ge
 import { TallaService } from '../../../../../core/services/producto/detalles/talla/talla.service';
 
 import { EmpresaObtenerDTO } from '../../../../../core/models/empresa/empresa.model';
-import { ProductoCrearDTO } from '../../../../../core/models/producto/producto.model';
+import {
+  ProductoCostoDetalleCrearDTO,
+  ProductoCrearDTO,
+  TipoCostoProducto
+} from '../../../../../core/models/producto/producto.model';
+import { AtributoCostoObtenerDTO } from '../../../../../core/models/producto/atributo-costo.model';
 
 import { ColorObtenerDTO } from '../../../../../core/models/producto/detalles/color.model';
 import { CategoriaObtenerDTO } from '../../../../../core/models/producto/detalles/categoria.model';
@@ -22,6 +27,25 @@ import { GeneroObtenerDTO } from '../../../../../core/models/producto/detalles/g
 import { TallaObtenerDTO } from '../../../../../core/models/producto/detalles/talla.model';
 
 import { AuthService } from '../../../../../core/services/auth/auth.service';
+import { AtributoCostoService } from '../../../../../core/services/producto/atributo-costo/atributo-costo.service';
+
+type TipoSelectorAtributo = 'color' | 'categoria' | 'talla' | 'genero';
+type CampoSelectorAtributo = 'colorId' | 'categoriaId' | 'tallaId' | 'generoId';
+
+interface SelectorAtributoConfig {
+  tipo: TipoSelectorAtributo;
+  campo: CampoSelectorAtributo;
+  etiqueta: string;
+  placeholder: string;
+  icono: string;
+  error: string;
+}
+
+interface ComponenteCostoFormulario {
+  atributoCostoId: number | null;
+  concepto: string;
+  valorTexto: string;
+}
 
 @Component({
   selector: 'app-crear-producto',
@@ -45,13 +69,64 @@ export class CrearProductoComponent implements OnInit {
   generos: GeneroObtenerDTO[] = [];
   tallas: TallaObtenerDTO[] = [];
 
+  readonly selectoresAtributos: SelectorAtributoConfig[] = [
+    {
+      tipo: 'color',
+      campo: 'colorId',
+      etiqueta: 'Color',
+      placeholder: 'Busca y selecciona un color',
+      icono: 'bi-palette',
+      error: 'Debes seleccionar un color.'
+    },
+    {
+      tipo: 'categoria',
+      campo: 'categoriaId',
+      etiqueta: 'Categoría',
+      placeholder: 'Busca y selecciona una categoría',
+      icono: 'bi-grid',
+      error: 'Debes seleccionar una categoría.'
+    },
+    {
+      tipo: 'talla',
+      campo: 'tallaId',
+      etiqueta: 'Talla',
+      placeholder: 'Busca y selecciona una talla',
+      icono: 'bi-rulers',
+      error: 'Debes seleccionar una talla.'
+    },
+    {
+      tipo: 'genero',
+      campo: 'generoId',
+      etiqueta: 'Género',
+      placeholder: 'Busca y selecciona un género',
+      icono: 'bi-person-badge',
+      error: 'Debes seleccionar un género.'
+    }
+  ];
+
+  selectorAtributoAbierto: TipoSelectorAtributo | null = null;
+  busquedasAtributos: Record<TipoSelectorAtributo, string> = {
+    color: '',
+    categoria: '',
+    talla: '',
+    genero: ''
+  };
+
   formularioProducto: FormGroup;
 
   cargandoEmpresa = false;
   cargandoDetalles = false;
   guardando = false;
+  cargandoAtributosCosto = false;
 
   mensajeError = '';
+
+  tipoCosto: TipoCostoProducto = 'MANUAL';
+  costoPersonalizado = false;
+  costoManualTexto = '';
+  atributosCosto: AtributoCostoObtenerDTO[] = [];
+  desgloseCosto: ComponenteCostoFormulario[] = [this.nuevoComponenteCosto()];
+  mostrarErrorDesglose = false;
 
   constructor(
     private fb: FormBuilder,
@@ -63,7 +138,8 @@ export class CrearProductoComponent implements OnInit {
     private categoriaService: CategoriaService,
     private generoService: GeneroService,
     private tallaService: TallaService,
-    private authService: AuthService
+    private authService: AuthService,
+    private atributoCostoService: AtributoCostoService
   ) {
     this.formularioProducto = this.fb.group({
       nombre: ['', [Validators.required, Validators.maxLength(150)]],
@@ -129,6 +205,24 @@ export class CrearProductoComponent implements OnInit {
     ];
   }
 
+  rutaAtributosCosto(): any[] {
+    if (this.esSuperAdmin()) {
+      return [
+        '/super-admin/empresas',
+        this.empresaId,
+        'productos',
+        'atributos-costo'
+      ];
+    }
+
+    return [
+      '/admin/empresa',
+      this.empresaId,
+      'productos',
+      'atributos-costo'
+    ];
+  }
+
   cargarEmpresa(): void {
     this.cargandoEmpresa = true;
     this.mensajeError = '';
@@ -162,7 +256,7 @@ export class CrearProductoComponent implements OnInit {
 
     this.colorService.listarPorEmpresa(this.empresaId).subscribe({
       next: (colores) => {
-        this.colores = colores;
+        this.colores = this.ordenarOpciones(colores);
         finalizarCarga();
       },
       error: (error) => {
@@ -174,7 +268,7 @@ export class CrearProductoComponent implements OnInit {
 
     this.categoriaService.listarPorEmpresa(this.empresaId).subscribe({
       next: (categorias) => {
-        this.categorias = categorias;
+        this.categorias = this.ordenarOpciones(categorias);
         finalizarCarga();
       },
       error: (error) => {
@@ -186,7 +280,7 @@ export class CrearProductoComponent implements OnInit {
 
     this.generoService.listarPorEmpresa(this.empresaId).subscribe({
       next: (generos) => {
-        this.generos = generos;
+        this.generos = this.ordenarOpciones(generos);
         finalizarCarga();
       },
       error: (error) => {
@@ -198,7 +292,7 @@ export class CrearProductoComponent implements OnInit {
 
     this.tallaService.listarPorEmpresa(this.empresaId).subscribe({
       next: (tallas) => {
-        this.tallas = tallas;
+        this.tallas = this.ordenarOpciones(tallas);
         finalizarCarga();
       },
       error: (error) => {
@@ -226,6 +320,26 @@ export class CrearProductoComponent implements OnInit {
       return;
     }
 
+    if (this.tipoCosto === 'DESGLOSE' && !this.desgloseEsValido()) {
+      this.mostrarErrorDesglose = true;
+
+      Swal.fire({
+        icon: 'warning',
+        title: 'Desglose incompleto',
+        text: 'Selecciona un atributo de costo y agrega un valor mayor que cero para cada componente.',
+        confirmButtonText: 'Entendido',
+        confirmButtonColor: '#ffc107'
+      });
+
+      return;
+    }
+
+    this.mostrarErrorDesglose = false;
+
+    const costoUnitario = this.tipoCosto === 'DESGLOSE'
+      ? this.totalDesgloseCosto()
+      : this.obtenerMontoDesdeTexto(this.costoManualTexto);
+
     const dto: ProductoCrearDTO = {
       nombre: this.formularioProducto.value.nombre.trim(),
       codigo: this.formularioProducto.value.codigo.trim(),
@@ -236,7 +350,13 @@ export class CrearProductoComponent implements OnInit {
       colorId: Number(this.formularioProducto.value.colorId),
       categoriaId: Number(this.formularioProducto.value.categoriaId),
       tallaId: Number(this.formularioProducto.value.tallaId),
-      generoId: Number(this.formularioProducto.value.generoId)
+      generoId: Number(this.formularioProducto.value.generoId),
+      tipoCosto: this.tipoCosto,
+      costoPersonalizado: this.costoPersonalizado,
+      costoUnitario,
+      ...(this.tipoCosto === 'DESGLOSE'
+        ? { desgloseCosto: this.obtenerDesgloseParaGuardar() }
+        : {})
     };
 
     this.guardando = true;
@@ -248,7 +368,9 @@ export class CrearProductoComponent implements OnInit {
         Swal.fire({
           icon: 'success',
           title: 'Producto creado',
-          text: 'El producto fue creado correctamente. El costo y precio de venta se asignarán al ingresar mercancía.',
+          text: this.tipoCosto === 'DESGLOSE'
+            ? `El ${this.costoPersonalizado ? 'producto personalizado fue creado' : 'producto fue creado'} y su costo unitario quedó calculado en ${this.formatearMoneda(costoUnitario)}.`
+            : 'El producto fue creado correctamente con el costo manual indicado. Podrás ajustarlo al ingresar mercancía.',
           confirmButtonText: 'Continuar',
           confirmButtonColor: '#0d6efd'
         }).then(() => {
@@ -261,6 +383,249 @@ export class CrearProductoComponent implements OnInit {
         console.error(error);
       }
     });
+  }
+
+  cambiarTipoCosto(tipo: TipoCostoProducto): void {
+    this.tipoCosto = tipo;
+    this.mostrarErrorDesglose = false;
+
+    if (tipo === 'MANUAL') {
+      this.costoPersonalizado = false;
+    }
+
+    if (tipo === 'DESGLOSE') {
+      const categoriaId = this.obtenerValorAtributo('categoria');
+
+      if (categoriaId !== null && this.atributosCosto.length === 0) {
+        this.cargarAtributosCostoDeCategoria(categoriaId);
+      }
+    }
+
+    if (tipo === 'DESGLOSE' && this.desgloseCosto.length === 0) {
+      this.desgloseCosto.push(this.nuevoComponenteCosto());
+    }
+  }
+
+  cambiarPersonalizacionCosto(evento: Event): void {
+    this.costoPersonalizado = (evento.target as HTMLInputElement).checked;
+    this.mostrarErrorDesglose = false;
+  }
+
+  cambiarAtributoCosto(indice: number, evento: Event): void {
+    const atributoCostoId = Number((evento.target as HTMLSelectElement).value);
+    const atributo = this.atributosCosto.find(item => item.id === atributoCostoId);
+
+    this.desgloseCosto[indice].atributoCostoId = atributo?.id ?? null;
+    this.desgloseCosto[indice].concepto = atributo?.nombre ?? '';
+    this.mostrarErrorDesglose = false;
+  }
+
+  actualizarCostoManual(evento: Event): void {
+    const input = evento.target as HTMLInputElement;
+    this.costoManualTexto = this.formatearNumeroDesdeEntrada(input.value);
+    input.value = this.costoManualTexto;
+  }
+
+  agregarComponenteCosto(): void {
+    this.desgloseCosto.push(this.nuevoComponenteCosto());
+    this.mostrarErrorDesglose = false;
+  }
+
+  eliminarComponenteCosto(indice: number): void {
+    if (this.desgloseCosto.length === 1) {
+      this.desgloseCosto[0] = this.nuevoComponenteCosto();
+    } else {
+      this.desgloseCosto.splice(indice, 1);
+    }
+
+    this.mostrarErrorDesglose = false;
+  }
+
+  actualizarConceptoCosto(indice: number, evento: Event): void {
+    this.desgloseCosto[indice].concepto = (evento.target as HTMLInputElement).value;
+    this.mostrarErrorDesglose = false;
+  }
+
+  actualizarValorComponente(indice: number, evento: Event): void {
+    const input = evento.target as HTMLInputElement;
+    this.desgloseCosto[indice].valorTexto = this.formatearNumeroDesdeEntrada(input.value);
+    input.value = this.desgloseCosto[indice].valorTexto;
+    this.mostrarErrorDesglose = false;
+  }
+
+  totalDesgloseCosto(): number {
+    return this.desgloseCosto.reduce(
+      (total, componente) => total + this.obtenerMontoDesdeTexto(componente.valorTexto),
+      0
+    );
+  }
+
+  desgloseEsValido(): boolean {
+    return this.desgloseCosto.length > 0
+      && this.desgloseCosto.every(componente =>
+        componente.atributoCostoId !== null
+        && componente.concepto.trim().length > 0
+        && this.obtenerMontoDesdeTexto(componente.valorTexto) > 0
+      );
+  }
+
+  private obtenerDesgloseParaGuardar(): ProductoCostoDetalleCrearDTO[] {
+    return this.desgloseCosto.map(componente => ({
+      atributoCostoId: componente.atributoCostoId,
+      concepto: componente.concepto.trim(),
+      valor: this.obtenerMontoDesdeTexto(componente.valorTexto)
+    }));
+  }
+
+  private nuevoComponenteCosto(): ComponenteCostoFormulario {
+    return {
+      atributoCostoId: null,
+      concepto: '',
+      valorTexto: ''
+    };
+  }
+
+  cargarAtributosCostoDeCategoria(categoriaId: number): void {
+    this.cargandoAtributosCosto = true;
+    this.atributosCosto = [];
+    this.desgloseCosto = [this.nuevoComponenteCosto()];
+
+    this.atributoCostoService.listarActivosPorCategoria(categoriaId).subscribe({
+      next: (atributos) => {
+        this.atributosCosto = (atributos || []).slice().sort((a, b) =>
+          a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' })
+        );
+        this.cargandoAtributosCosto = false;
+      },
+      error: (error) => {
+        this.cargandoAtributosCosto = false;
+        this.mostrarErroresBackend(error, 'No se pudieron cargar los atributos de costo de la categoría');
+      }
+    });
+  }
+
+  private obtenerMontoDesdeTexto(valor: string | null | undefined): number {
+    const digitos = (valor || '').replace(/\D/g, '');
+    return digitos ? Number(digitos) : 0;
+  }
+
+  private formatearNumeroDesdeEntrada(valor: string | null | undefined): string {
+    const monto = this.obtenerMontoDesdeTexto(valor);
+
+    return monto > 0
+      ? new Intl.NumberFormat('es-CO', { maximumFractionDigits: 0 }).format(monto)
+      : '';
+  }
+
+  private formatearMoneda(valor: number): string {
+    return new Intl.NumberFormat('es-CO', {
+      style: 'currency',
+      currency: 'COP',
+      maximumFractionDigits: 0
+    }).format(valor);
+  }
+
+  obtenerOpcionesAtributo(tipo: TipoSelectorAtributo): Array<{ id: number; nombre: string }> {
+    switch (tipo) {
+      case 'color':
+        return this.colores;
+      case 'categoria':
+        return this.categorias;
+      case 'talla':
+        return this.tallas;
+      case 'genero':
+        return this.generos;
+    }
+  }
+
+  obtenerOpcionesFiltradas(tipo: TipoSelectorAtributo): Array<{ id: number; nombre: string }> {
+    const busqueda = this.normalizarTexto(this.busquedasAtributos[tipo]);
+
+    if (!busqueda) {
+      return this.obtenerOpcionesAtributo(tipo);
+    }
+
+    return this.obtenerOpcionesAtributo(tipo).filter(opcion =>
+      this.normalizarTexto(`${opcion.nombre} ${opcion.id}`).includes(busqueda)
+    );
+  }
+
+  obtenerValorAtributo(tipo: TipoSelectorAtributo): number | null {
+    const config = this.selectoresAtributos.find(item => item.tipo === tipo);
+    const valor = config ? this.formularioProducto.get(config.campo)?.value : null;
+
+    return valor === null || valor === undefined || valor === ''
+      ? null
+      : Number(valor);
+  }
+
+  obtenerNombreAtributo(tipo: TipoSelectorAtributo): string {
+    const config = this.selectoresAtributos.find(item => item.tipo === tipo);
+    const id = this.obtenerValorAtributo(tipo);
+
+    if (!config || id === null) {
+      return config?.placeholder ?? 'Selecciona una opción';
+    }
+
+    return this.obtenerOpcionesAtributo(tipo).find(opcion => opcion.id === id)?.nombre
+      ?? config.placeholder;
+  }
+
+  toggleSelectorAtributo(tipo: TipoSelectorAtributo): void {
+    if (this.selectorAtributoAbierto === tipo) {
+      this.cerrarSelectorAtributo();
+      return;
+    }
+
+    this.selectorAtributoAbierto = tipo;
+    this.busquedasAtributos[tipo] = '';
+  }
+
+  actualizarBusquedaAtributo(tipo: TipoSelectorAtributo, evento: Event): void {
+    this.busquedasAtributos[tipo] = (evento.target as HTMLInputElement).value;
+  }
+
+  seleccionarAtributo(
+    tipo: TipoSelectorAtributo,
+    opcion: { id: number; nombre: string }
+  ): void {
+    const config = this.selectoresAtributos.find(item => item.tipo === tipo);
+
+    if (!config) {
+      return;
+    }
+
+    const control = this.formularioProducto.get(config.campo);
+    control?.setValue(opcion.id);
+    control?.markAsDirty();
+    control?.markAsTouched();
+    this.busquedasAtributos[tipo] = '';
+    this.selectorAtributoAbierto = null;
+
+    if (tipo === 'categoria') {
+      this.cargarAtributosCostoDeCategoria(opcion.id);
+    }
+  }
+
+  @HostListener('document:click')
+  cerrarSelectorAtributo(): void {
+    if (this.selectorAtributoAbierto) {
+      this.busquedasAtributos[this.selectorAtributoAbierto] = '';
+      this.selectorAtributoAbierto = null;
+    }
+  }
+
+  private normalizarTexto(valor: string): string {
+    return (valor || '')
+      .toLocaleLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+  }
+
+  private ordenarOpciones<T extends { nombre: string }>(opciones: T[]): T[] {
+    return (opciones || []).slice().sort((a, b) =>
+      a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' })
+    );
   }
 
   campoInvalido(campo: string): boolean {

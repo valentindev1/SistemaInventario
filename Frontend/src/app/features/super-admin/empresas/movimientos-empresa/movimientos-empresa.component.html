@@ -1,0 +1,212 @@
+<div class="movimientos-empresa-page">
+  <header class="page-header">
+    <div>
+      <a class="back-link" [routerLink]="volverDetalleEmpresa()">
+        <i class="bi bi-arrow-left me-2"></i>
+        {{ sucursalId !== null ? 'Volver a la tienda' : 'Volver a la empresa' }}
+      </a>
+      <span class="page-kicker"><i class="bi bi-activity me-2"></i> Trazabilidad de operaciones</span>
+      <h1>{{ sucursalId !== null ? 'Movimientos de la tienda' : 'Movimientos a nivel de empresa' }}</h1>
+      <p>{{ sucursalId !== null
+        ? 'Consulta ingresos, ajustes, ventas y actividades relacionadas con esta tienda, con el usuario que las realizó.'
+        : 'Consulta en un solo lugar las actividades de inventario y del catálogo, con el usuario que las realizó.' }}</p>
+    </div>
+
+    <button type="button" class="refresh-button" (click)="cargarMovimientos()" [disabled]="cargando">
+      <i class="bi bi-arrow-clockwise me-2"></i>
+      Actualizar
+    </button>
+  </header>
+
+  @if (mensajeError) {
+    <div class="error-banner">
+      <i class="bi bi-exclamation-circle-fill"></i>
+      <span>{{ mensajeError }}</span>
+    </div>
+  }
+
+  @if (cargando) {
+    <section class="loading-card">
+      <div class="spinner"></div>
+      <strong>Cargando movimientos...</strong>
+      <span>Estamos consolidando inventario, ventas y catálogo.</span>
+    </section>
+  }
+
+  @if (!cargando) {
+    <section class="summary-grid">
+      <article class="summary-card summary-total">
+        <span><i class="bi bi-layers me-2"></i>Actividades filtradas</span>
+        <strong>{{ movimientosFiltrados.length }}</strong>
+        <small>{{ sucursalId !== null ? 'Tienda seleccionada' : 'Empresa completa' }}</small>
+      </article>
+      <article class="summary-card summary-sales">
+        <span><i class="bi bi-cart-check me-2"></i>Ventas</span>
+        <strong>{{ contar('VENTA') }}</strong>
+        <small>Salidas registradas</small>
+      </article>
+      <article class="summary-card summary-entries">
+        <span><i class="bi bi-box-arrow-in-down me-2"></i>Ingresos</span>
+        <strong>{{ contar('INGRESO_MERCANCIA') }}</strong>
+        <small>Entradas de mercancía</small>
+      </article>
+      <article class="summary-card summary-catalog">
+        <span><i class="bi bi-tag me-2"></i>Catálogo</span>
+        <strong>{{ contar('PRODUCTO_CREADO') }}</strong>
+        <small>Productos creados</small>
+      </article>
+    </section>
+
+    <section class="panel filters-panel">
+      <div class="panel-heading">
+        <div>
+          <span class="eyebrow">Búsqueda y control</span>
+          <h2>Filtrar actividades</h2>
+          <p>Encuentra rápidamente una venta, ingreso, devolución o acción realizada por un usuario.</p>
+        </div>
+        <i class="bi bi-funnel-fill panel-heading-icon"></i>
+      </div>
+
+      <div class="filters-grid">
+        <label class="field field-wide">
+          <span>Buscar actividad</span>
+          <div class="input-with-icon">
+            <i class="bi bi-search"></i>
+            <input type="text" [(ngModel)]="filtroTexto" (input)="aplicarFiltros()" placeholder="Código, producto, tipo o concepto...">
+          </div>
+        </label>
+
+        <label class="field">
+          <span>Tipo de movimiento</span>
+          <select [(ngModel)]="filtroTipo" (change)="aplicarFiltros()">
+            <option value="">Todos los movimientos</option>
+            @for (tipo of tipos; track tipo) {
+              <option [value]="tipo">{{ obtenerTextoTipo(tipo) }}</option>
+            }
+          </select>
+        </label>
+
+        <label class="field">
+          <span>Usuario responsable</span>
+          <input type="text" list="usuariosEmpresa" [(ngModel)]="filtroUsuario" (input)="aplicarFiltros()" placeholder="Nombre de usuario...">
+          <datalist id="usuariosEmpresa">
+            @for (usuario of usuarios; track usuario) { <option [value]="usuario"></option> }
+          </datalist>
+        </label>
+
+        @if (sucursalId === null) {
+        <label class="field">
+          <span>Sucursal</span>
+          <select [(ngModel)]="filtroSucursal" (change)="aplicarFiltros()">
+            <option value="">Todas las sucursales</option>
+            @for (sucursal of sucursales; track sucursal) { <option [value]="sucursal">{{ sucursal }}</option> }
+          </select>
+        </label>
+        }
+
+        <label class="field">
+          <span>Desde</span>
+          <input type="date" [(ngModel)]="fechaInicio" (change)="aplicarFiltros()">
+        </label>
+
+        <label class="field">
+          <span>Hasta</span>
+          <input type="date" [(ngModel)]="fechaFin" (change)="aplicarFiltros()">
+        </label>
+
+        <button type="button" class="clear-button" (click)="limpiarFiltros()">
+          <i class="bi bi-eraser me-2"></i> Limpiar filtros
+        </button>
+      </div>
+    </section>
+
+    <section class="panel history-panel">
+      <div class="panel-heading history-heading">
+        <div>
+          <span class="eyebrow">Registro consolidado</span>
+          <h2>{{ sucursalId !== null ? 'Actividad de la tienda' : 'Actividad de ' + empresaNombre }}</h2>
+          <p>Los reversos crean una compensación y conservan el movimiento original como histórico.</p>
+        </div>
+        <span class="result-counter">{{ movimientosFiltrados.length }} registros</span>
+      </div>
+
+      @if (movimientosFiltrados.length === 0) {
+        <div class="empty-state">
+          <i class="bi bi-inbox"></i>
+          <strong>No hay actividades para mostrar</strong>
+          <span>Prueba con otros filtros o limpia la búsqueda.</span>
+        </div>
+      }
+
+      @if (movimientosFiltrados.length > 0) {
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Actividad</th>
+                <th>Producto / referencia</th>
+                <th>Sucursal</th>
+                <th>Usuario</th>
+                <th>Impacto</th>
+                <th>Detalle</th>
+                <th class="action-column">Acción</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (movimiento of movimientosPaginados; track trackMovimiento(movimiento)) {
+                <tr [class.row-reverted]="movimiento.revertido">
+                  <td class="date-cell">{{ movimiento.fecha | date:'dd/MM/yyyy HH:mm' }}</td>
+                  <td>
+                    <span [class]="obtenerClaseTipo(movimiento.tipo)">
+                      {{ obtenerTextoTipo(movimiento.tipo) }}
+                    </span>
+                    @if (esActividadCatalogo(movimiento)) { <small class="origin-label">Catálogo</small> }
+                  </td>
+                  <td class="product-cell">
+                    <strong>{{ movimiento.productoNombre || 'Actividad general' }}</strong>
+                    <small>{{ movimiento.productoCodigo || 'Sin referencia' }}</small>
+                  </td>
+                  <td>{{ movimiento.sucursalNombre || 'Nivel empresa' }}</td>
+                  <td class="user-cell">
+                    <strong>{{ movimiento.usuarioNombre || 'Usuario no asignado' }}</strong>
+                    <small>{{ movimiento.usuarioRol || '—' }}</small>
+                  </td>
+                  <td [class]="obtenerClaseCantidad(movimiento)">
+                    <strong>{{ obtenerCantidad(movimiento) }}</strong>
+                    @if (movimiento.stockAntes !== undefined && movimiento.stockDespues !== undefined) {
+                      <small>{{ movimiento.stockAntes }} → {{ movimiento.stockDespues }} stock</small>
+                    }
+                  </td>
+                  <td class="detail-cell">{{ movimiento.motivo || 'Sin detalle adicional' }}</td>
+                  <td class="action-column">
+                    @if (movimiento.revertido) {
+                      <span class="reverted-label"><i class="bi bi-check2-circle me-1"></i>Cancelado</span>
+                    } @else if (movimiento.puedeRevertirse) {
+                      <button type="button" class="revert-button" (click)="revertirMovimiento(movimiento)" [disabled]="revirtiendoId === movimiento.id">
+                        @if (revirtiendoId === movimiento.id) { <span class="button-spinner"></span> }
+                        @else { <i class="bi bi-x-circle me-1"></i> }
+                        Cancelar
+                      </button>
+                    } @else {
+                      <span class="not-available">No aplica</span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <div class="pagination-bar">
+          <span>Mostrando {{ movimientosPaginados.length }} de {{ movimientosFiltrados.length }} registros</span>
+          <div class="pagination-actions">
+            <button type="button" (click)="cambiarPagina(paginaActual - 1)" [disabled]="paginaActual === 1">Anterior</button>
+            <strong>Página {{ paginaActual }} / {{ totalPaginas }}</strong>
+            <button type="button" (click)="cambiarPagina(paginaActual + 1)" [disabled]="paginaActual === totalPaginas">Siguiente</button>
+          </div>
+        </div>
+      }
+    </section>
+  }
+</div>

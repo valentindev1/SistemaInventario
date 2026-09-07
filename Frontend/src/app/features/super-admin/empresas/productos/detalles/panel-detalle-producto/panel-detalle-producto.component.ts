@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import Swal from 'sweetalert2';
@@ -21,6 +22,9 @@ interface DetalleProductoItem {
   empresaId: number;
   empresaNombre: string;
   fechaCreacion: string;
+  tipoGanancia?: 'PORCENTAJE' | 'DINERO' | null;
+  valorGanancia?: number | null;
+  porcentajeGanancia?: number | null;
 }
 
 type TipoDetalle = 'colores' | 'categorias' | 'generos' | 'tallas';
@@ -31,6 +35,7 @@ type TipoDetalle = 'colores' | 'categorias' | 'generos' | 'tallas';
   imports: [
     CommonModule,
     ReactiveFormsModule,
+    FormsModule,
     RouterLink
   ],
   templateUrl: './panel-detalle-producto.component.html',
@@ -54,6 +59,10 @@ export class PanelDetalleProductoComponent implements OnInit {
 
   mensajeError = '';
 
+  filtroCategorias = '';
+  paginaActual = 1;
+  readonly elementosPorPagina = 40;
+
   constructor(
     private fb: FormBuilder,
     private route: ActivatedRoute,
@@ -65,7 +74,9 @@ export class PanelDetalleProductoComponent implements OnInit {
     private authService: AuthService
   ) {
     this.formulario = this.fb.group({
-      nombre: ['', [Validators.required, Validators.maxLength(80)]]
+      nombre: ['', [Validators.required, Validators.maxLength(80)]],
+      tipoGanancia: ['PORCENTAJE'],
+      valorGanancia: [null, [Validators.min(0)]]
     });
   }
 
@@ -150,6 +161,7 @@ export class PanelDetalleProductoComponent implements OnInit {
     this.servicioActual().listarPorEmpresa(this.empresaId).subscribe({
       next: (data: DetalleProductoItem[]) => {
         this.items = data;
+        this.ajustarPagina();
         this.cargandoItems = false;
       },
       error: (error: any) => {
@@ -167,7 +179,9 @@ export class PanelDetalleProductoComponent implements OnInit {
       Swal.fire({
         icon: 'warning',
         title: 'Formulario incompleto',
-        text: 'Debes ingresar un nombre válido.',
+        text: this.esCategoria()
+          ? 'Debes ingresar un nombre válido y una regla de utilidad válida.'
+          : 'Debes ingresar un nombre válido.',
         confirmButtonText: 'Entendido',
         confirmButtonColor: '#ffc107'
       });
@@ -185,7 +199,11 @@ export class PanelDetalleProductoComponent implements OnInit {
   crear(): void {
     const dto = {
       nombre: this.formulario.value.nombre,
-      empresaId: this.empresaId
+      empresaId: this.empresaId,
+      ...(this.esCategoria() ? {
+        tipoGanancia: this.tipoGananciaDesdeFormulario(),
+        valorGanancia: this.valorGananciaDesdeFormulario()
+      } : {})
     };
 
     this.guardando = true;
@@ -216,7 +234,11 @@ export class PanelDetalleProductoComponent implements OnInit {
     this.itemEditando = item;
 
     this.formulario.patchValue({
-      nombre: item.nombre
+      nombre: item.nombre,
+      tipoGanancia: this.esCategoria() ? (item.tipoGanancia ?? 'PORCENTAJE') : 'PORCENTAJE',
+      valorGanancia: this.esCategoria()
+        ? (item.valorGanancia ?? item.porcentajeGanancia ?? null)
+        : null
     });
   }
 
@@ -231,7 +253,11 @@ export class PanelDetalleProductoComponent implements OnInit {
     }
 
     const dto = {
-      nombre: this.formulario.value.nombre
+      nombre: this.formulario.value.nombre,
+      ...(this.esCategoria() ? {
+        tipoGanancia: this.tipoGananciaDesdeFormulario(),
+        valorGanancia: this.valorGananciaDesdeFormulario()
+      } : {})
     };
 
     this.guardando = true;
@@ -273,6 +299,7 @@ export class PanelDetalleProductoComponent implements OnInit {
         this.servicioActual().eliminar(item.id).subscribe({
           next: () => {
             this.items = this.items.filter(i => i.id !== item.id);
+            this.ajustarPagina();
 
             Swal.fire({
               icon: 'success',
@@ -307,6 +334,110 @@ export class PanelDetalleProductoComponent implements OnInit {
       case 'tallas':
         return this.tallaService;
     }
+  }
+
+  esCategoria(): boolean {
+    return this.tipo === 'categorias';
+  }
+
+  get itemsFiltrados(): DetalleProductoItem[] {
+    if (!this.esCategoria()) {
+      return this.items;
+    }
+
+    const termino = this.normalizarTexto(this.filtroCategorias);
+
+    if (!termino) {
+      return this.items;
+    }
+
+    return this.items.filter(item =>
+      this.normalizarTexto(item.nombre).includes(termino) ||
+      String(item.id).includes(termino)
+    );
+  }
+
+  get itemsPaginados(): DetalleProductoItem[] {
+    if (!this.esCategoria()) {
+      return this.items;
+    }
+
+    const inicio = (this.paginaActual - 1) * this.elementosPorPagina;
+    return this.itemsFiltrados.slice(inicio, inicio + this.elementosPorPagina);
+  }
+
+  get totalPaginas(): number {
+    return Math.max(1, Math.ceil(this.itemsFiltrados.length / this.elementosPorPagina));
+  }
+
+  get paginas(): number[] {
+    return Array.from({ length: this.totalPaginas }, (_, indice) => indice + 1);
+  }
+
+  get primerRegistroVisible(): number {
+    if (this.itemsFiltrados.length === 0) {
+      return 0;
+    }
+
+    return (this.paginaActual - 1) * this.elementosPorPagina + 1;
+  }
+
+  get ultimoRegistroVisible(): number {
+    return Math.min(this.paginaActual * this.elementosPorPagina, this.itemsFiltrados.length);
+  }
+
+  actualizarFiltroCategorias(valor: string): void {
+    this.filtroCategorias = valor;
+    this.paginaActual = 1;
+  }
+
+  irAPagina(pagina: number): void {
+    this.paginaActual = Math.min(Math.max(pagina, 1), this.totalPaginas);
+  }
+
+  paginaAnterior(): void {
+    this.irAPagina(this.paginaActual - 1);
+  }
+
+  paginaSiguiente(): void {
+    this.irAPagina(this.paginaActual + 1);
+  }
+
+  private ajustarPagina(): void {
+    this.paginaActual = Math.min(this.paginaActual, this.totalPaginas);
+  }
+
+  seleccionarTipoGanancia(tipo: 'PORCENTAJE' | 'DINERO'): void {
+    this.formulario.patchValue({ tipoGanancia: tipo });
+    this.formulario.get('valorGanancia')?.markAsTouched();
+  }
+
+  private tipoGananciaDesdeFormulario(): 'PORCENTAJE' | 'DINERO' | null {
+    if (this.valorGananciaDesdeFormulario() === null) {
+      return null;
+    }
+
+    const tipo = this.formulario.value.tipoGanancia;
+
+    return tipo === 'DINERO' ? 'DINERO' : 'PORCENTAJE';
+  }
+
+  private valorGananciaDesdeFormulario(): number | null {
+    const valor = this.formulario.value.valorGanancia;
+
+    if (valor === null || valor === undefined || valor === '') {
+      return null;
+    }
+
+    return Number(valor);
+  }
+
+  private normalizarTexto(valor: string): string {
+    return (valor || '')
+      .toLocaleLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim();
   }
 
   tipoEsValido(tipo: string): tipo is TipoDetalle {

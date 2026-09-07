@@ -62,6 +62,13 @@ public class MovimientoInventario {
     @Column(nullable = false, updatable = false)
     private LocalDateTime fecha;
 
+    /** Indica que este movimiento ya fue compensado desde la bitácora empresarial. */
+    @Column(nullable = true)
+    private Boolean revertido = false;
+
+    /** Identificador del movimiento compensatorio generado al revertirlo. */
+    private Long movimientoReversionId;
+
     @PrePersist
     public void prePersist() {
         this.fecha = LocalDateTime.now();

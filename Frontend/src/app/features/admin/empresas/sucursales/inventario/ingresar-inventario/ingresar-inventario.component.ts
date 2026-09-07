@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, HostListener, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 
@@ -36,6 +36,8 @@ export class IngresarInventarioComponent implements OnInit {
   motivo = '';
 
   productoSeleccionadoId: number | null = null;
+  busquedaProducto = '';
+  productoSelectorAbierto = false;
   cantidad = 1;
   costoUnitario = 0;
   precioVenta = 0;
@@ -44,6 +46,8 @@ export class IngresarInventarioComponent implements OnInit {
 
   cargandoProductos = false;
   guardando = false;
+
+  private camposNumericosEnfocados = new Set<string>();
 
   mensajeExito = '';
   mensajeError = '';
@@ -183,6 +187,8 @@ export class IngresarInventarioComponent implements OnInit {
 
 
   onProductoSeleccionado(): void {
+    this.camposNumericosEnfocados.clear();
+
     if (!this.productoSeleccionadoId) {
       this.costoUnitario = 0;
       this.precioVenta = 0;
@@ -201,6 +207,92 @@ export class IngresarInventarioComponent implements OnInit {
 
     this.costoUnitario = producto.costoUnitario;
     this.precioVenta = producto.precioVenta;
+  }
+
+  ponerEnCeroAlEnfocar(
+    campo: 'cantidad' | 'costoUnitario' | 'precioVenta',
+    evento: FocusEvent
+  ): void {
+    const input = evento.target as HTMLInputElement;
+
+    if (!this.camposNumericosEnfocados.has(campo)) {
+      this.camposNumericosEnfocados.add(campo);
+
+      if (campo === 'cantidad') {
+        this.cantidad = 0;
+      } else if (campo === 'costoUnitario') {
+        this.costoUnitario = 0;
+      } else {
+        this.precioVenta = 0;
+      }
+    }
+
+    input.select();
+  }
+
+  get productoSeleccionado(): ProductoInventarioOption | null {
+    return this.productos.find(
+      producto => producto.id === Number(this.productoSeleccionadoId)
+    ) ?? null;
+  }
+
+  get productosFiltrados(): ProductoInventarioOption[] {
+    const termino = this.normalizarTexto(this.busquedaProducto);
+
+    if (!termino) {
+      return this.productos;
+    }
+
+    return this.productos.filter(producto =>
+      this.normalizarTexto(`${producto.codigo} ${producto.nombre}`).includes(termino)
+    );
+  }
+
+  toggleProductoSelector(): void {
+    this.productoSelectorAbierto = !this.productoSelectorAbierto;
+
+    if (!this.productoSelectorAbierto) {
+      this.busquedaProducto = '';
+    }
+  }
+
+  seleccionarProducto(producto: ProductoInventarioOption): void {
+    this.productoSeleccionadoId = producto.id;
+    this.onProductoSeleccionado();
+    this.productoSelectorAbierto = false;
+    this.busquedaProducto = '';
+  }
+
+  manejarTeclaSelector(event: KeyboardEvent): void {
+    if (event.key === 'Escape') {
+      this.productoSelectorAbierto = false;
+      this.busquedaProducto = '';
+      return;
+    }
+
+    if (
+      event.key === 'Enter' &&
+      this.busquedaProducto.trim() &&
+      this.productosFiltrados.length === 1
+    ) {
+      event.preventDefault();
+      this.seleccionarProducto(this.productosFiltrados[0]);
+    }
+  }
+
+  @HostListener('document:click')
+  cerrarSelectorAlHacerClickFuera(): void {
+    if (this.productoSelectorAbierto) {
+      this.productoSelectorAbierto = false;
+      this.busquedaProducto = '';
+    }
+  }
+
+  private normalizarTexto(valor: string): string {
+    return valor
+      .toLocaleLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
   }
 
   agregarItem(): void {
@@ -333,7 +425,10 @@ export class IngresarInventarioComponent implements OnInit {
   }
 
   private limpiarFormularioProducto(): void {
+    this.camposNumericosEnfocados.clear();
     this.productoSeleccionadoId = null;
+    this.busquedaProducto = '';
+    this.productoSelectorAbierto = false;
     this.cantidad = 1;
     this.costoUnitario = 0;
     this.precioVenta = 0;

@@ -17,6 +17,8 @@ import { ListarEmpresasComponent } from './features/super-admin/empresas/listar-
 import { CrearEmpresaComponent } from './features/super-admin/empresas/crear-empresa/crear-empresa.component';
 import { EditarEmpresaComponent } from './features/super-admin/empresas/editar-empresa/editar-empresa.component';
 import { DetalleEmpresaComponent } from './features/super-admin/empresas/detalle-empresa/detalle-empresa.component';
+import { InformesEmpresaComponent } from './features/super-admin/empresas/informes-empresa/informes-empresa.component';
+import { MovimientosEmpresaComponent } from './features/super-admin/empresas/movimientos-empresa/movimientos-empresa.component';
 
 import {
   CrearUsuarioEmpresaComponent
@@ -33,6 +35,10 @@ import {
 import {
   DetalleSucursalEmpresaComponent
 } from './features/super-admin/empresas/sucursales/detalle-sucursal-empresa/detalle-sucursal-empresa.component';
+
+import {
+  ReportesContablesComponent
+} from './features/super-admin/empresas/sucursales/reportes-contables/reportes-contables.component';
 
 import {
   EditarSucursalEmpresaComponent
@@ -59,6 +65,10 @@ import {
 } from './features/super-admin/empresas/productos/detalles/panel-detalle-producto/panel-detalle-producto.component';
 
 import {
+  AtributosCostoComponent
+} from './features/super-admin/empresas/productos/atributos-costo/atributos-costo.component';
+
+import {
   InventarioSucursalComponent
 } from './features/super-admin/empresas/sucursales/inventario/inventario-sucursal/inventario-sucursal.component';
 
@@ -69,6 +79,14 @@ import {
 import {
   AjustarInventarioComponent
 } from './features/super-admin/empresas/sucursales/inventario/ajustar-inventario/ajustar-inventario.component';
+
+import {
+  AjustarPrecioComponent
+} from './features/super-admin/empresas/sucursales/inventario/ajustar-precio/ajustar-precio.component';
+
+import {
+  ConfigurarPorcentajesComponent
+} from './features/super-admin/empresas/sucursales/inventario/configurar-porcentajes/configurar-porcentajes.component';
 
 import {
   ResumenInventarioComponent
@@ -262,6 +280,14 @@ export const routes: Routes = [
         path: 'dashboard/estadisticas',
         component: DashboardEmpresaComponent
       },
+      {
+        path: 'informes',
+        component: InformesEmpresaComponent
+      },
+      {
+        path: 'movimientos',
+        component: MovimientosEmpresaComponent
+      },
 
       // Usuarios de empresa
       {
@@ -282,6 +308,33 @@ export const routes: Routes = [
         path: 'sucursales/detalle/:sucursalId',
         component: DetalleSucursalEmpresaComponent,
         canActivate: [sucursalAccessGuard]
+      },
+      {
+        path: 'sucursales/:sucursalId/reportes-contables',
+        component: ReportesContablesComponent,
+        canActivate: [sucursalAccessGuard]
+      },
+      {
+        path: 'sucursales/:sucursalId/clasificaciones-contables',
+        loadComponent: () =>
+          import('./features/super-admin/empresas/sucursales/clasificaciones-contables/clasificaciones-contables.component')
+            .then(m => m.ClasificacionesContablesComponent),
+        canActivate: [sucursalAccessGuard]
+      },
+      {
+        path: 'sucursales/:sucursalId/movimientos',
+        component: MovimientosEmpresaComponent,
+        canActivate: [sucursalAccessGuard]
+      },
+      {
+        path: 'sucursales/:sucursalId/compras-varias',
+        loadComponent: () =>
+          import('./features/super-admin/empresas/sucursales/compras-varias/compras-varias.component')
+            .then(m => m.ComprasVariasComponent),
+        canActivate: [roleGuard, sucursalAccessGuard],
+        data: {
+          roles: ['SUPER_ADMIN', 'ADMIN']
+        }
       },
       {
         path: 'sucursales/editar/:sucursalId',
@@ -314,6 +367,10 @@ export const routes: Routes = [
         path: 'productos/detalles/:tipo',
         component: PanelDetalleProductoComponent
       },
+      {
+        path: 'productos/atributos-costo',
+        component: AtributosCostoComponent
+      },
 
       // Inventario
       {
@@ -334,6 +391,16 @@ export const routes: Routes = [
       {
         path: 'sucursales/:sucursalId/inventario/ajustar',
         component: AjustarInventarioComponent,
+        canActivate: [sucursalAccessGuard]
+      },
+      {
+        path: 'sucursales/:sucursalId/inventario/ajustar-precio',
+        component: AjustarPrecioComponent,
+        canActivate: [sucursalAccessGuard]
+      },
+      {
+        path: 'sucursales/:sucursalId/inventario/configurar-porcentajes',
+        component: ConfigurarPorcentajesComponent,
         canActivate: [sucursalAccessGuard]
       },
       {
@@ -436,6 +503,14 @@ export const routes: Routes = [
         path: 'empresas/:empresaId/dashboard',
         component: DashboardEmpresaComponent
       },
+      {
+        path: 'empresas/:empresaId/informes',
+        component: InformesEmpresaComponent
+      },
+      {
+        path: 'empresas/:empresaId/movimientos',
+        component: MovimientosEmpresaComponent
+      },
 
       // Usuarios de empresa
       {
@@ -455,6 +530,30 @@ export const routes: Routes = [
       {
         path: 'empresas/:empresaId/sucursales/detalle/:sucursalId',
         component: DetalleSucursalEmpresaComponent
+      },
+      {
+        path: 'empresas/:empresaId/sucursales/:sucursalId/reportes-contables',
+        component: ReportesContablesComponent
+      },
+      {
+        path: 'empresas/:empresaId/sucursales/:sucursalId/clasificaciones-contables',
+        loadComponent: () =>
+          import('./features/super-admin/empresas/sucursales/clasificaciones-contables/clasificaciones-contables.component')
+            .then(m => m.ClasificacionesContablesComponent)
+      },
+      {
+        path: 'empresas/:empresaId/sucursales/:sucursalId/movimientos',
+        component: MovimientosEmpresaComponent
+      },
+      {
+        path: 'empresas/:empresaId/sucursales/:sucursalId/compras-varias',
+        loadComponent: () =>
+          import('./features/super-admin/empresas/sucursales/compras-varias/compras-varias.component')
+            .then(m => m.ComprasVariasComponent),
+        canActivate: [roleGuard, sucursalAccessGuard],
+        data: {
+          roles: ['SUPER_ADMIN']
+        }
       },
       {
         path: 'empresas/:empresaId/sucursales/editar/:sucursalId',
@@ -484,6 +583,10 @@ export const routes: Routes = [
         path: 'empresas/:empresaId/productos/detalles/:tipo',
         component: PanelDetalleProductoComponent
       },
+      {
+        path: 'empresas/:empresaId/productos/atributos-costo',
+        component: AtributosCostoComponent
+      },
 
       // Inventario
       {
@@ -497,6 +600,14 @@ export const routes: Routes = [
       {
         path: 'empresas/:empresaId/sucursales/:sucursalId/inventario/ajustar',
         component: AjustarInventarioComponent
+      },
+      {
+        path: 'empresas/:empresaId/sucursales/:sucursalId/inventario/ajustar-precio',
+        component: AjustarPrecioComponent
+      },
+      {
+        path: 'empresas/:empresaId/sucursales/:sucursalId/inventario/configurar-porcentajes',
+        component: ConfigurarPorcentajesComponent
       },
       {
         path: 'empresas/:empresaId/sucursales/:sucursalId/inventario/resumen',

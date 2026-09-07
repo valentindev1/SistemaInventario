@@ -107,4 +107,26 @@ export class PanelInventarioSucursalComponent implements OnInit {
 
     return this.utilidadProyectada / this.valorComercialInventario * 100;
   }
+
+  rutaAjustarPrecio(): any[] {
+    return [
+      '/admin/empresa',
+      this.empresaId,
+      'sucursales',
+      this.sucursalId,
+      'inventario',
+      'ajustar-precio'
+    ];
+  }
+
+  rutaConfigurarPorcentajes(): any[] {
+    return [
+      '/admin/empresa',
+      this.empresaId,
+      'sucursales',
+      this.sucursalId,
+      'inventario',
+      'configurar-porcentajes'
+    ];
+  }
 }

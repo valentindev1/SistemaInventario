@@ -14,7 +14,9 @@ public enum TipoMovimiento {
 
     DEVOLUCION,
 
-    CANCELACION_FACTURA
+    CANCELACION_FACTURA,
+
+    REVERSO
 
 
 }

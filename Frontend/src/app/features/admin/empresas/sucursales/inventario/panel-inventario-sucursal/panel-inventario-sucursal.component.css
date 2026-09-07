@@ -44,6 +44,36 @@
   color: #842029;
 }
 
+.icon-price {
+  background: #ede9fe;
+  color: #7c3aed;
+}
+
+.icon-config {
+  background: #cffafe;
+  color: #0891b2;
+}
+
+.btn-price {
+  background: #7c3aed;
+  color: #ffffff;
+}
+
+.btn-price:hover {
+  background: #6d28d9;
+  color: #ffffff;
+}
+
+.btn-config {
+  background: #0891b2;
+  color: #ffffff;
+}
+
+.btn-config:hover {
+  background: #0e7490;
+  color: #ffffff;
+}
+
 .metric-loading-card {
   background: #ffffff;
   border: 1px solid #e9ecef;

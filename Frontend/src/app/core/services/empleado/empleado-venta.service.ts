@@ -22,6 +22,8 @@ import {
 export class EmpleadoVentaService {
 
   private apiUrl = `${environment.apiUrl}/empleado/ventas`;
+  private ventasApiUrl = `${environment.apiUrl}/ventas`;
+
 
   constructor(
     private http: HttpClient,
@@ -92,4 +94,15 @@ export class EmpleadoVentaService {
       usuarioId.toString()
     );
   }
+
+  generarSoporteVentaPdf(ventaId: number): Observable<Blob> {
+    return this.http.get(
+      `${this.ventasApiUrl}/${ventaId}/soporte/pdf`,
+      {
+        responseType: 'blob'
+      }
+    );
+  }
+
+
 }

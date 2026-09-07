@@ -81,7 +81,7 @@
       <div>
         <h2>Agregar producto al ingreso</h2>
         <p>
-          Selecciona el producto, la cantidad, el costo unitario y el precio de venta.
+          Selecciona el producto, indica el costo y define la utilidad para calcular el precio de venta.
         </p>
       </div>
 
@@ -98,28 +98,153 @@
     }
 
     @if (!cargandoProductos) {
+      @if (reglaArticuloActiva && productoSeleccionado; as producto) {
+        <div class="utility-config-bar article-rule-bar">
+          <span class="utility-config-icon">
+            <i class="bi bi-bookmark-star"></i>
+          </span>
+
+          <span class="utility-config-copy">
+            <strong>Regla propia de la referencia</strong>
+            <small>
+              @if (producto.tipoGananciaProducto === 'PORCENTAJE') {
+                Utilidad {{ producto.valorGananciaProducto | number:'1.0-2' }}% sobre el costo.
+              } @else {
+                Utilidad fija de {{ producto.valorGananciaProducto | currency:'COP':'symbol-narrow':'1.0-0' }} por unidad.
+              }
+              Esta regla tiene prioridad sobre la categoría.
+            </small>
+          </span>
+
+          <a class="utility-config-link" [routerLink]="rutaConfigurarPorcentajes()">
+            Editar regla
+          </a>
+        </div>
+      } @else if (reglaCategoriaActiva) {
+        @if (productoSeleccionado; as producto) {
+          <div class="utility-config-bar category-rule-bar">
+          <span class="utility-config-icon">
+            <i class="bi bi-tags"></i>
+          </span>
+
+          <span class="utility-config-copy">
+            <strong>Regla de la categoría: {{ producto.categoriaNombre }}</strong>
+            <small>
+              @if (producto.categoriaTipoGanancia === 'PORCENTAJE') {
+                Utilidad proyectada {{ producto.categoriaValorGanancia | number:'1.0-2' }}% sobre el costo.
+              } @else {
+                Utilidad fija de {{ producto.categoriaValorGanancia | currency:'COP':'symbol-narrow':'1.0-0' }} por unidad.
+              }
+              Esta es la utilidad global que se aplicará a este ingreso.
+            </small>
+          </span>
+
+          <a class="utility-config-link" [routerLink]="rutaConfigurarPorcentajes()">
+            Configurar categorías
+          </a>
+          </div>
+        }
+      } @else if (productoSeleccionado) {
+        <div class="utility-config-empty">
+          <i class="bi bi-info-circle"></i>
+          <span>
+            La categoría de este producto no tiene una regla configurada.
+            Se usará el precio vigente. Marca “Asignar regla manual” para definir una utilidad propia.
+          </span>
+        </div>
+      }
+
       <div class="producto-form-grid">
 
         <div class="form-group producto-select">
           <label for="producto">Producto</label>
 
-          <select
-            id="producto"
-            name="producto"
-            [(ngModel)]="productoSeleccionadoId"
-            (change)="onProductoSeleccionado()">
+          <div class="product-picker" (click)="$event.stopPropagation()">
+            <button
+              type="button"
+              class="product-picker-trigger"
+              [class.has-value]="productoSeleccionado"
+              [attr.aria-expanded]="productoSelectorAbierto"
+              aria-haspopup="listbox"
+              aria-controls="lista-productos"
+              (click)="toggleProductoSelector()">
 
-            <option [ngValue]="null">
-              Seleccione un producto
-            </option>
+              <span class="product-picker-icon">
+                <i class="bi bi-box-seam"></i>
+              </span>
 
-            @for (producto of productos; track producto.id) {
-              <option [ngValue]="producto.id">
-                {{ producto.codigo }} - {{ producto.nombre }}
-              </option>
-            }
+              <span class="product-picker-value" *ngIf="productoSeleccionado as producto; else productoSinSeleccionar">
+                <strong>{{ producto.codigo }}</strong>
+                <small>{{ producto.nombre }}</small>
+              </span>
 
-          </select>
+              <ng-template #productoSinSeleccionar>
+                <span class="product-picker-placeholder">Busca y selecciona un producto</span>
+              </ng-template>
+
+              <i class="bi bi-chevron-down product-picker-chevron" [class.rotated]="productoSelectorAbierto"></i>
+            </button>
+
+            <div
+              *ngIf="productoSelectorAbierto"
+              id="lista-productos"
+              class="product-picker-menu"
+              role="listbox">
+
+              <div class="product-search">
+                <i class="bi bi-search"></i>
+                <input
+                  id="buscarProducto"
+                  name="buscarProducto"
+                  type="search"
+                  autocomplete="off"
+                  placeholder="Buscar por código o nombre..."
+                  [(ngModel)]="busquedaProducto"
+                  (keydown)="manejarTeclaSelector($event)">
+              </div>
+
+              <div class="product-options">
+                <button
+                  *ngFor="let producto of productosFiltrados"
+                  type="button"
+                  class="product-option"
+                  [class.is-selected]="productoSeleccionadoId === producto.id"
+                  [attr.aria-selected]="productoSeleccionadoId === producto.id"
+                  (click)="seleccionarProducto(producto)">
+                  <span class="product-option-main">
+                    <strong>{{ producto.codigo }}</strong>
+                    <span>{{ producto.nombre }}</span>
+                  </span>
+                  <span class="product-option-prices">
+                    <small>Costo {{ producto.costoUnitario | currency:'COP':'symbol-narrow':'1.0-0' }}</small>
+                    <small>Venta {{ producto.precioVenta | currency:'COP':'symbol-narrow':'1.0-0' }}</small>
+                    <small *ngIf="producto.tipoGananciaProducto === 'PORCENTAJE'" class="product-option-category">
+                      Artículo {{ producto.valorGananciaProducto | number:'1.0-2' }}%
+                    </small>
+                    <small *ngIf="producto.tipoGananciaProducto === 'DINERO'" class="product-option-category">
+                      Artículo {{ producto.valorGananciaProducto | currency:'COP':'symbol-narrow':'1.0-0' }} fija
+                    </small>
+                    <small *ngIf="!producto.tipoGananciaProducto && producto.categoriaTipoGanancia === 'PORCENTAJE'" class="product-option-category">
+                      Categoría {{ producto.categoriaValorGanancia | number:'1.0-2' }}%
+                    </small>
+                    <small *ngIf="!producto.tipoGananciaProducto && producto.categoriaTipoGanancia === 'DINERO'" class="product-option-category">
+                      Categoría {{ producto.categoriaValorGanancia | currency:'COP':'symbol-narrow':'1.0-0' }} fija
+                    </small>
+                  </span>
+                  <i *ngIf="productoSeleccionadoId === producto.id" class="bi bi-check2 product-option-check"></i>
+                </button>
+
+                <div *ngIf="productosFiltrados.length === 0" class="product-empty">
+                  <i class="bi bi-search"></i>
+                  <span>No encontramos productos con esa búsqueda.</span>
+                </div>
+              </div>
+
+              <div class="product-picker-footer">
+                {{ productosFiltrados.length }} producto(s) disponible(s)
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="form-group">
@@ -130,7 +255,9 @@
             name="cantidad"
             type="number"
             min="1"
-            [(ngModel)]="cantidad">
+            [(ngModel)]="cantidad"
+            (focus)="ponerEnCeroAlEnfocar('cantidad', $event)"
+            (ngModelChange)="recalcularPrecioVenta()">
         </div>
 
         <div class="form-group">
@@ -139,23 +266,120 @@
           <input
             id="costoUnitario"
             name="costoUnitario"
-            type="number"
-            min="0"
-            [(ngModel)]="costoUnitario">
+            type="text"
+            inputmode="numeric"
+            autocomplete="off"
+            [value]="costoUnitarioTexto"
+            (focus)="ponerEnCeroAlEnfocar('costoUnitario', $event)"
+            (input)="actualizarCostoUnitario($event)">
+        </div>
+
+        <div class="manual-rule-field">
+          <label class="manual-rule-toggle" [class.is-locked]="reglaArticuloActiva">
+            <input
+              type="checkbox"
+              name="asignarReglaManual"
+              [(ngModel)]="asignarReglaManual"
+              [disabled]="reglaArticuloActiva"
+              (ngModelChange)="cambiarAsignacionReglaManual($event)">
+
+            <span class="manual-rule-toggle-copy">
+              <strong>Asignar regla manual</strong>
+              <small>
+                @if (reglaArticuloActiva) {
+                  Este artículo ya tiene una regla propia asignada.
+                } @else if (asignarReglaManual) {
+                  El porcentaje o valor fijo se guardará como regla propia del artículo.
+                } @else {
+                  @if (reglaCategoriaActiva) {
+                    Se aplicará la utilidad global de la categoría.
+                  } @else {
+                    Se conservará el precio vigente del producto.
+                  }
+                }
+              </small>
+            </span>
+          </label>
+        </div>
+
+        <div class="utility-mode-field" [class.is-disabled]="!asignarReglaManual">
+          <label>Utilidad que se aplicará</label>
+
+          <div class="utility-mode-switch" role="group" aria-label="Modo de utilidad">
+            <button
+              type="button"
+              [class.active]="modoUtilidad === 'PORCENTAJE'"
+              [disabled]="!asignarReglaManual"
+              (click)="cambiarModoUtilidad('PORCENTAJE')">
+              <i class="bi bi-percent me-1"></i>
+              Porcentaje
+            </button>
+
+            <button
+              type="button"
+              [class.active]="modoUtilidad === 'DINERO'"
+              [disabled]="!asignarReglaManual"
+              (click)="cambiarModoUtilidad('DINERO')">
+              <i class="bi bi-cash-coin me-1"></i>
+              Valor fijo / manual
+            </button>
+          </div>
         </div>
 
         <div class="form-group">
-          <label for="precioVenta">Precio de venta</label>
+          <label for="valorUtilidad">
+            {{ modoUtilidad === 'PORCENTAJE' ? 'Utilidad proyectada (%)' : 'Utilidad fija ($)' }}
+          </label>
 
           <input
-            id="precioVenta"
-            name="precioVenta"
+            id="valorUtilidad"
+            name="valorUtilidad"
             type="number"
             min="0"
-            [(ngModel)]="precioVenta">
+            step="0.01"
+            [(ngModel)]="valorUtilidad"
+            [disabled]="!asignarReglaManual"
+            (focus)="ponerEnCeroAlEnfocar('valorUtilidad', $event)"
+            (ngModelChange)="cambioManualDeUtilidad()">
+        </div>
+
+        <div class="form-group calculated-sale-price-field">
+          <label for="precioVentaCalculado">Precio de venta estimado</label>
+
+          <input
+            id="precioVentaCalculado"
+            name="precioVentaCalculado"
+            type="text"
+            readonly
+            [value]="precioVenta | currency:'COP':'symbol-narrow':'1.0-0'">
         </div>
 
       </div>
+
+      @if (productoSeleccionado) {
+        <div class="utility-preview" aria-live="polite">
+          <div class="utility-preview-main">
+            <span>Precio de venta final</span>
+            <strong>{{ precioVenta | currency:'COP':'symbol-narrow':'1.0-0' }}</strong>
+            <small>Se aplicará automáticamente al ingresar la referencia.</small>
+          </div>
+
+          <div class="utility-preview-item">
+            <span>Utilidad por unidad</span>
+            <strong>{{ obtenerUtilidadUnitario() | currency:'COP':'symbol-narrow':'1.0-0' }}</strong>
+          </div>
+
+          <div class="utility-preview-item">
+            <span>Porcentaje</span>
+            <strong>{{ obtenerPorcentajeUtilidad() | number:'1.0-2' }}%</strong>
+          </div>
+
+          <div class="utility-preview-item utility-preview-highlight">
+            <span>Beneficio proyectado · {{ cantidad }} unidad(es)</span>
+            <strong>{{ obtenerBeneficioProyectado() | currency:'COP':'symbol-narrow':'1.0-0' }}</strong>
+          </div>
+        </div>
+      }
 
       <div class="form-actions">
         <button
@@ -259,23 +483,27 @@
                       class="table-input"
                       type="number"
                       min="0"
-                      [(ngModel)]="itemEditando.costoUnitario">
+                      [(ngModel)]="itemEditando.costoUnitario"
+                      (ngModelChange)="recalcularPrecioEdicion()">
                   }
                 </td>
 
                 <!-- Precio venta -->
                 <td>
-                  @if (indiceEditando !== i) {
-                    <span>
-                      {{ item.precioVenta | currency:'COP':'symbol-narrow':'1.0-0' }}
-                    </span>
-                  } @else {
-                    <input
+                @if (indiceEditando !== i) {
+                  <span>
+                    {{ item.precioVenta | currency:'COP':'symbol-narrow':'1.0-0' }}
+                  </span>
+                } @else {
+                  <input
                       class="table-input"
                       type="number"
                       min="0"
-                      [(ngModel)]="itemEditando.precioVenta">
-                  }
+                      [value]="itemEditando.precioVenta"
+                      readonly
+                      title="Se calcula según la utilidad configurada">
+                  <small class="table-calculated-hint">Calculado</small>
+                }
                 </td>
 
                 <!-- Total costo -->

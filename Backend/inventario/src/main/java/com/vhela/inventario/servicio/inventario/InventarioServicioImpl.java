@@ -1,7 +1,13 @@
 package com.vhela.inventario.servicio.inventario;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 
 import com.vhela.inventario.dto.inventario.empleado.MovimientoInventarioEmpleadoDTO;
 import org.springframework.stereotype.Service;
@@ -14,6 +20,8 @@ import com.vhela.inventario.dto.inventario.InventarioAdminDTO;
 import com.vhela.inventario.dto.inventario.InventarioEmpleadoDTO;
 import com.vhela.inventario.dto.inventario.MovimientoInventarioDTO;
 import com.vhela.inventario.dto.inventario.ResumenInventarioSucursalDTO;
+import com.vhela.inventario.modelo.empresa.ActividadEmpresa;
+import com.vhela.inventario.modelo.empresa.Empresa;
 import com.vhela.inventario.modelo.inventario.InventarioSucursal;
 import com.vhela.inventario.modelo.inventario.MovimientoInventario;
 import com.vhela.inventario.modelo.inventario.enums.TipoMovimiento;
@@ -23,6 +31,8 @@ import com.vhela.inventario.modelo.usuario.RolEnum;
 import com.vhela.inventario.modelo.usuario.Usuario;
 import com.vhela.inventario.repositorio.SucursalRepositorio;
 import com.vhela.inventario.repositorio.UsuarioRepositorio;
+import com.vhela.inventario.repositorio.EmpresaRepositorio;
+import com.vhela.inventario.repositorio.empresa.ActividadEmpresaRepositorio;
 import com.vhela.inventario.repositorio.inventario.InventarioSucursalRepositorio;
 import com.vhela.inventario.repositorio.inventario.MovimientoInventarioRepositorio;
 import com.vhela.inventario.repositorio.producto.ProductoRepositorio;
@@ -39,6 +49,8 @@ public class InventarioServicioImpl implements InventarioServicio {
     private final ProductoRepositorio productoRepositorio;
     private final SucursalRepositorio sucursalRepositorio;
     private final UsuarioRepositorio usuarioRepositorio;
+    private final EmpresaRepositorio empresaRepositorio;
+    private final ActividadEmpresaRepositorio actividadEmpresaRepositorio;
 
     @Override
     public void ingresarMercancia(Long usuarioId, IngresoInventarioDTO dto) {
@@ -57,6 +69,15 @@ public class InventarioServicioImpl implements InventarioServicio {
 
             validarProductoPerteneceAEmpresa(producto, sucursal);
 
+            BigDecimal precioVentaCalculado = calcularPrecioVenta(
+                    item.getCostoUnitario(),
+                    item.getPrecioVenta(),
+                    item.getModoUtilidad(),
+                    item.getValorUtilidad()
+            );
+
+            aplicarReglaUtilidadDelIngreso(producto, item);
+
             /*
              * Regla de negocio:
              * El último ingreso actualiza el costo y precio de venta del producto.
@@ -69,7 +90,7 @@ public class InventarioServicioImpl implements InventarioServicio {
              * El stock solo se modifica en la sucursal donde se ingresa la mercancía.
              */
             producto.setCostoUnitario(item.getCostoUnitario());
-            producto.setPrecioVenta(item.getPrecioVenta());
+            producto.setPrecioVenta(precioVentaCalculado);
 
             productoRepositorio.save(producto);
 
@@ -234,6 +255,134 @@ public class InventarioServicioImpl implements InventarioServicio {
                 .toList();
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<MovimientoInventarioDTO> listarMovimientosPorEmpresa(
+            Long usuarioId,
+            Long empresaId
+    ) {
+        Usuario usuario = obtenerUsuario(usuarioId);
+        validarPermisoModificarInventario(usuario);
+
+        Empresa empresa = obtenerEmpresa(empresaId);
+        validarAccesoEmpresa(usuario, empresaId);
+
+        List<MovimientoInventarioDTO> actividades = new ArrayList<>();
+
+        movimientoInventarioRepositorio
+                .findBySucursal_Empresa_IdOrderByFechaDesc(empresa.getId())
+                .stream()
+                .map(this::mapToMovimientoDTO)
+                .forEach(actividades::add);
+
+        List<ActividadEmpresa> actividadesCatalogo = actividadEmpresaRepositorio
+                .findByEmpresaIdOrderByFechaDesc(empresa.getId());
+
+        actividadesCatalogo
+                .stream()
+                .map(this::mapToActividadDTO)
+                .forEach(actividades::add);
+
+        Set<Long> productosConActividad = new HashSet<>();
+        actividadesCatalogo.forEach(actividad -> {
+            if (actividad.getProducto() != null) {
+                productosConActividad.add(actividad.getProducto().getId());
+            }
+        });
+
+        // Compatibilidad con productos creados antes de activar esta bitácora.
+        productoRepositorio.findByEmpresaId(empresa.getId())
+                .stream()
+                .filter(producto -> !productosConActividad.contains(producto.getId()))
+                .map(this::mapProductoHistorico)
+                .forEach(actividades::add);
+
+        actividades.sort(
+                Comparator.comparing(
+                        MovimientoInventarioDTO::getFecha,
+                        Comparator.nullsLast(Comparator.reverseOrder())
+                )
+        );
+
+        return actividades;
+    }
+
+    @Override
+    public MovimientoInventarioDTO revertirMovimiento(
+            Long usuarioId,
+            Long empresaId,
+            Long movimientoId
+    ) {
+        Usuario usuario = obtenerUsuario(usuarioId);
+        validarPermisoModificarInventario(usuario);
+        validarAccesoEmpresa(usuario, empresaId);
+
+        MovimientoInventario movimiento = movimientoInventarioRepositorio.findById(movimientoId)
+                .orElseThrow(() -> new RuntimeException("Movimiento no encontrado"));
+
+        if (movimiento.getSucursal() == null
+                || movimiento.getSucursal().getEmpresa() == null
+                || !movimiento.getSucursal().getEmpresa().getId().equals(empresaId)) {
+            throw new RuntimeException("El movimiento no pertenece a la empresa seleccionada");
+        }
+
+        if (movimiento.getTipo() == TipoMovimiento.REVERSO) {
+            throw new RuntimeException("Un movimiento compensatorio no se puede revertir nuevamente");
+        }
+
+        if (Boolean.TRUE.equals(movimiento.getRevertido())) {
+            throw new RuntimeException("Este movimiento ya fue revertido");
+        }
+
+        if (movimiento.getCantidad() == null || movimiento.getCantidad() == 0) {
+            throw new RuntimeException("El movimiento no tiene una cantidad que pueda revertirse");
+        }
+
+        InventarioSucursal inventario = inventarioSucursalRepositorio
+                .findBySucursalIdAndProductoId(
+                        movimiento.getSucursal().getId(),
+                        movimiento.getProducto().getId()
+                )
+                .orElseThrow(() -> new RuntimeException(
+                        "No existe inventario actual para el producto del movimiento"
+                ));
+
+        Integer stockAntes = inventario.getStockActual();
+        Integer cantidadCompensatoria = movimiento.getCantidad() * -1;
+        Integer stockDespues = stockAntes + cantidadCompensatoria;
+
+        if (stockDespues < 0) {
+            throw new RuntimeException(
+                    "La reversión dejaría el inventario en negativo. Ajusta primero el stock actual."
+            );
+        }
+
+        inventario.setStockActual(stockDespues);
+        inventarioSucursalRepositorio.save(inventario);
+
+        MovimientoInventario reverso = new MovimientoInventario();
+        reverso.setTipo(TipoMovimiento.REVERSO);
+        reverso.setCantidad(cantidadCompensatoria);
+        reverso.setStockAntes(stockAntes);
+        reverso.setStockDespues(stockDespues);
+        reverso.setMotivo("Reversión del movimiento #" + movimiento.getId());
+        reverso.setReferenciaId(movimiento.getId());
+        reverso.setProducto(movimiento.getProducto());
+        reverso.setSucursal(movimiento.getSucursal());
+        reverso.setUsuario(usuario);
+        reverso.setCostoUnitarioMomento(movimiento.getCostoUnitarioMomento());
+        reverso.setPrecioVentaMomento(movimiento.getPrecioVentaMomento());
+        reverso.setRevertido(false);
+
+        MovimientoInventario reversoGuardado = movimientoInventarioRepositorio.saveAndFlush(reverso);
+
+        movimiento.setRevertido(true);
+        movimiento.setMovimientoReversionId(reversoGuardado.getId());
+        movimientoInventarioRepositorio.save(movimiento);
+
+        return mapToMovimientoDTO(reversoGuardado);
+    }
+
     private InventarioSucursal crearInventarioInicial(Sucursal sucursal, Producto producto) {
 
         InventarioSucursal inventario = new InventarioSucursal();
@@ -286,6 +435,11 @@ public class InventarioServicioImpl implements InventarioServicio {
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
     }
 
+    private Empresa obtenerEmpresa(Long empresaId) {
+        return empresaRepositorio.findById(empresaId)
+                .orElseThrow(() -> new RuntimeException("Empresa no encontrada"));
+    }
+
     private Sucursal obtenerSucursal(Long sucursalId) {
         return sucursalRepositorio.findById(sucursalId)
                 .orElseThrow(() -> new RuntimeException("Sucursal no encontrada"));
@@ -318,6 +472,71 @@ public class InventarioServicioImpl implements InventarioServicio {
         if (!sucursal.getEmpresa().getId().equals(usuario.getEmpresa().getId())) {
             throw new RuntimeException("No puede operar inventario de otra empresa");
         }
+    }
+
+    private void validarAccesoEmpresa(Usuario usuario, Long empresaId) {
+        if (usuario.getRol() == RolEnum.SUPER_ADMIN) {
+            return;
+        }
+
+        if (usuario.getEmpresa() == null || !usuario.getEmpresa().getId().equals(empresaId)) {
+            throw new RuntimeException("No puede consultar movimientos de otra empresa");
+        }
+    }
+
+    private void aplicarReglaUtilidadDelIngreso(
+            Producto producto,
+            IngresoInventarioItemDTO item
+    ) {
+        if (!Boolean.TRUE.equals(item.getReglaUtilidadModificada())) {
+            return;
+        }
+
+        String modo = item.getModoUtilidad() == null
+                ? ""
+                : item.getModoUtilidad().trim().toUpperCase(Locale.ROOT);
+
+        if (!"PORCENTAJE".equals(modo) && !"DINERO".equals(modo)) {
+            throw new RuntimeException("El modo de utilidad debe ser PORCENTAJE o DINERO");
+        }
+
+        BigDecimal valor = item.getValorUtilidad() == null
+                ? BigDecimal.ZERO
+                : item.getValorUtilidad();
+
+        producto.setTipoGanancia(modo);
+        producto.setValorGanancia(valor.setScale(2, RoundingMode.HALF_UP));
+    }
+
+    private BigDecimal calcularPrecioVenta(
+            BigDecimal costoUnitario,
+            BigDecimal precioVentaInformado,
+            String modoUtilidad,
+            BigDecimal valorUtilidad
+    ) {
+        // Compatibilidad con ingresos antiguos que todavía no envían la regla.
+        if (modoUtilidad == null || modoUtilidad.isBlank()) {
+            return precioVentaInformado;
+        }
+
+        BigDecimal costo = costoUnitario == null ? BigDecimal.ZERO : costoUnitario;
+        BigDecimal utilidad = valorUtilidad == null ? BigDecimal.ZERO : valorUtilidad;
+        String modo = modoUtilidad.trim().toUpperCase(Locale.ROOT);
+
+        BigDecimal precio;
+        if ("PORCENTAJE".equals(modo)) {
+            precio = costo.add(costo.multiply(utilidad).divide(
+                    BigDecimal.valueOf(100),
+                    2,
+                    RoundingMode.HALF_UP
+            ));
+        } else if ("DINERO".equals(modo)) {
+            precio = costo.add(utilidad);
+        } else {
+            throw new RuntimeException("El modo de utilidad debe ser PORCENTAJE o DINERO");
+        }
+
+        return precio.setScale(2, RoundingMode.HALF_UP);
     }
 
     private void validarAccesoConsultaInventario(Usuario usuario, Sucursal sucursal) {
@@ -430,6 +649,7 @@ public class InventarioServicioImpl implements InventarioServicio {
 
         dto.setId(movimiento.getId());
         dto.setTipo(movimiento.getTipo().name());
+        dto.setOrigen("INVENTARIO");
 
         dto.setProductoId(movimiento.getProducto().getId());
         dto.setProductoCodigo(movimiento.getProducto().getCodigo());
@@ -453,6 +673,66 @@ public class InventarioServicioImpl implements InventarioServicio {
         dto.setReferenciaId(movimiento.getReferenciaId());
 
         dto.setFecha(movimiento.getFecha());
+        dto.setPuedeRevertirse(
+                movimiento.getTipo() != TipoMovimiento.REVERSO
+                        && !Boolean.TRUE.equals(movimiento.getRevertido())
+        );
+        dto.setRevertido(Boolean.TRUE.equals(movimiento.getRevertido()));
+        dto.setMovimientoReversionId(movimiento.getMovimientoReversionId());
+
+        return dto;
+    }
+
+    private MovimientoInventarioDTO mapToActividadDTO(ActividadEmpresa actividad) {
+        MovimientoInventarioDTO dto = new MovimientoInventarioDTO();
+
+        // Los IDs negativos separan estas actividades de los IDs de movimientos de stock.
+        dto.setId(actividad.getId() * -1);
+        dto.setTipo(actividad.getTipo());
+        dto.setOrigen("CATALOGO");
+
+        if (actividad.getProducto() != null) {
+            dto.setProductoId(actividad.getProducto().getId());
+            dto.setProductoCodigo(actividad.getProducto().getCodigo());
+            dto.setProductoNombre(actividad.getProducto().getNombre());
+        }
+
+        if (actividad.getSucursal() != null) {
+            dto.setSucursalId(actividad.getSucursal().getId());
+            dto.setSucursalNombre(actividad.getSucursal().getNombre());
+        }
+
+        if (actividad.getUsuario() != null) {
+            dto.setUsuarioId(actividad.getUsuario().getId());
+            dto.setUsuarioNombre(actividad.getUsuario().getNombre());
+            dto.setUsuarioRol(actividad.getUsuario().getRol().name());
+        }
+
+        dto.setMotivo(actividad.getDescripcion());
+        dto.setReferenciaId(actividad.getReferenciaId());
+        dto.setFecha(actividad.getFecha());
+        dto.setPuedeRevertirse(false);
+        dto.setRevertido(false);
+
+        return dto;
+    }
+
+    private MovimientoInventarioDTO mapProductoHistorico(Producto producto) {
+        MovimientoInventarioDTO dto = new MovimientoInventarioDTO();
+
+        dto.setId(-(1_000_000_000L + producto.getId()));
+        dto.setTipo("PRODUCTO_CREADO");
+        dto.setOrigen("CATALOGO");
+        dto.setProductoId(producto.getId());
+        dto.setProductoCodigo(producto.getCodigo());
+        dto.setProductoNombre(producto.getNombre());
+        dto.setUsuarioNombre("Sistema (histórico)");
+        dto.setUsuarioRol("HISTÓRICO");
+        dto.setMotivo("Referencia existente en el catálogo; no se dispone del usuario de creación.");
+        dto.setReferenciaId(producto.getId());
+        dto.setFecha(producto.getFechaCreacion());
+        dto.setPuedeRevertirse(false);
+        dto.setRevertido(false);
 
         return dto;
     }

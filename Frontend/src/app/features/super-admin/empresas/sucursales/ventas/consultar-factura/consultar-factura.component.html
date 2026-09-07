@@ -232,23 +232,43 @@
               </h4>
             </div>
 
-            @if (puedeCancelarFactura(facturaSeleccionada)) {
+            <div class="d-flex flex-column align-items-md-end gap-2">
+
               <button
                 type="button"
-                class="btn btn-outline-danger btn-sm"
-                (click)="cancelarFactura(facturaSeleccionada)"
-                [disabled]="cancelando">
+                class="btn btn-outline-primary btn-sm"
+                (click)="generarSoportePdf(facturaSeleccionada)"
+                [disabled]="generandoSoporte">
 
-                @if (cancelando) {
+                @if (generandoSoporte) {
                   <span class="spinner-border spinner-border-sm me-1"></span>
-                  Cancelando...
+                  Generando PDF...
                 } @else {
-                  <i class="bi bi-x-circle me-1"></i>
-                  Cancelar factura
+                  <i class="bi bi-file-earmark-pdf me-1"></i>
+                  Descargar soporte PDF
                 }
 
               </button>
-            }
+
+              @if (puedeCancelarFactura(facturaSeleccionada)) {
+                <button
+                  type="button"
+                  class="btn btn-outline-danger btn-sm"
+                  (click)="cancelarFactura(facturaSeleccionada)"
+                  [disabled]="cancelando">
+
+                  @if (cancelando) {
+                    <span class="spinner-border spinner-border-sm me-1"></span>
+                    Cancelando...
+                  } @else {
+                    <i class="bi bi-x-circle me-1"></i>
+                    Cancelar factura
+                  }
+
+                </button>
+              }
+
+            </div>
           </div>
 
         </div>
@@ -565,13 +585,27 @@
                   </td>
 
                   <td class="text-end">
-                    <div class="d-flex justify-content-end gap-1">
+                    <div class="d-flex justify-content-end gap-1 flex-wrap">
 
                       <button
                         type="button"
                         class="btn btn-sm btn-outline-primary"
                         (click)="verDetalleFactura(factura)">
                         Ver detalle
+                      </button>
+
+                      <button
+                        type="button"
+                        class="btn btn-sm btn-outline-success"
+                        (click)="generarSoportePdf(factura)"
+                        [disabled]="generandoSoporte">
+                        @if (generandoSoporte) {
+                          <span class="spinner-border spinner-border-sm me-1"></span>
+                          PDF...
+                        } @else {
+                          <i class="bi bi-file-earmark-pdf me-1"></i>
+                          PDF
+                        }
                       </button>
 
                       <button

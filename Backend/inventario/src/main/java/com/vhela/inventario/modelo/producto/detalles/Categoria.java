@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -32,6 +33,15 @@ public class Categoria {
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime fechaCreacion;
+
+    @Column(name = "porcentaje_ganancia", precision = 7, scale = 2)
+    private BigDecimal porcentajeGanancia;
+
+    @Column(name = "tipo_ganancia", length = 20)
+    private String tipoGanancia;
+
+    @Column(name = "valor_ganancia", precision = 12, scale = 2)
+    private BigDecimal valorGanancia;
 
     private Boolean activo = true;
 

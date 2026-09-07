@@ -1,0 +1,451 @@
+<div class="utility-page">
+
+  <header class="utility-header">
+    <div>
+      <button
+        type="button"
+        class="back-link"
+        (click)="volverAlPanel()">
+        <i class="bi bi-arrow-left me-1"></i>
+        Volver al panel de inventario
+      </button>
+
+      <span class="page-eyebrow">
+        <i class="bi bi-sliders me-1"></i>
+        Configuración de precios
+      </span>
+
+      <h1>Configurar porcentajes</h1>
+
+      <p>
+        Define cómo calcular la utilidad cuando agregues mercancía al inventario.
+      </p>
+    </div>
+
+    <div class="header-icon">
+      <i class="bi bi-percent"></i>
+    </div>
+  </header>
+
+  @if (mensajeExito) {
+    <div class="alert alert-success">
+      <i class="bi bi-check-circle me-2"></i>
+      {{ mensajeExito }}
+    </div>
+  }
+
+  @if (mensajeError) {
+    <div class="alert alert-danger">
+      <i class="bi bi-exclamation-triangle me-2"></i>
+      {{ mensajeError }}
+    </div>
+  }
+
+  <div class="utility-layout">
+    <section class="utility-card">
+      <div class="card-heading">
+        <div class="heading-icon">
+          <i class="bi bi-calculator"></i>
+        </div>
+
+        <div>
+          <h2>Regla de utilidad por categoría</h2>
+          <p>Selecciona una categoría y define su utilidad por porcentaje o por valor fijo.</p>
+        </div>
+      </div>
+
+      <div class="category-rule-box">
+        <div class="category-rule-heading">
+          <span class="category-rule-icon"><i class="bi bi-tags"></i></span>
+          <div>
+            <strong>Selecciona una categoría</strong>
+            <small>La regla se aplicará a los productos nuevos y a los existentes de esta categoría.</small>
+          </div>
+        </div>
+
+        <div class="category-select-group">
+          <label for="categoriaUtilidad">Categoría</label>
+
+          <div class="category-picker" (click)="$event.stopPropagation()">
+            <button
+              type="button"
+              class="category-picker-trigger"
+              [class.has-value]="categoriaSeleccionada"
+              [class.is-open]="categoriaSelectorAbierto"
+              [attr.aria-expanded]="categoriaSelectorAbierto"
+              aria-haspopup="listbox"
+              (click)="toggleCategoriaSelector()">
+              <span class="category-picker-leading">
+                <i class="bi bi-tags"></i>
+              </span>
+
+              @if (categoriaSeleccionada; as categoria) {
+                <span class="category-picker-value">
+                  <strong>{{ categoria.nombre }}</strong>
+                  <small>{{ obtenerResumenRegla(categoria) }}</small>
+                </span>
+              } @else {
+                <span class="category-picker-placeholder">
+                  {{ cargandoCategorias ? 'Cargando categorías...' : 'Selecciona una categoría' }}
+                </span>
+              }
+
+              <i
+                class="bi bi-chevron-down category-picker-chevron"
+                [class.rotated]="categoriaSelectorAbierto"></i>
+            </button>
+
+            @if (categoriaSelectorAbierto) {
+              <div class="category-picker-menu" role="listbox">
+                <div class="category-search">
+                  <i class="bi bi-search"></i>
+                  <input
+                    id="buscarCategoriaUtilidad"
+                    name="buscarCategoriaUtilidad"
+                    type="search"
+                    autocomplete="off"
+                    placeholder="Buscar por nombre o ID..."
+                    [(ngModel)]="busquedaCategoria">
+                </div>
+
+                <div class="category-options">
+                  <button
+                    *ngFor="let categoria of categoriasFiltradas"
+                    type="button"
+                    class="category-option"
+                    [class.is-selected]="categoriaSeleccionadaId === categoria.id"
+                    [attr.aria-selected]="categoriaSeleccionadaId === categoria.id"
+                    (click)="seleccionarCategoria(categoria)">
+                    <span class="category-option-icon">
+                      <i class="bi bi-grid"></i>
+                    </span>
+
+                    <span class="category-option-main">
+                      <strong>{{ categoria.nombre }}</strong>
+                      <small>ID #{{ categoria.id }}</small>
+                    </span>
+
+                    <span
+                      class="category-option-rule"
+                      [class.is-empty]="!categoria.tipoGanancia">
+                      {{ obtenerResumenRegla(categoria) }}
+                    </span>
+
+                    <i
+                      *ngIf="categoriaSeleccionadaId === categoria.id"
+                      class="bi bi-check2 category-option-check"></i>
+                  </button>
+
+                  <div *ngIf="categoriasFiltradas.length === 0" class="category-empty">
+                    <i class="bi bi-search"></i>
+                    <span>No encontramos categorías con esa búsqueda.</span>
+                  </div>
+                </div>
+
+                <div class="category-picker-footer">
+                  {{ categoriasFiltradas.length }} categoría(s) disponible(s)
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+
+        @if (categoriaSeleccionada) {
+          <div class="category-current-rule">
+            <span>Regla actual de {{ categoriaSeleccionada.nombre }}</span>
+            <strong>
+              {{ categoriaSeleccionada.tipoGanancia === 'PORCENTAJE'
+                ? (categoriaSeleccionada.valorGanancia | number:'1.0-2') + '% sobre costo'
+                : categoriaSeleccionada.tipoGanancia === 'DINERO'
+                  ? (categoriaSeleccionada.valorGanancia | currency:'COP':'symbol-narrow':'1.0-0') + ' por unidad'
+                  : 'Sin configurar' }}
+            </strong>
+          </div>
+        }
+
+        <div class="category-mode-group">
+          <label>Aplicar utilidad por</label>
+
+          <div class="mode-selector">
+            <button
+              type="button"
+              class="mode-option"
+              [class.active]="tipoGanancia === 'PORCENTAJE'"
+              [disabled]="!categoriaSeleccionada"
+              (click)="seleccionarTipoGanancia('PORCENTAJE')">
+              <span class="mode-icon"><i class="bi bi-percent"></i></span>
+              <span>
+                <strong>Porcentaje sobre costo</strong>
+                <small>Ejemplo: 30% sobre el costo.</small>
+              </span>
+              <i *ngIf="tipoGanancia === 'PORCENTAJE'" class="bi bi-check-circle-fill mode-check"></i>
+            </button>
+
+            <button
+              type="button"
+              class="mode-option"
+              [class.active]="tipoGanancia === 'DINERO'"
+              [disabled]="!categoriaSeleccionada"
+              (click)="seleccionarTipoGanancia('DINERO')">
+              <span class="mode-icon money"><i class="bi bi-cash-stack"></i></span>
+              <span>
+                <strong>Valor fijo en dinero</strong>
+                <small>Ejemplo: $25.000 de utilidad por unidad.</small>
+              </span>
+              <i *ngIf="tipoGanancia === 'DINERO'" class="bi bi-check-circle-fill mode-check"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="utility-input-group category-percentage-input">
+          <label for="valorGananciaCategoria">
+            {{ tipoGanancia === 'PORCENTAJE' ? 'Porcentaje proyectado' : 'Utilidad por unidad' }}
+          </label>
+
+          <div class="utility-input-wrapper">
+            <span>{{ tipoGanancia === 'PORCENTAJE' ? '%' : '$' }}</span>
+            <input
+              id="valorGananciaCategoria"
+              name="valorGananciaCategoria"
+              type="number"
+              min="0"
+              [max]="tipoGanancia === 'PORCENTAJE' ? 1000 : null"
+              step="0.01"
+              [(ngModel)]="valorGanancia"
+              (focus)="limpiarPorcentajeAlEnfocar($event)"
+              [disabled]="!categoriaSeleccionada">
+          </div>
+        </div>
+
+        <button
+          type="button"
+          class="btn btn-primary save-button category-save-button"
+          [disabled]="!categoriaSeleccionada || guardandoReglaCategoria"
+          (click)="guardarReglaCategoria()">
+          <span *ngIf="guardandoReglaCategoria" class="spinner-border spinner-border-sm me-2"></span>
+          <i *ngIf="!guardandoReglaCategoria" class="bi bi-save me-2"></i>
+          Guardar regla de categoría
+        </button>
+
+        <button
+          type="button"
+          class="btn global-category-button"
+          [disabled]="!categoriaSeleccionada || guardandoReglaCategoria"
+          (click)="guardarReglaCategoriaGlobal()">
+          <span *ngIf="guardandoReglaCategoria" class="spinner-border spinner-border-sm me-2"></span>
+          <i *ngIf="!guardandoReglaCategoria" class="bi bi-globe2 me-2"></i>
+          Aplicar porcentaje global a todos
+        </button>
+
+        <div class="category-rule-note">
+          <i class="bi bi-info-circle"></i>
+          <span>El botón global reemplaza también las reglas propias de los artículos de esta categoría.</span>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <section class="article-rule-card">
+    <div class="article-rule-heading">
+      <div class="heading-icon article-heading-icon">
+        <i class="bi bi-bookmark-star"></i>
+      </div>
+      <div>
+        <h2>Regla de utilidad por artículo</h2>
+        <p>Asigna una regla propia a una referencia. Esta regla tendrá prioridad sobre la categoría.</p>
+      </div>
+    </div>
+
+    <div class="article-rule-layout">
+      <div class="article-rule-form">
+        <label for="articuloUtilidad">Artículo o referencia</label>
+
+        <div class="article-picker" (click)="$event.stopPropagation()">
+          <button
+            type="button"
+            class="article-picker-trigger"
+            [class.has-value]="productoSeleccionado"
+            [class.is-open]="articuloSelectorAbierto"
+            [attr.aria-expanded]="articuloSelectorAbierto"
+            aria-haspopup="listbox"
+            (click)="toggleArticuloSelector()">
+            <span class="article-picker-leading">
+              <i class="bi bi-box-seam"></i>
+            </span>
+
+            @if (productoSeleccionado; as producto) {
+              <span class="article-picker-value">
+                <strong>{{ producto.codigo }} · {{ producto.nombre }}</strong>
+                <small>Categoría {{ producto.categoriaNombre }}</small>
+              </span>
+            } @else {
+              <span class="article-picker-placeholder">
+                {{ cargandoProductos ? 'Cargando referencias...' : 'Busca por código o nombre' }}
+              </span>
+            }
+
+            <i class="bi bi-chevron-down article-picker-chevron" [class.rotated]="articuloSelectorAbierto"></i>
+          </button>
+
+          @if (articuloSelectorAbierto) {
+            <div class="article-picker-menu" role="listbox">
+              <div class="article-search">
+                <i class="bi bi-search"></i>
+                <input
+                  id="buscarArticuloUtilidad"
+                  name="buscarArticuloUtilidad"
+                  type="search"
+                  autocomplete="off"
+                  placeholder="Buscar por código o nombre..."
+                  [(ngModel)]="busquedaArticulo">
+              </div>
+
+              <div class="article-options">
+                <button
+                  *ngFor="let producto of productosFiltrados"
+                  type="button"
+                  class="article-option"
+                  [class.is-selected]="productoSeleccionadoId === producto.id"
+                  [attr.aria-selected]="productoSeleccionadoId === producto.id"
+                  (click)="seleccionarArticulo(producto)">
+                  <span class="article-option-icon">
+                    <i class="bi bi-box-seam"></i>
+                  </span>
+
+                  <span class="article-option-main">
+                    <strong>{{ producto.codigo }}</strong>
+                    <small>{{ producto.nombre }} · {{ producto.categoriaNombre }}</small>
+                  </span>
+
+                  <span class="article-option-rule" [class.is-empty]="!producto.tipoGananciaProducto">
+                    {{ obtenerResumenReglaArticulo(producto) }}
+                  </span>
+
+                  <i
+                    *ngIf="productoSeleccionadoId === producto.id"
+                    class="bi bi-check2 article-option-check"></i>
+                </button>
+
+                <div *ngIf="productosFiltrados.length === 0" class="article-empty">
+                  <i class="bi bi-search"></i>
+                  No encontramos referencias con esa búsqueda.
+                </div>
+              </div>
+
+              <div class="article-picker-footer">
+                {{ productosFiltrados.length }} referencia(s) disponible(s)
+              </div>
+            </div>
+          }
+        </div>
+
+        @if (productoSeleccionado; as producto) {
+          <div class="article-current-rule">
+            <span>
+              <small>Regla actual</small>
+              <strong>{{ obtenerResumenReglaArticulo(producto) }}</strong>
+            </span>
+            <span class="article-category-reference">
+              <small>Categoría vinculada</small>
+              <strong>{{ producto.categoriaNombre }}</strong>
+            </span>
+          </div>
+
+          <div class="article-mode-label">Aplicar utilidad por</div>
+
+          <div class="mode-selector article-mode-selector">
+            <button
+              type="button"
+              class="mode-option"
+              [class.active]="tipoGananciaArticulo === 'PORCENTAJE'"
+              (click)="tipoGananciaArticulo = 'PORCENTAJE'">
+              <span class="mode-icon"><i class="bi bi-percent"></i></span>
+              <span>
+                <strong>Porcentaje</strong>
+                <small>Sobre el costo</small>
+              </span>
+              <i *ngIf="tipoGananciaArticulo === 'PORCENTAJE'" class="bi bi-check-circle-fill mode-check"></i>
+            </button>
+
+            <button
+              type="button"
+              class="mode-option"
+              [class.active]="tipoGananciaArticulo === 'DINERO'"
+              (click)="tipoGananciaArticulo = 'DINERO'">
+              <span class="mode-icon money"><i class="bi bi-cash-stack"></i></span>
+              <span>
+                <strong>Valor fijo</strong>
+                <small>Por unidad</small>
+              </span>
+              <i *ngIf="tipoGananciaArticulo === 'DINERO'" class="bi bi-check-circle-fill mode-check"></i>
+            </button>
+          </div>
+
+          <div class="article-value-row">
+            <div class="utility-input-group article-value-input">
+              <label for="valorGananciaArticulo">
+                {{ tipoGananciaArticulo === 'PORCENTAJE' ? 'Porcentaje propio' : 'Utilidad fija por unidad' }}
+              </label>
+              <div class="utility-input-wrapper">
+                <span>{{ tipoGananciaArticulo === 'PORCENTAJE' ? '%' : '$' }}</span>
+                <input
+                  id="valorGananciaArticulo"
+                  name="valorGananciaArticulo"
+                  type="number"
+                  min="0"
+                  [max]="tipoGananciaArticulo === 'PORCENTAJE' ? 1000 : null"
+                  step="0.01"
+                  [(ngModel)]="valorGananciaArticulo">
+              </div>
+            </div>
+
+            <div class="article-actions">
+              <button
+                type="button"
+                class="btn btn-primary"
+                [disabled]="guardandoReglaArticulo"
+                (click)="guardarReglaArticulo()">
+                <i class="bi bi-save me-2"></i>
+                Guardar regla propia
+              </button>
+
+              <button
+                type="button"
+                class="btn btn-light article-inherit-button"
+                [disabled]="guardandoReglaArticulo || !producto.tipoGananciaProducto"
+                (click)="usarReglaCategoriaEnArticulo()">
+                Usar regla de categoría
+              </button>
+            </div>
+          </div>
+        } @else {
+          <div class="article-empty-state">
+            <i class="bi bi-info-circle"></i>
+            Selecciona una referencia para configurar una regla propia.
+          </div>
+        }
+      </div>
+
+      <aside class="article-rule-info">
+        <span class="article-info-icon"><i class="bi bi-lightbulb"></i></span>
+        <strong>Prioridad de cálculo</strong>
+        <p>
+          Si el artículo tiene una regla propia, se utilizará primero. Si no, heredará la regla definida en su categoría.
+        </p>
+      </aside>
+    </div>
+  </section>
+
+  <section class="utility-note">
+    <i class="bi bi-info-circle"></i>
+    <div>
+      <strong>¿Cómo se aplicará?</strong>
+      <p>
+        En “Agregar mercancía”, se usará primero la regla propia del artículo y, si no existe, la regla de su categoría: porcentaje sobre costo o valor fijo por unidad. Antes de confirmar verás el precio final, la utilidad por unidad, el porcentaje y el beneficio proyectado. También podrás sobrescribir la utilidad manualmente solo para ese ingreso.
+      </p>
+    </div>
+  </section>
+
+</div>

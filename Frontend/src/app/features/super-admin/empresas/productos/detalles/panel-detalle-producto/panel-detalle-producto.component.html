@@ -164,6 +164,54 @@
 
             </div>
 
+            <div *ngIf="esCategoria()" class="form-field category-rule-field">
+
+              <label>Regla de utilidad</label>
+
+              <div class="category-rule-mode" role="group" aria-label="Tipo de ganancia">
+                <button
+                  type="button"
+                  [class.active]="formulario.value.tipoGanancia === 'PORCENTAJE'"
+                  (click)="seleccionarTipoGanancia('PORCENTAJE')">
+                  <i class="bi bi-percent"></i>
+                  Porcentaje
+                </button>
+
+                <button
+                  type="button"
+                  [class.active]="formulario.value.tipoGanancia === 'DINERO'"
+                  (click)="seleccionarTipoGanancia('DINERO')">
+                  <i class="bi bi-cash-coin"></i>
+                  Valor fijo
+                </button>
+              </div>
+
+              <div class="input-shell">
+                <i [class]="formulario.value.tipoGanancia === 'DINERO' ? 'bi bi-cash-stack' : 'bi bi-percent'"></i>
+
+                <input
+                  type="number"
+                  formControlName="valorGanancia"
+                  min="0"
+                  [max]="formulario.value.tipoGanancia === 'PORCENTAJE' ? 1000 : null"
+                  step="0.01"
+                  [placeholder]="formulario.value.tipoGanancia === 'DINERO' ? 'Ej: 25000' : 'Ej: 30'"
+                  [class.is-invalid]="campoInvalido('valorGanancia')"
+                >
+              </div>
+
+              <small class="field-help">
+                Se aplicará a los productos nuevos y actualizará los existentes de esta categoría cuando cambie la regla.
+              </small>
+
+              <div
+                *ngIf="campoInvalido('valorGanancia')"
+                class="field-error">
+                Ingresa un valor de utilidad válido.
+              </div>
+
+            </div>
+
             <div class="form-actions">
 
               <button
@@ -226,7 +274,24 @@
 
         </div>
 
-        <div class="app-card-body list-body">
+          <div class="app-card-body list-body">
+
+          <div *ngIf="esCategoria() && items.length > 0" class="category-list-tools">
+            <div class="category-filter">
+              <i class="bi bi-search"></i>
+              <input
+                type="search"
+                [value]="filtroCategorias"
+                (input)="actualizarFiltroCategorias($any($event.target).value)"
+                placeholder="Filtrar por nombre o ID..."
+                aria-label="Filtrar categorías por nombre o ID"
+              >
+            </div>
+
+            <span class="filter-summary">
+              {{ itemsFiltrados.length }} categoría(s) encontradas
+            </span>
+          </div>
 
           <!-- CARGANDO ITEMS -->
           <div *ngIf="cargandoItems" class="loading-inline">
@@ -253,8 +318,16 @@
 
           </div>
 
+          <div *ngIf="!cargandoItems && items.length > 0 && itemsFiltrados.length === 0" class="empty-state filtered-empty-state">
+            <div class="empty-icon">
+              <i class="bi bi-search"></i>
+            </div>
+            <h4>No encontramos categorías</h4>
+            <p>Prueba con otro nombre o ID.</p>
+          </div>
+
           <!-- TABLA -->
-          <div *ngIf="!cargandoItems && items.length > 0" class="table-wrapper">
+          <div *ngIf="!cargandoItems && itemsPaginados.length > 0" class="table-wrapper">
 
             <table class="table app-table align-middle mb-0">
 
@@ -262,6 +335,7 @@
               <tr>
                 <th>ID</th>
                 <th>Nombre</th>
+                <th *ngIf="esCategoria()">Regla de utilidad</th>
                 <th>Empresa</th>
                 <th>Fecha creación</th>
                 <th class="text-end">Acciones</th>
@@ -269,7 +343,7 @@
               </thead>
 
               <tbody>
-              <tr *ngFor="let item of items">
+              <tr *ngFor="let item of itemsPaginados">
 
                 <td>
                   <span class="id-pill">
@@ -289,6 +363,18 @@
                     </strong>
 
                   </div>
+                </td>
+
+                <td *ngIf="esCategoria()">
+                  <span
+                    class="percentage-pill"
+                    [class.is-empty]="item.tipoGanancia === null || item.tipoGanancia === undefined || item.valorGanancia === null || item.valorGanancia === undefined">
+                    {{ item.tipoGanancia === 'PORCENTAJE'
+                      ? (item.valorGanancia | number:'1.0-2') + '% sobre costo'
+                      : item.tipoGanancia === 'DINERO'
+                        ? (item.valorGanancia | currency:'COP':'symbol-narrow':'1.0-0') + ' fija'
+                        : 'Sin configurar' }}
+                  </span>
                 </td>
 
                 <td>
@@ -336,6 +422,41 @@
 
             </table>
 
+          </div>
+
+          <div *ngIf="esCategoria() && itemsFiltrados.length > 0 && totalPaginas > 1" class="pagination-bar">
+            <span>
+              Mostrando {{ primerRegistroVisible }}-{{ ultimoRegistroVisible }} de {{ itemsFiltrados.length }} categorías
+            </span>
+
+            <div class="pagination-controls">
+              <button
+                type="button"
+                class="pagination-button"
+                [disabled]="paginaActual === 1"
+                (click)="paginaAnterior()"
+                aria-label="Página anterior">
+                <i class="bi bi-chevron-left"></i>
+              </button>
+
+              <button
+                *ngFor="let pagina of paginas"
+                type="button"
+                class="pagination-button page-number"
+                [class.active]="pagina === paginaActual"
+                (click)="irAPagina(pagina)">
+                {{ pagina }}
+              </button>
+
+              <button
+                type="button"
+                class="pagination-button"
+                [disabled]="paginaActual === totalPaginas"
+                (click)="paginaSiguiente()"
+                aria-label="Página siguiente">
+                <i class="bi bi-chevron-right"></i>
+              </button>
+            </div>
           </div>
 
         </div>

@@ -318,6 +318,18 @@
   background: #0891b2;
 }
 
+.option-accounting::before {
+  background: #7c3aed;
+}
+
+.option-movements::before {
+  background: #0f766e;
+}
+
+.option-purchases::before {
+  background: #0f766e;
+}
+
 .option-top {
   display: flex;
   justify-content: space-between;
@@ -355,6 +367,16 @@
 .option-icon.info {
   background: #cffafe;
   color: #0e7490;
+}
+
+.option-icon.accounting {
+  background: #ede9fe;
+  color: #7c3aed;
+}
+
+.option-icon.movements {
+  background: #ccfbf1;
+  color: #0f766e;
 }
 
 .option-badge {
@@ -437,6 +459,41 @@
 
 .btn-option-info:hover {
   background: #0e7490;
+  color: #ffffff;
+}
+
+.btn-option-accounting {
+  background: #7c3aed;
+  color: #ffffff;
+}
+
+.btn-option-accounting:hover {
+  background: #6d28d9;
+  color: #ffffff;
+}
+
+.btn-option-movements {
+  background: #0f766e;
+  color: #ffffff;
+}
+
+.btn-option-movements:hover {
+  background: #115e59;
+  color: #ffffff;
+}
+
+.option-icon.purchases {
+  background: #ccfbf1;
+  color: #0f766e;
+}
+
+.btn-option-purchases {
+  background: #0f766e;
+  color: #ffffff;
+}
+
+.btn-option-purchases:hover {
+  background: #115e59;
   color: #ffffff;
 }
 

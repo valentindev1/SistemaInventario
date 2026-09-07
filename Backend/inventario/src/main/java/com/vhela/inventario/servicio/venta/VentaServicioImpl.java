@@ -15,6 +15,8 @@ import com.vhela.inventario.dto.venta.*;
 import com.vhela.inventario.dto.venta.empleado.venta.DetalleFacturaVentaEmpleadoDTO;
 import com.vhela.inventario.dto.venta.empleado.venta.FacturaVentaEmpleadoDTO;
 import com.vhela.inventario.dto.venta.empleado.venta.VentaHistorialEmpleadoDTO;
+import com.vhela.inventario.dto.venta.soporte.SoporteVentaDTO;
+import com.vhela.inventario.dto.venta.soporte.SoporteVentaItemDTO;
 import com.vhela.inventario.modelo.cliente.Cliente;
 import com.vhela.inventario.modelo.inventario.InventarioSucursal;
 import com.vhela.inventario.modelo.inventario.MovimientoInventario;
@@ -1821,5 +1823,140 @@ public class VentaServicioImpl implements VentaServicio {
     }
 
 
+    @Override
+    @Transactional(readOnly = true)
+    public SoporteVentaDTO generarSoporteVenta(Long usuarioId, Long ventaId) {
+
+        Usuario usuario = obtenerUsuario(usuarioId);
+
+        Venta venta = facturaVentaRepositorio.findById(ventaId)
+                .orElseThrow(() -> new RuntimeException("Venta no encontrada"));
+
+        validarAccesoConsultaVenta(usuario, venta.getSucursal());
+
+        return mapToSoporteVentaDTO(venta);
+    }
+
+
+    private SoporteVentaDTO mapToSoporteVentaDTO(Venta venta) {
+
+        SoporteVentaDTO dto = new SoporteVentaDTO();
+
+        dto.setEmpresaNombre(
+                venta.getEmpresa() != null
+                        ? venta.getEmpresa().getNombre()
+                        : "Empresa no asignada"
+        );
+
+        dto.setSucursalNombre(
+                venta.getSucursal() != null
+                        ? venta.getSucursal().getNombre()
+                        : "Sucursal no asignada"
+        );
+
+        dto.setSucursalDireccion(
+                venta.getSucursal() != null
+                        ? venta.getSucursal().getDireccion()
+                        : "Dirección no registrada"
+        );
+
+        dto.setSucursalTelefono(
+                venta.getSucursal() != null
+                        ? venta.getSucursal().getTelefono()
+                        : "Teléfono no registrado"
+        );
+
+        dto.setNumeroVenta(venta.getNumeroVenta());
+
+        dto.setFechaVenta(
+                venta.getFechaVenta() != null
+                        ? venta.getFechaVenta().toLocalDate()
+                        : null
+        );
+
+        dto.setHoraVenta(
+                venta.getFechaVenta() != null
+                        ? venta.getFechaVenta().toLocalTime()
+                        : null
+        );
+
+        dto.setVendedorNombre(
+                venta.getUsuario() != null
+                        ? venta.getUsuario().getNombre()
+                        : "Vendedor no asignado"
+        );
+
+        if (venta.getCliente() != null) {
+            dto.setClienteNombre(venta.getCliente().getNombre());
+            dto.setClienteDocumento(venta.getCliente().getNumeroDocumento());
+        } else {
+            dto.setClienteNombre("Cliente no asignado");
+            dto.setClienteDocumento("Sin documento");
+        }
+
+        dto.setSubtotal(
+                venta.getSubtotal() == null
+                        ? BigDecimal.ZERO
+                        : venta.getSubtotal()
+        );
+
+        dto.setDescuento(
+                venta.getDescuento() == null
+                        ? BigDecimal.ZERO
+                        : venta.getDescuento()
+        );
+
+        dto.setTotal(
+                venta.getTotal() == null
+                        ? BigDecimal.ZERO
+                        : venta.getTotal()
+        );
+
+        dto.setItems(
+                venta.getDetalles()
+                        .stream()
+                        .map(this::mapToSoporteVentaItemDTO)
+                        .toList()
+        );
+
+        return dto;
+    }
+
+    private SoporteVentaItemDTO mapToSoporteVentaItemDTO(DetalleVenta detalle) {
+
+        SoporteVentaItemDTO dto = new SoporteVentaItemDTO();
+
+        dto.setCodigoProducto(
+                detalle.getProducto() != null
+                        ? detalle.getProducto().getCodigo()
+                        : "SIN-CODIGO"
+        );
+
+        dto.setNombreProducto(
+                detalle.getProducto() != null
+                        ? detalle.getProducto().getNombre()
+                        : "Producto no asignado"
+        );
+
+        dto.setCantidad(
+                detalle.getCantidad() == null
+                        ? 0
+                        : detalle.getCantidad()
+        );
+
+        dto.setPrecioUnitario(
+                detalle.getPrecioUnitarioMomento() == null
+                        ? BigDecimal.ZERO
+                        : detalle.getPrecioUnitarioMomento()
+        );
+
+        dto.setSubtotal(
+                detalle.getSubtotal() == null
+                        ? BigDecimal.ZERO
+                        : detalle.getSubtotal()
+        );
+
+        return dto;
+    }
 
 }

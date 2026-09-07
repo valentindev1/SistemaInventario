@@ -44,6 +44,17 @@ export class VentaService {
     );
   }
 
+
+  generarSoporteVentaPdf(ventaId: number): Observable<Blob> {
+    return this.http.get(
+      `${this.apiUrl}/${ventaId}/soporte/pdf`,
+      {
+        responseType: 'blob'
+      }
+    );
+  }
+
+
   obtenerPorId(ventaId: number): Observable<FacturaVentaDTO> {
     const params = this.obtenerUsuarioIdComoParam();
 

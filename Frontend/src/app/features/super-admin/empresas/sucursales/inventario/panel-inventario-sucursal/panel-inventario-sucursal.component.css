@@ -422,6 +422,16 @@
   color: #dc2626;
 }
 
+.icon-price {
+  background: #ede9fe;
+  color: #7c3aed;
+}
+
+.icon-config {
+  background: #cffafe;
+  color: #0891b2;
+}
+
 .inventory-card h5 {
   font-weight: 800;
 
@@ -440,6 +450,26 @@
   padding: 10px 16px;
 
   font-weight: 700;
+}
+
+.btn-price {
+  background: #7c3aed;
+  color: white;
+}
+
+.btn-price:hover {
+  background: #6d28d9;
+  color: white;
+}
+
+.btn-config {
+  background: #0891b2;
+  color: white;
+}
+
+.btn-config:hover {
+  background: #0e7490;
+  color: white;
 }
 
 /* ==========================
