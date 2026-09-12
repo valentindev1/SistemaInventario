@@ -105,12 +105,14 @@ export class CrearProductoComponent implements OnInit {
   ];
 
   selectorAtributoAbierto: TipoSelectorAtributo | null = null;
+  selectorCostoAbierto: number | null = null;
   busquedasAtributos: Record<TipoSelectorAtributo, string> = {
     color: '',
     categoria: '',
     talla: '',
     genero: ''
   };
+  busquedaAtributoCosto = '';
 
   formularioProducto: FormGroup;
 
@@ -122,6 +124,7 @@ export class CrearProductoComponent implements OnInit {
   mensajeError = '';
 
   tipoCosto: TipoCostoProducto = 'MANUAL';
+  esRemanufacturado = true;
   costoPersonalizado = false;
   costoManualTexto = '';
   atributosCosto: AtributoCostoObtenerDTO[] = [];
@@ -352,6 +355,7 @@ export class CrearProductoComponent implements OnInit {
       tallaId: Number(this.formularioProducto.value.tallaId),
       generoId: Number(this.formularioProducto.value.generoId),
       tipoCosto: this.tipoCosto,
+      esRemanufacturado: this.tipoCosto === 'MANUAL' && this.esRemanufacturado,
       costoPersonalizado: this.costoPersonalizado,
       costoUnitario,
       ...(this.tipoCosto === 'DESGLOSE'
@@ -390,10 +394,12 @@ export class CrearProductoComponent implements OnInit {
     this.mostrarErrorDesglose = false;
 
     if (tipo === 'MANUAL') {
+      this.esRemanufacturado = true;
       this.costoPersonalizado = false;
     }
 
     if (tipo === 'DESGLOSE') {
+      this.esRemanufacturado = false;
       const categoriaId = this.obtenerValorAtributo('categoria');
 
       if (categoriaId !== null && this.atributosCosto.length === 0) {
@@ -406,18 +412,48 @@ export class CrearProductoComponent implements OnInit {
     }
   }
 
+  cambiarRemanufacturado(evento: Event): void {
+    this.esRemanufacturado = (evento.target as HTMLInputElement).checked;
+  }
+
   cambiarPersonalizacionCosto(evento: Event): void {
     this.costoPersonalizado = (evento.target as HTMLInputElement).checked;
     this.mostrarErrorDesglose = false;
   }
 
-  cambiarAtributoCosto(indice: number, evento: Event): void {
-    const atributoCostoId = Number((evento.target as HTMLSelectElement).value);
-    const atributo = this.atributosCosto.find(item => item.id === atributoCostoId);
-
+  seleccionarAtributoCosto(indice: number, atributo: AtributoCostoObtenerDTO): void {
     this.desgloseCosto[indice].atributoCostoId = atributo?.id ?? null;
     this.desgloseCosto[indice].concepto = atributo?.nombre ?? '';
     this.mostrarErrorDesglose = false;
+    this.busquedaAtributoCosto = '';
+    this.selectorCostoAbierto = null;
+  }
+
+  obtenerAtributosCostoFiltrados(): AtributoCostoObtenerDTO[] {
+    const busqueda = this.normalizarTexto(this.busquedaAtributoCosto);
+
+    if (!busqueda) {
+      return this.atributosCosto;
+    }
+
+    return this.atributosCosto.filter(atributo =>
+      this.normalizarTexto(`${atributo.nombre} ${atributo.id}`).includes(busqueda)
+    );
+  }
+
+  toggleSelectorCosto(indice: number): void {
+    if (this.selectorCostoAbierto === indice) {
+      this.selectorCostoAbierto = null;
+      this.busquedaAtributoCosto = '';
+      return;
+    }
+
+    this.selectorCostoAbierto = indice;
+    this.busquedaAtributoCosto = '';
+  }
+
+  actualizarBusquedaAtributoCosto(evento: Event): void {
+    this.busquedaAtributoCosto = (evento.target as HTMLInputElement).value;
   }
 
   actualizarCostoManual(evento: Event): void {
@@ -492,9 +528,7 @@ export class CrearProductoComponent implements OnInit {
 
     this.atributoCostoService.listarActivosPorCategoria(categoriaId).subscribe({
       next: (atributos) => {
-        this.atributosCosto = (atributos || []).slice().sort((a, b) =>
-          a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' })
-        );
+        this.atributosCosto = this.ordenarOpciones(atributos || []);
         this.cargandoAtributosCosto = false;
       },
       error: (error) => {
@@ -613,6 +647,9 @@ export class CrearProductoComponent implements OnInit {
       this.busquedasAtributos[this.selectorAtributoAbierto] = '';
       this.selectorAtributoAbierto = null;
     }
+
+    this.selectorCostoAbierto = null;
+    this.busquedaAtributoCosto = '';
   }
 
   private normalizarTexto(valor: string): string {
@@ -624,7 +661,8 @@ export class CrearProductoComponent implements OnInit {
 
   private ordenarOpciones<T extends { nombre: string }>(opciones: T[]): T[] {
     return (opciones || []).slice().sort((a, b) =>
-      a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' })
+      a.nombre.trim().localeCompare(b.nombre.trim(), 'es', { sensitivity: 'base' })
+      || a.nombre.trim().localeCompare(b.nombre.trim())
     );
   }
 

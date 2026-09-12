@@ -18,6 +18,7 @@ import { CrearEmpresaComponent } from './features/super-admin/empresas/crear-emp
 import { EditarEmpresaComponent } from './features/super-admin/empresas/editar-empresa/editar-empresa.component';
 import { DetalleEmpresaComponent } from './features/super-admin/empresas/detalle-empresa/detalle-empresa.component';
 import { InformesEmpresaComponent } from './features/super-admin/empresas/informes-empresa/informes-empresa.component';
+import { InformeGraficoEmpresaComponent } from './features/super-admin/empresas/informes-empresa/informe-grafico-empresa.component';
 import { MovimientosEmpresaComponent } from './features/super-admin/empresas/movimientos-empresa/movimientos-empresa.component';
 
 import {
@@ -189,6 +190,12 @@ export const routes: Routes = [
             .then(m => m.DashboardComponent)
       },
       {
+        path: 'gastos/registrar',
+        loadComponent: () =>
+          import('./features/empleado/contabilidad/registrar-gasto-empleado/registrar-gasto-empleado.component')
+            .then(m => m.RegistrarGastoEmpleadoComponent)
+      },
+      {
         path: 'ventas/panel',
         loadComponent: () =>
           import('./features/empleado/ventas/panel-ventas-empleado/panel-ventas-empleado.component')
@@ -279,6 +286,10 @@ export const routes: Routes = [
       {
         path: 'dashboard/estadisticas',
         component: DashboardEmpresaComponent
+      },
+      {
+        path: 'informes/grafico',
+        component: InformeGraficoEmpresaComponent
       },
       {
         path: 'informes',
@@ -502,6 +513,10 @@ export const routes: Routes = [
       {
         path: 'empresas/:empresaId/dashboard',
         component: DashboardEmpresaComponent
+      },
+      {
+        path: 'empresas/:empresaId/informes/grafico',
+        component: InformeGraficoEmpresaComponent
       },
       {
         path: 'empresas/:empresaId/informes',

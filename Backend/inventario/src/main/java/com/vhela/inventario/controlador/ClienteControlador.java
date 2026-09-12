@@ -13,7 +13,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+
+import com.vhela.inventario.servicio.venta.UsuarioAutenticadoServicio;
 
 @RestController
 @RequestMapping("/api/clientes")
@@ -22,16 +25,17 @@ import org.springframework.web.bind.annotation.*;
 public class ClienteControlador {
 
     private final ClienteServicio clienteServicio;
+    private final UsuarioAutenticadoServicio usuarioAutenticadoServicio;
 
     // ======================================================
     // CREAR CLIENTE
     // ======================================================
     @PostMapping
     public ResponseEntity<ClienteObtenerDTO> crear(
-            @RequestParam Long usuarioId,
+            Authentication authentication,
             @Valid @RequestBody ClienteCrearDTO dto) {
 
-        ClienteObtenerDTO response = clienteServicio.crear(usuarioId, dto);
+        ClienteObtenerDTO response = clienteServicio.crear(usuarioId(authentication), dto);
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -43,10 +47,10 @@ public class ClienteControlador {
     // ======================================================
     @GetMapping
     public ResponseEntity<List<ClienteObtenerDTO>> listar(
-            @RequestParam Long usuarioId) {
+            Authentication authentication) {
 
         return ResponseEntity.ok(
-                clienteServicio.listar(usuarioId)
+                clienteServicio.listar(usuarioId(authentication))
         );
     }
 
@@ -55,11 +59,11 @@ public class ClienteControlador {
     // ======================================================
     @GetMapping("/{clienteId}")
     public ResponseEntity<ClienteObtenerDTO> obtenerPorId(
-            @RequestParam Long usuarioId,
+            Authentication authentication,
             @PathVariable Long clienteId) {
 
         return ResponseEntity.ok(
-                clienteServicio.obtenerPorId(usuarioId, clienteId)
+                clienteServicio.obtenerPorId(usuarioId(authentication), clienteId)
         );
     }
 
@@ -68,11 +72,11 @@ public class ClienteControlador {
     // ======================================================
     @GetMapping("/documento/{numeroDocumento}")
     public ResponseEntity<ClienteObtenerDTO> obtenerPorDocumento(
-            @RequestParam Long usuarioId,
+            Authentication authentication,
             @PathVariable String numeroDocumento) {
 
         return ResponseEntity.ok(
-                clienteServicio.obtenerPorDocumento(usuarioId, numeroDocumento)
+                clienteServicio.obtenerPorDocumento(usuarioId(authentication), numeroDocumento)
         );
     }
 
@@ -83,12 +87,12 @@ public class ClienteControlador {
     // ======================================================
     @PutMapping("/{clienteId}")
     public ResponseEntity<ClienteObtenerDTO> editar(
-            @RequestParam Long usuarioId,
+            Authentication authentication,
             @PathVariable Long clienteId,
             @Valid @RequestBody ClienteEditarDTO dto) {
 
         return ResponseEntity.ok(
-                clienteServicio.editar(usuarioId, clienteId, dto)
+                clienteServicio.editar(usuarioId(authentication), clienteId, dto)
         );
     }
 
@@ -97,11 +101,15 @@ public class ClienteControlador {
     // ======================================================
     @DeleteMapping("/{clienteId}")
     public ResponseEntity<Void> eliminar(
-            @RequestParam Long usuarioId,
+            Authentication authentication,
             @PathVariable Long clienteId) {
 
-        clienteServicio.eliminar(usuarioId, clienteId);
+        clienteServicio.eliminar(usuarioId(authentication), clienteId);
 
         return ResponseEntity.noContent().build();
+    }
+
+    private Long usuarioId(Authentication authentication) {
+        return usuarioAutenticadoServicio.obtenerUsuarioId(authentication);
     }
 }

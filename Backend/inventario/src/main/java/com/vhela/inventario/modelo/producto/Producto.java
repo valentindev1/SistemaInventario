@@ -78,6 +78,9 @@ public class Producto {
     @Column(name = "tipo_costo", length = 20)
     private String tipoCosto;
 
+    @Column(name = "es_remanufacturado", nullable = false)
+    private Boolean esRemanufacturado = false;
+
     @Column(name = "costo_personalizado")
     private Boolean costoPersonalizado = false;
 

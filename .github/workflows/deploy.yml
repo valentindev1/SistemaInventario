@@ -30,10 +30,10 @@ jobs:
             git reset --hard origin/master
 
             test -f .env
-            docker compose config --quiet
+            docker compose -f docker-compose.vps.yml config --quiet
 
-            docker compose up -d --build --force-recreate --remove-orphans
+            docker compose -f docker-compose.vps.yml up -d --build --force-recreate --remove-orphans
 
             docker image prune -f
 
-            docker ps
+            docker compose -f docker-compose.vps.yml ps

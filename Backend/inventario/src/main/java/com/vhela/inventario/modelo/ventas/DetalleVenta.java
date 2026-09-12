@@ -63,6 +63,14 @@ public class DetalleVenta {
     private BigDecimal costoUnitarioMomento;
 
     /**
+     * Indica si el producto era remanufacturado al momento de la venta.
+     * Se conserva en el detalle para que los informes históricos no cambien
+     * cuando posteriormente se edite el producto.
+     */
+    @Column(name = "remanufacturado_momento")
+    private Boolean remanufacturadoMomento;
+
+    /**
      * Precio unitario de venta al momento de la venta.
      * Queda congelado para la trazabilidad histórica.
      */

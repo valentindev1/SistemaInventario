@@ -432,6 +432,11 @@
   color: #0891b2;
 }
 
+.icon-cost {
+  background: #fce7f3;
+  color: #db2777;
+}
+
 .inventory-card h5 {
   font-weight: 800;
 
@@ -469,6 +474,16 @@
 
 .btn-config:hover {
   background: #0e7490;
+  color: white;
+}
+
+.btn-cost {
+  background: #db2777;
+  color: white;
+}
+
+.btn-cost:hover {
+  background: #be185d;
   color: white;
 }
 

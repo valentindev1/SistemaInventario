@@ -196,6 +196,23 @@ export class EmpleadoLayoutComponent implements OnInit {
             ]
           }
         ]
+      },
+      {
+        title: 'Contabilidad',
+        icon: 'bi-receipt-cutoff',
+        items: [
+          {
+            label: 'Registrar gastos',
+            icon: 'bi-wallet2',
+            route: [
+              '/empleado',
+              'sucursal',
+              this.sucursalId.toString(),
+              'gastos',
+              'registrar'
+            ]
+          }
+        ]
       }
     ];
   }

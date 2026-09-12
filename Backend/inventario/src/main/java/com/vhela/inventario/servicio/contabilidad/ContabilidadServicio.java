@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.vhela.inventario.dto.contabilidad.RegistroContableCrearDTO;
 import com.vhela.inventario.dto.contabilidad.RegistroContableDTO;
+import com.vhela.inventario.dto.contabilidad.RegistroGastoEmpleadoDTO;
 import com.vhela.inventario.dto.contabilidad.ClasificacionContableCrearDTO;
 import com.vhela.inventario.dto.contabilidad.ClasificacionContableDTO;
 import com.vhela.inventario.dto.contabilidad.ClasificacionContableEditarDTO;
@@ -20,6 +21,30 @@ public interface ContabilidadServicio {
     );
 
     List<RegistroContableDTO> listarPorSucursal(Long usuarioId, Long sucursalId);
+
+    List<RegistroContableDTO> listarGastosEmpleado(
+            Long usuarioId,
+            Long sucursalId
+    );
+
+    RegistroContableDTO registrarGastoEmpleado(
+            Long usuarioId,
+            Long sucursalId,
+            RegistroGastoEmpleadoDTO dto
+    );
+
+    RegistroContableDTO editarGastoEmpleado(
+            Long usuarioId,
+            Long sucursalId,
+            Long registroId,
+            RegistroGastoEmpleadoDTO dto
+    );
+
+    void eliminarGastoEmpleado(
+            Long usuarioId,
+            Long sucursalId,
+            Long registroId
+    );
 
     ConceptoGastoDTO crearConcepto(Long usuarioId, ConceptoGastoCrearDTO dto);
 

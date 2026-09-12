@@ -50,7 +50,6 @@ export class ReportesContablesComponent implements OnInit, OnDestroy {
   guardando = false;
   guardandoConcepto = false;
   guardandoClasificacion = false;
-  mensajeError = '';
 
   mostrarGestionConceptos = false;
   mostrarGestionClasificaciones = false;
@@ -88,6 +87,7 @@ export class ReportesContablesComponent implements OnInit, OnDestroy {
   concepto = '';
   descripcion = '';
   valor: number | null = null;
+  valorTexto = '';
   fecha = this.formatearFecha(new Date());
   mostrarCalendario = false;
   fechaCalendario = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
@@ -119,7 +119,7 @@ export class ReportesContablesComponent implements OnInit, OnDestroy {
     const sucursalIdParam = this.obtenerParametroRuta('sucursalId');
 
     if (!empresaIdParam || !sucursalIdParam) {
-      this.mensajeError = 'No se pudo identificar la empresa o la sucursal.';
+      this.mostrarError('No se pudo identificar la empresa o la sucursal.');
       return;
     }
 
@@ -128,18 +128,18 @@ export class ReportesContablesComponent implements OnInit, OnDestroy {
 
     if (!Number.isInteger(this.empresaId) || !Number.isInteger(this.sucursalId)
       || this.empresaId <= 0 || this.sucursalId <= 0) {
-      this.mensajeError = 'La ruta contiene parámetros inválidos.';
+      this.mostrarError('La ruta contiene parámetros inválidos.');
       return;
     }
 
     this.empresaService.obtenerPorId(this.empresaId).subscribe({
       next: empresa => this.empresaNombre = empresa.nombre,
-      error: () => undefined
+      error: () => this.mostrarError('No se pudo cargar la información de la empresa.')
     });
 
     this.sucursalService.obtenerPorId(this.sucursalId).subscribe({
       next: sucursal => this.sucursalNombre = sucursal.nombre,
-      error: () => undefined
+      error: () => this.mostrarError('No se pudo cargar la información de la sucursal.')
     });
 
     this.cargarConceptos();
@@ -162,8 +162,8 @@ export class ReportesContablesComponent implements OnInit, OnDestroy {
       },
       error: error => {
         this.cargandoConceptos = false;
-        this.mensajeError = error?.error?.message
-          ?? 'No se pudieron cargar los conceptos de gasto.';
+        this.mostrarError(error?.error?.message
+          ?? 'No se pudieron cargar los conceptos de gasto.');
       }
     });
   }
@@ -177,15 +177,14 @@ export class ReportesContablesComponent implements OnInit, OnDestroy {
       },
       error: error => {
         this.cargandoClasificaciones = false;
-        this.mensajeError = error?.error?.message
-          ?? 'No se pudieron cargar las clasificaciones contables.';
+        this.mostrarError(error?.error?.message
+          ?? 'No se pudieron cargar las clasificaciones contables.');
       }
     });
   }
 
   cargarRegistros(): void {
     this.cargando = true;
-    this.mensajeError = '';
 
     this.contabilidadService.listarPorSucursal(this.sucursalId).subscribe({
       next: registros => {
@@ -198,8 +197,8 @@ export class ReportesContablesComponent implements OnInit, OnDestroy {
       },
       error: error => {
         this.cargando = false;
-        this.mensajeError = error?.error?.message
-          ?? 'No se pudieron cargar los reportes contables.';
+        this.mostrarError(error?.error?.message
+          ?? 'No se pudieron cargar los reportes contables.');
       }
     });
   }
@@ -329,26 +328,24 @@ export class ReportesContablesComponent implements OnInit, OnDestroy {
   }
 
   guardarRegistro(): void {
-    this.mensajeError = '';
-
     const conceptoSeleccionado = this.conceptosGasto.find(
       concepto => concepto.id === this.conceptoGastoSeleccionadoId
     );
 
     if (!conceptoSeleccionado) {
-      this.mensajeError = this.tipoSeleccionado === 'COSTO'
+      this.mostrarError(this.tipoSeleccionado === 'COSTO'
         ? 'Selecciona un concepto de costo indirecto del catálogo.'
-        : 'Selecciona un concepto de gasto del catálogo.';
+        : 'Selecciona un concepto de gasto del catálogo.');
       return;
     }
 
     if (!this.fecha) {
-      this.mensajeError = 'Selecciona la fecha del registro.';
+      this.mostrarError('Selecciona la fecha del registro.');
       return;
     }
 
     if (this.valor === null || Number(this.valor) <= 0) {
-      this.mensajeError = 'Ingresa un valor mayor que cero.';
+      this.mostrarError('Ingresa un valor mayor que cero.');
       return;
     }
 
@@ -380,8 +377,8 @@ export class ReportesContablesComponent implements OnInit, OnDestroy {
       },
       error: error => {
         this.guardando = false;
-        this.mensajeError = error?.error?.message
-          ?? 'No se pudo guardar el registro contable.';
+        this.mostrarError(error?.error?.message
+          ?? 'No se pudo guardar el registro contable.');
       }
     });
   }
@@ -395,8 +392,35 @@ export class ReportesContablesComponent implements OnInit, OnDestroy {
     this.filtroSelectorConceptos = '';
     this.descripcion = '';
     this.valor = null;
+    this.valorTexto = '';
     this.fecha = this.formatearFecha(new Date());
     this.mostrarCalendario = false;
+  }
+
+  actualizarValorDesdeTexto(evento: Event): void {
+    const input = evento.target as HTMLInputElement;
+    const entrada = input.value;
+    const tieneComa = entrada.includes(',');
+    const partes = entrada.replace(/[^0-9,\-]/g, '').split(',');
+    const signo = partes[0].startsWith('-') ? '-' : '';
+    const entero = partes[0].replace(/[^0-9]/g, '').replace(/^0+(?=\d)/, '');
+    const decimales = tieneComa
+      ? partes.slice(1).join('').replace(/[^0-9]/g, '').slice(0, 2)
+      : '';
+    const enteroVisible = entero.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+    this.valorTexto = signo + (enteroVisible || (tieneComa ? '0' : ''))
+      + (tieneComa ? ',' + decimales : '');
+    this.valor = this.numeroDesdeTexto(this.valorTexto);
+
+    input.value = this.valorTexto;
+    input.setSelectionRange(input.value.length, input.value.length);
+  }
+
+  formatearValorIngresado(): void {
+    if (this.valor !== null && Number.isFinite(this.valor)) {
+      this.valorTexto = this.formatearNumeroIngresado(this.valor);
+    }
   }
 
   get registrosFiltrados(): RegistroContableDTO[] {
@@ -462,10 +486,8 @@ export class ReportesContablesComponent implements OnInit, OnDestroy {
   }
 
   guardarConcepto(): void {
-    this.mensajeError = '';
-
     if (!this.nombreConcepto.trim()) {
-      this.mensajeError = 'Escribe el nombre del concepto.';
+      this.mostrarError('Escribe el nombre del concepto.');
       return;
     }
 
@@ -479,7 +501,7 @@ export class ReportesContablesComponent implements OnInit, OnDestroy {
     };
 
     if (!this.opcionClasificacionSeleccionada) {
-      this.mensajeError = 'Selecciona una clasificación contable.';
+      this.mostrarError('Selecciona una clasificación contable.');
       return;
     }
 
@@ -517,8 +539,8 @@ export class ReportesContablesComponent implements OnInit, OnDestroy {
       },
       error: error => {
         this.guardandoConcepto = false;
-        this.mensajeError = error?.error?.message
-          ?? 'No se pudo guardar el concepto de gasto.';
+        this.mostrarError(error?.error?.message
+          ?? 'No se pudo guardar el concepto de gasto.');
       }
     });
   }
@@ -550,8 +572,8 @@ export class ReportesContablesComponent implements OnInit, OnDestroy {
         this.cargarConceptos();
       },
       error: error => {
-        this.mensajeError = error?.error?.message
-          ?? 'No se pudo desactivar el concepto de gasto.';
+        this.mostrarError(error?.error?.message
+          ?? 'No se pudo desactivar el concepto de gasto.');
       }
     });
   }
@@ -575,11 +597,10 @@ export class ReportesContablesComponent implements OnInit, OnDestroy {
   }
 
   guardarClasificacion(): void {
-    this.mensajeError = '';
     const nombre = this.nombreNuevaClasificacion.trim();
 
     if (!nombre) {
-      this.mensajeError = 'Escribe el nombre de la clasificación.';
+      this.mostrarError('Escribe el nombre de la clasificación.');
       return;
     }
 
@@ -615,8 +636,8 @@ export class ReportesContablesComponent implements OnInit, OnDestroy {
       },
       error: error => {
         this.guardandoClasificacion = false;
-        this.mensajeError = error?.error?.message
-          ?? 'No se pudo guardar la clasificación contable.';
+        this.mostrarError(error?.error?.message
+          ?? 'No se pudo guardar la clasificación contable.');
       }
     });
   }
@@ -656,8 +677,8 @@ export class ReportesContablesComponent implements OnInit, OnDestroy {
           });
         },
         error: error => {
-          this.mensajeError = error?.error?.message
-            ?? 'No se pudo eliminar la clasificación contable.';
+          this.mostrarError(error?.error?.message
+            ?? 'No se pudo eliminar la clasificación contable.');
         }
       });
     });
@@ -682,6 +703,16 @@ export class ReportesContablesComponent implements OnInit, OnDestroy {
       clearTimeout(this.temporizadorOcultarConceptos);
       this.temporizadorOcultarConceptos = null;
     }
+  }
+
+  private mostrarError(mensaje: string): void {
+    Swal.fire({
+      icon: 'error',
+      title: 'Ocurrió un error',
+      text: mensaje,
+      confirmButtonText: 'Entendido',
+      confirmButtonColor: '#dc2626'
+    });
   }
 
   get conceptosActivos(): ConceptoGastoDTO[] {
@@ -862,6 +893,23 @@ export class ReportesContablesComponent implements OnInit, OnDestroy {
       minimumFractionDigits: 0,
       maximumFractionDigits: 2
     }).format(Number(valor));
+  }
+
+  private formatearNumeroIngresado(valor: number): string {
+    return new Intl.NumberFormat('es-CO', {
+      useGrouping: true,
+      minimumFractionDigits: Number.isInteger(valor) ? 0 : 2,
+      maximumFractionDigits: 2
+    }).format(valor);
+  }
+
+  private numeroDesdeTexto(valor: string): number | null {
+    const normalizado = valor.trim().replace(/\./g, '').replace(',', '.');
+    if (!normalizado || normalizado === '-') {
+      return null;
+    }
+    const numero = Number(normalizado);
+    return Number.isFinite(numero) ? numero : null;
   }
 
   get etiquetaPeriodoResumen(): string {

@@ -1,0 +1,6 @@
+services:
+  inventario-api:
+    environment:
+      JPA_DDL_AUTO: update
+      ROOT_USER_FORCE_RESET_PASSWORD: "false"
+

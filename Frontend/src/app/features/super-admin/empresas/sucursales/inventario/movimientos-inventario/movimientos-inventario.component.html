@@ -1,7 +1,7 @@
 <div class="movimientos-page">
 
   <div class="page-header">
-    <div>
+    <div class="header-content">
       <button
         type="button"
         class="btn-link-custom"
@@ -20,7 +20,9 @@
     <button
       type="button"
       class="btn btn-secondary"
+      [disabled]="cargando"
       (click)="cargarMovimientos()">
+      <i class="bi bi-arrow-clockwise me-1"></i>
       Actualizar
     </button>
   </div>
@@ -42,21 +44,25 @@
     <div class="summary-grid">
 
       <div class="summary-card">
+        <span class="summary-icon blue"><i class="bi bi-list-check"></i></span>
         <span class="summary-label">Total filtrado</span>
         <strong>{{ movimientosFiltrados.length }}</strong>
       </div>
 
       <div class="summary-card">
+        <span class="summary-icon green"><i class="bi bi-box-arrow-in-down"></i></span>
         <span class="summary-label">Ingresos</span>
         <strong>{{ contarIngresos() }}</strong>
       </div>
 
       <div class="summary-card">
+        <span class="summary-icon teal"><i class="bi bi-plus-circle"></i></span>
         <span class="summary-label">Ajustes positivos</span>
         <strong>{{ contarAjustesPositivos() }}</strong>
       </div>
 
       <div class="summary-card">
+        <span class="summary-icon red"><i class="bi bi-dash-circle"></i></span>
         <span class="summary-label">Ajustes negativos</span>
         <strong>{{ contarAjustesNegativos() }}</strong>
       </div>
@@ -75,6 +81,9 @@
             Filtra los movimientos por tipo, código de producto, usuario o fecha.
           </p>
         </div>
+        <span class="results-count">
+          {{ movimientosFiltrados.length }} resultado{{ movimientosFiltrados.length === 1 ? '' : 's' }}
+        </span>
       </div>
 
       <div class="filters-grid">
@@ -82,17 +91,53 @@
         <div class="filter-group">
           <label>Tipo de movimiento</label>
 
-          <select
-            [(ngModel)]="filtroTipo"
-            (change)="aplicarFiltros()">
-            <option value="">Todos</option>
-            <option value="INGRESO_MERCANCIA">Ingreso de mercancía</option>
-            <option value="AJUSTE_POSITIVO">Ajuste positivo</option>
-            <option value="AJUSTE_NEGATIVO">Ajuste negativo</option>
-            <option value="VENTA">Venta</option>
-            <option value="DEVOLUCION">Devolución</option>
-            <option value="CANCELACION_FACTURA">Cancelación factura</option>
-          </select>
+          <div class="movement-type-picker">
+            <button
+              type="button"
+              class="movement-type-trigger"
+              [attr.aria-expanded]="tipoFiltroAbierto"
+              aria-haspopup="listbox"
+              (click)="toggleTipoFiltro()">
+              <span
+                class="movement-type-icon"
+                [ngClass]="obtenerTipoFiltroSeleccionado().clase">
+                <i [class]="'bi ' + obtenerTipoFiltroSeleccionado().icono"></i>
+              </span>
+              <span class="movement-type-label">
+                {{ obtenerTipoFiltroSeleccionado().nombre }}
+              </span>
+              <i
+                class="bi movement-type-chevron"
+                [class.bi-chevron-down]="!tipoFiltroAbierto"
+                [class.bi-chevron-up]="tipoFiltroAbierto"></i>
+            </button>
+
+            @if (tipoFiltroAbierto) {
+              <div class="movement-type-menu" role="listbox">
+                @for (tipo of tiposMovimiento; track tipo.valor) {
+                  <button
+                    type="button"
+                    class="movement-type-option"
+                    [class.active]="filtroTipo === tipo.valor"
+                    [attr.aria-selected]="filtroTipo === tipo.valor"
+                    (click)="seleccionarTipoFiltro(tipo.valor)">
+                    <span
+                      class="movement-type-icon"
+                      [ngClass]="tipo.clase">
+                      <i [class]="'bi ' + tipo.icono"></i>
+                    </span>
+                    <span class="movement-type-option-copy">
+                      <strong>{{ tipo.nombre }}</strong>
+                      <small>{{ tipo.descripcion }}</small>
+                    </span>
+                    @if (filtroTipo === tipo.valor) {
+                      <i class="bi bi-check2 movement-type-check"></i>
+                    }
+                  </button>
+                }
+              </div>
+            }
+          </div>
         </div>
 
         <div class="filter-group">
@@ -102,6 +147,7 @@
             type="text"
             placeholder="Ej: VHL-0001"
             [(ngModel)]="filtroCodigoProducto"
+            autocomplete="off"
             (input)="aplicarFiltros()">
         </div>
 
@@ -113,6 +159,7 @@
             placeholder="Ej: Super Admin"
             list="usuariosMovimiento"
             [(ngModel)]="filtroUsuarioNombre"
+            autocomplete="off"
             (input)="aplicarFiltros()">
 
           <datalist id="usuariosMovimiento">
@@ -125,14 +172,53 @@
         <div class="filter-group">
           <label>Filtro por fecha</label>
 
-          <select
-            [(ngModel)]="filtroFecha"
-            (change)="cambiarFiltroFecha()">
-            <option value="TODOS">Todas las fechas</option>
-            <option value="DIA">Por día</option>
-            <option value="MES">Por mes</option>
-            <option value="RANGO">Rango personalizado</option>
-          </select>
+          <div class="movement-type-picker date-filter-picker">
+            <button
+              type="button"
+              class="movement-type-trigger"
+              [attr.aria-expanded]="filtroFechaAbierto"
+              aria-haspopup="listbox"
+              (click)="toggleFechaFiltro()">
+              <span
+                class="movement-type-icon"
+                [ngClass]="obtenerFechaFiltroSeleccionado().clase">
+                <i [class]="'bi ' + obtenerFechaFiltroSeleccionado().icono"></i>
+              </span>
+              <span class="movement-type-label">
+                {{ obtenerFechaFiltroSeleccionado().nombre }}
+              </span>
+              <i
+                class="bi movement-type-chevron"
+                [class.bi-chevron-down]="!filtroFechaAbierto"
+                [class.bi-chevron-up]="filtroFechaAbierto"></i>
+            </button>
+
+            @if (filtroFechaAbierto) {
+              <div class="movement-type-menu" role="listbox">
+                @for (tipo of filtrosFecha; track tipo.valor) {
+                  <button
+                    type="button"
+                    class="movement-type-option"
+                    [class.active]="filtroFecha === tipo.valor"
+                    [attr.aria-selected]="filtroFecha === tipo.valor"
+                    (click)="seleccionarFechaFiltro(tipo.valor)">
+                    <span
+                      class="movement-type-icon"
+                      [ngClass]="tipo.clase">
+                      <i [class]="'bi ' + tipo.icono"></i>
+                    </span>
+                    <span class="movement-type-option-copy">
+                      <strong>{{ tipo.nombre }}</strong>
+                      <small>{{ tipo.descripcion }}</small>
+                    </span>
+                    @if (filtroFecha === tipo.valor) {
+                      <i class="bi bi-check2 movement-type-check"></i>
+                    }
+                  </button>
+                }
+              </div>
+            }
+          </div>
         </div>
 
         @if (filtroFecha === 'DIA') {
@@ -188,6 +274,14 @@
 
       </div>
 
+      @if (hayFiltrosActivos) {
+        <div class="active-filters">
+          <i class="bi bi-funnel-fill"></i>
+          <span>Filtros activos</span>
+          <button type="button" (click)="limpiarFiltros()">Restablecer búsqueda</button>
+        </div>
+      }
+
     </section>
   }
 
@@ -199,7 +293,7 @@
           <h2>Historial de movimientos</h2>
 
           <p>
-            Mostrando página {{ paginaActual }} de {{ totalPaginas }}. Cada página contiene máximo {{ tamanioPagina }} movimientos.
+            Página {{ paginaActual }} de {{ totalPaginas }} · máximo {{ tamanioPagina }} movimientos por página.
           </p>
         </div>
       </div>
@@ -220,8 +314,7 @@
               <th>Tipo</th>
               <th>Producto</th>
               <th>Cantidad</th>
-              <th>Stock antes</th>
-              <th>Stock después</th>
+              <th>Stock</th>
               <th>Costo momento</th>
               <th>Precio momento</th>
               <th>Usuario</th>
@@ -234,7 +327,8 @@
                 <tr>
 
                   <td class="fecha-cell">
-                    {{ movimiento.fecha | date:'yyyy-MM-dd HH:mm' }}
+                    <span class="fecha-principal">{{ movimiento.fecha | date:'dd MMM yyyy' }}</span>
+                    <span class="fecha-hora">{{ movimiento.fecha | date:'HH:mm' }}</span>
                   </td>
 
                   <td>
@@ -253,16 +347,19 @@
                     </div>
                   </td>
 
-                  <td [class]="obtenerClaseCantidad(movimiento.cantidad)">
-                    {{ movimiento.cantidad }}
+                  <td>
+                    <span
+                      class="quantity-badge"
+                      [class.quantity-positive]="movimiento.cantidad > 0"
+                      [class.quantity-negative]="movimiento.cantidad < 0">
+                      {{ formatearCantidad(movimiento.cantidad) }}
+                    </span>
                   </td>
 
-                  <td>
-                    {{ movimiento.stockAntes }}
-                  </td>
-
-                  <td>
-                    {{ movimiento.stockDespues }}
+                  <td class="stock-cell">
+                    <span>{{ movimiento.stockAntes }}</span>
+                    <i class="bi bi-arrow-right"></i>
+                    <strong>{{ movimiento.stockDespues }}</strong>
                   </td>
 
                   <td>
@@ -283,8 +380,8 @@
                     </div>
                   </td>
 
-                  <td class="motivo-cell">
-                    {{ movimiento.motivo || 'Sin concepto' }}
+                  <td class="motivo-cell" [title]="movimiento.motivo || 'Sin concepto'">
+                    <span>{{ movimiento.motivo || 'Sin concepto' }}</span>
                   </td>
 
                 </tr>

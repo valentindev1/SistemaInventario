@@ -1,99 +1,641 @@
 <main class="reports-page">
   <header class="reports-hero">
-    <div>
+    <div class="reports-hero-copy">
       <a class="reports-back" [routerLink]="volverDetalleEmpresa()">
-        <i class="bi bi-arrow-left me-1"></i>
+        <i class="bi bi-arrow-left"></i>
         Volver a {{ empresaNombre }}
       </a>
 
       <span class="reports-eyebrow">
-        <i class="bi bi-file-earmark-bar-graph me-1"></i>
-        Herramientas de gestión
+        <i class="bi bi-graph-up-arrow"></i>
+        Análisis financiero
       </span>
 
-      <h1>Informes</h1>
-      <p>Prepara reportes contables y administrativos con rangos de fecha personalizados.</p>
+      <h1>Informes financieros</h1>
+      <p>
+        Consulta el estado de resultados de {{ empresaNombre }} por mes o por el intervalo de
+        fechas que necesites.
+      </p>
     </div>
 
-    <div class="reports-hero-icon">
-      <i class="bi bi-bar-chart-line"></i>
+    <div class="reports-hero-actions">
+      <button
+        type="button"
+        class="reports-graphic-button"
+        [disabled]="!informe"
+        (click)="generarInformeGrafico()">
+        <i class="bi bi-bar-chart-line-fill"></i>
+        Generar informe gráfico
+      </button>
+      <button type="button" class="reports-export-button" [disabled]="!informe" (click)="descargarExcel()">
+        <i class="bi bi-file-earmark-excel"></i>
+        Excel
+      </button>
+      <button type="button" class="reports-export-button" [disabled]="!informe" (click)="descargarPdf()">
+        <i class="bi bi-file-earmark-pdf"></i>
+        PDF
+      </button>
     </div>
   </header>
+
+  <aside class="reports-exclusion-note">
+    <span class="reports-exclusion-icon"><i class="bi bi-shield-check"></i></span>
+    <div>
+      <strong>Compras varias está aislado de este informe</strong>
+      <p>
+        Ningún registro del módulo Compras varias se suma a ingresos, costos, gastos,
+        utilidad ni márgenes financieros.
+      </p>
+    </div>
+    <span class="reports-exclusion-badge">Excluido</span>
+  </aside>
+
+  <section class="reports-filter-card">
+    <div class="reports-filter-heading">
+      <div class="reports-card-heading">
+        <span class="reports-heading-icon"><i class="bi bi-calendar-range"></i></span>
+        <div>
+          <h2>Periodo del informe</h2>
+          <p>Selecciona un mes completo o define un intervalo personalizado.</p>
+        </div>
+      </div>
+
+      <div class="reports-period-switch" role="group" aria-label="Tipo de periodo">
+        <button
+          type="button"
+          [class.active]="tipoPeriodo === 'MES'"
+          (click)="seleccionarTipoPeriodo('MES')">
+          <i class="bi bi-calendar3"></i>
+          Por mes
+        </button>
+        <button
+          type="button"
+          [class.active]="tipoPeriodo === 'RANGO'"
+          (click)="seleccionarTipoPeriodo('RANGO')">
+          <i class="bi bi-calendar2-range"></i>
+          Por intervalo
+        </button>
+      </div>
+    </div>
+
+    <div class="reports-filter-grid">
+      <label *ngIf="tipoPeriodo === 'MES'" class="reports-field">
+        <span>Mes a consultar</span>
+        <div class="reports-control reports-month-picker-control">
+          <i class="bi bi-calendar-month"></i>
+          <button
+            type="button"
+            class="reports-month-picker-trigger"
+            aria-haspopup="dialog"
+            [attr.aria-expanded]="mostrarSelectorMes"
+            (click)="abrirSelectorMes()">
+            {{ formatearMesSeleccionado() }}
+          </button>
+          <i class="bi bi-chevron-down reports-month-picker-chevron"></i>
+
+          <div *ngIf="mostrarSelectorMes" class="reports-month-picker-popover" role="dialog" aria-label="Seleccionar mes" (click)="$event.stopPropagation()">
+            <div class="reports-month-picker-header">
+              <button type="button" aria-label="Año anterior" (click)="cambiarAnioSelector(-1)">
+                <i class="bi bi-chevron-left"></i>
+              </button>
+              <strong>{{ anioSelector }}</strong>
+              <button type="button" aria-label="Año siguiente" (click)="cambiarAnioSelector(1)">
+                <i class="bi bi-chevron-right"></i>
+              </button>
+            </div>
+
+            <div class="reports-month-picker-grid">
+              <button
+                *ngFor="let mes of mesesDisponibles"
+                type="button"
+                [class.selected]="esMesSeleccionado(anioSelector, mes.valor)"
+                [class.current]="esMesActual(anioSelector, mes.valor)"
+                (click)="seleccionarMesDesdeSelector(mes.valor)">
+                {{ mes.nombre }}
+              </button>
+            </div>
+
+            <div class="reports-month-picker-footer">
+              <button type="button" (click)="limpiarMesSeleccionado()">Borrar</button>
+              <button type="button" (click)="seleccionarMesActualDesdeSelector()">Este mes</button>
+            </div>
+          </div>
+        </div>
+      </label>
+
+      <ng-container *ngIf="tipoPeriodo === 'RANGO'">
+        <label class="reports-field">
+          <span>Fecha inicial</span>
+          <div class="reports-control reports-date-picker-control" [class.active]="selectorFechaActivo === 'inicio'">
+            <i class="bi bi-calendar-event"></i>
+            <button
+              type="button"
+              class="reports-date-picker-trigger"
+              aria-haspopup="dialog"
+              [attr.aria-expanded]="selectorFechaActivo === 'inicio'"
+              (click)="abrirSelectorFecha('inicio')">
+              {{ formatearFechaControl(fechaInicio) }}
+            </button>
+            <i class="bi bi-chevron-down reports-date-picker-chevron"></i>
+
+            <div *ngIf="selectorFechaActivo === 'inicio'" class="reports-date-picker-popover" role="dialog" aria-label="Seleccionar fecha inicial" (click)="$event.stopPropagation()">
+              <div class="reports-date-picker-header">
+                <button type="button" aria-label="Mes anterior" (click)="cambiarMesCalendario(-1)">
+                  <i class="bi bi-chevron-left"></i>
+                </button>
+                <strong>{{ nombreMesCalendario() }}</strong>
+                <button type="button" aria-label="Mes siguiente" (click)="cambiarMesCalendario(1)">
+                  <i class="bi bi-chevron-right"></i>
+                </button>
+              </div>
+              <div class="reports-date-picker-weekdays">
+                <span *ngFor="let dia of ['L', 'M', 'X', 'J', 'V', 'S', 'D']">{{ dia }}</span>
+              </div>
+              <div class="reports-date-picker-grid">
+                <button
+                  *ngFor="let dia of diasCalendario"
+                  type="button"
+                  [class.other-month]="!dia.mesActual"
+                  [class.selected]="esFechaSeleccionada(dia.iso)"
+                  [class.today]="esFechaHoy(dia.iso)"
+                  (click)="seleccionarFechaDesdeSelector(dia.iso)">
+                  {{ dia.numero }}
+                </button>
+              </div>
+              <div class="reports-date-picker-footer">
+                <button type="button" (click)="limpiarFechaDesdeSelector()">Borrar</button>
+                <button type="button" (click)="seleccionarHoyDesdeSelector()">Hoy</button>
+              </div>
+            </div>
+          </div>
+        </label>
+
+        <label class="reports-field">
+          <span>Fecha final</span>
+          <div class="reports-control reports-date-picker-control" [class.active]="selectorFechaActivo === 'fin'">
+            <i class="bi bi-calendar-check"></i>
+            <button
+              type="button"
+              class="reports-date-picker-trigger"
+              aria-haspopup="dialog"
+              [attr.aria-expanded]="selectorFechaActivo === 'fin'"
+              (click)="abrirSelectorFecha('fin')">
+              {{ formatearFechaControl(fechaFin) }}
+            </button>
+            <i class="bi bi-chevron-down reports-date-picker-chevron"></i>
+
+            <div *ngIf="selectorFechaActivo === 'fin'" class="reports-date-picker-popover" role="dialog" aria-label="Seleccionar fecha final" (click)="$event.stopPropagation()">
+              <div class="reports-date-picker-header">
+                <button type="button" aria-label="Mes anterior" (click)="cambiarMesCalendario(-1)">
+                  <i class="bi bi-chevron-left"></i>
+                </button>
+                <strong>{{ nombreMesCalendario() }}</strong>
+                <button type="button" aria-label="Mes siguiente" (click)="cambiarMesCalendario(1)">
+                  <i class="bi bi-chevron-right"></i>
+                </button>
+              </div>
+              <div class="reports-date-picker-weekdays">
+                <span *ngFor="let dia of ['L', 'M', 'X', 'J', 'V', 'S', 'D']">{{ dia }}</span>
+              </div>
+              <div class="reports-date-picker-grid">
+                <button
+                  *ngFor="let dia of diasCalendario"
+                  type="button"
+                  [class.other-month]="!dia.mesActual"
+                  [class.selected]="esFechaSeleccionada(dia.iso)"
+                  [class.today]="esFechaHoy(dia.iso)"
+                  (click)="seleccionarFechaDesdeSelector(dia.iso)">
+                  {{ dia.numero }}
+                </button>
+              </div>
+              <div class="reports-date-picker-footer">
+                <button type="button" (click)="limpiarFechaDesdeSelector()">Borrar</button>
+                <button type="button" (click)="seleccionarHoyDesdeSelector()">Hoy</button>
+              </div>
+            </div>
+          </div>
+        </label>
+      </ng-container>
+
+      <label class="reports-field">
+        <span>Sucursal</span>
+        <div class="reports-control">
+          <i class="bi bi-shop"></i>
+          <select [(ngModel)]="sucursalSeleccionadaId">
+            <option [ngValue]="null">Todas las sucursales</option>
+            <option *ngFor="let sucursal of sucursales" [ngValue]="sucursal.id">
+              {{ sucursal.nombre }} · {{ sucursal.ciudad }}
+            </option>
+          </select>
+        </div>
+      </label>
+
+      <div class="reports-filter-actions">
+        <button
+          type="button"
+          class="reports-button reports-button-primary"
+          [disabled]="cargando"
+          (click)="generarInforme()">
+          <span *ngIf="cargando" class="reports-spinner"></span>
+          <i *ngIf="!cargando" class="bi bi-bar-chart-line"></i>
+          {{ cargando ? 'Calculando...' : 'Generar informe' }}
+        </button>
+        <button type="button" class="reports-button reports-button-light" (click)="establecerMesActual()">
+          Mes actual
+        </button>
+      </div>
+    </div>
+  </section>
 
   <div *ngIf="mensajeError" class="reports-alert reports-alert-error">
     <i class="bi bi-exclamation-triangle"></i>
     {{ mensajeError }}
   </div>
 
-  <div *ngIf="mensajeInfo" class="reports-alert reports-alert-info">
-    <i class="bi bi-check-circle"></i>
-    {{ mensajeInfo }}
-  </div>
-
-  <section class="reports-filter-card">
-    <div class="reports-card-heading">
-      <span class="reports-heading-icon"><i class="bi bi-calendar3"></i></span>
-      <div>
-        <h2>Rango del informe</h2>
-        <p>Define el periodo que utilizarán los próximos reportes contables.</p>
-      </div>
-    </div>
-
-    <div class="reports-filter-grid">
-      <label>
-        Fecha inicial
-        <input type="date" [(ngModel)]="fechaInicio">
-      </label>
-
-      <label>
-        Fecha final
-        <input type="date" [(ngModel)]="fechaFin">
-      </label>
-
-      <div class="reports-filter-actions">
-        <button type="button" class="reports-button reports-button-primary" (click)="prepararConsulta()">
-          <i class="bi bi-arrow-right-circle me-2"></i>
-          Preparar informe
-        </button>
-
-        <button type="button" class="reports-button reports-button-light" (click)="establecerMesActual()">
-          Este mes
-        </button>
-
-        <button type="button" class="reports-button reports-button-link" (click)="limpiarRango()">
-          Limpiar
-        </button>
-      </div>
-    </div>
+  <section *ngIf="cargando" class="reports-loading-card">
+    <span class="reports-loader"></span>
+    <strong>Construyendo el informe financiero</strong>
+    <p>Consolidando ventas, costos históricos, gastos y ajustes del periodo.</p>
   </section>
 
-  <section class="reports-roadmap-card">
-    <div class="reports-card-heading">
-      <span class="reports-heading-icon roadmap"><i class="bi bi-pie-chart"></i></span>
+  <ng-container *ngIf="informe as reporte">
+    <section class="reports-summary-header">
       <div>
-        <h2>Reportes disponibles próximamente</h2>
-        <p>Esta base queda preparada para conectar los módulos contables de la empresa.</p>
+        <span class="reports-section-kicker">Resultado del periodo</span>
+        <h2>{{ reporte.sucursalNombre }}</h2>
+        <p>
+          {{ formatearFecha(reporte.fechaInicio) }} — {{ formatearFecha(reporte.fechaFin) }} ·
+          {{ reporte.cantidadSucursalesIncluidas }} sucursal(es)
+        </p>
       </div>
-    </div>
+      <div class="reports-result-pill" [ngClass]="claseResultado(reporte.utilidadNeta)">
+        <small>Utilidad neta</small>
+        <strong>{{ formatearMoneda(reporte.utilidadNeta) }}</strong>
+      </div>
+    </section>
 
-    <div class="reports-roadmap-grid">
-      <article>
-        <span><i class="bi bi-cash-stack"></i></span>
-        <strong>Resumen financiero</strong>
-        <small>Ingresos, costos, utilidad y rentabilidad.</small>
+    <section class="reports-kpi-grid">
+      <article class="reports-kpi income">
+        <span class="reports-kpi-icon"><i class="bi bi-arrow-up-right"></i></span>
+        <div>
+          <small>Ingresos netos</small>
+          <strong>{{ formatearMoneda(reporte.ingresosNetos) }}</strong>
+          <p>Ventas efectivas después de descuentos y devoluciones.</p>
+        </div>
       </article>
 
-      <article>
-        <span><i class="bi bi-receipt"></i></span>
-        <strong>Ventas y movimientos</strong>
-        <small>Consulta consolidada por periodo y sucursal.</small>
+      <article class="reports-kpi cost">
+        <span class="reports-kpi-icon"><i class="bi bi-box-seam"></i></span>
+        <div>
+          <small>Costo vendido</small>
+          <strong>{{ formatearMoneda(reporte.costoProductosVendidos) }}</strong>
+          <p>Costo histórico congelado al momento de cada venta.</p>
+        </div>
       </article>
 
-      <article>
-        <span><i class="bi bi-box-seam"></i></span>
-        <strong>Inventario valorizado</strong>
-        <small>Existencias, costos y valor comercial.</small>
+      <article class="reports-kpi gross">
+        <span class="reports-kpi-icon"><i class="bi bi-piggy-bank"></i></span>
+        <div>
+          <small>Utilidad bruta</small>
+          <strong>{{ formatearMoneda(reporte.utilidadBruta) }}</strong>
+          <p>Margen bruto de {{ reporte.margenBruto | number:'1.2-2' }}%.</p>
+        </div>
       </article>
-    </div>
-  </section>
+
+      <article class="reports-kpi net" [class.loss]="reporte.utilidadNeta < 0">
+        <span class="reports-kpi-icon"><i class="bi bi-activity"></i></span>
+        <div>
+          <small>Utilidad neta</small>
+          <strong>{{ formatearMoneda(reporte.utilidadNeta) }}</strong>
+          <p>Margen neto de {{ reporte.margenNeto | number:'1.2-2' }}%.</p>
+        </div>
+      </article>
+    </section>
+
+    <section *ngIf="mostrarInformeGrafico" id="informe-grafico" class="reports-graphic-card">
+      <div class="reports-graphic-heading">
+        <div class="reports-card-title">
+          <span class="graphic"><i class="bi bi-bar-chart-line-fill"></i></span>
+          <div>
+            <span class="reports-section-kicker">Vista ejecutiva</span>
+            <h2>Informe gráfico</h2>
+            <p>Las métricas más importantes del periodo en una lectura visual.</p>
+          </div>
+        </div>
+        <button type="button" class="reports-graphic-close" (click)="ocultarInformeGrafico()">
+          <i class="bi bi-x-lg"></i>
+          Ocultar
+        </button>
+      </div>
+
+      <div class="reports-graphic-grid">
+        <article class="reports-chart-card reports-chart-card-wide">
+          <div class="reports-chart-heading">
+            <div>
+              <h3>Ingresos, costos y utilidad por mes</h3>
+              <p>Comparación relativa dentro del intervalo seleccionado.</p>
+            </div>
+            <div class="reports-chart-legend-inline">
+              <span><i class="income"></i>Ingresos</span>
+              <span><i class="cost"></i>Costos</span>
+              <span><i class="profit"></i>Utilidad</span>
+            </div>
+          </div>
+
+          <div class="reports-period-bars">
+            <div *ngFor="let periodo of reporte.periodos" class="reports-period-bar-group">
+              <div class="reports-period-bar-title">
+                <strong>{{ formatearPeriodo(periodo.periodo) }}</strong>
+                <small>{{ formatearNumero(periodo.unidadesVendidas) }} unidades</small>
+              </div>
+              <div class="reports-metric-line">
+                <span class="reports-metric-name">Ingresos</span>
+                <span class="reports-metric-track"><i class="income" [style.width.%]="anchoBarraGrafico(periodo.ingresosNetos, valoresDePeriodos('ingresosNetos'))"></i></span>
+                <strong>{{ formatearMoneda(periodo.ingresosNetos) }}</strong>
+              </div>
+              <div class="reports-metric-line">
+                <span class="reports-metric-name">Costos</span>
+                <span class="reports-metric-track"><i class="cost" [style.width.%]="anchoBarraGrafico(periodo.costoProductosVendidos, valoresDePeriodos('costoProductosVendidos'))"></i></span>
+                <strong>{{ formatearMoneda(periodo.costoProductosVendidos) }}</strong>
+              </div>
+              <div class="reports-metric-line">
+                <span class="reports-metric-name">Utilidad</span>
+                <span class="reports-metric-track"><i class="profit" [class.negative]="periodo.utilidadNeta < 0" [style.width.%]="anchoBarraGrafico(periodo.utilidadNeta, valoresDePeriodos('utilidadNeta'))"></i></span>
+                <strong [ngClass]="claseResultado(periodo.utilidadNeta)">{{ formatearMoneda(periodo.utilidadNeta) }}</strong>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article class="reports-chart-card reports-structure-chart">
+          <div class="reports-chart-heading">
+            <div>
+              <h3>Composición de ingresos</h3>
+              <p>Participación por tipo de producto.</p>
+            </div>
+            <i class="bi bi-pie-chart-fill reports-chart-heading-icon orange"></i>
+          </div>
+
+          <div class="reports-donut-layout">
+            <div class="reports-donut" [style.background]="estiloComposicionProductos()">
+              <div>
+                <strong>{{ formatearMoneda(reporte.ingresosNetos) }}</strong>
+                <small>ingresos netos</small>
+              </div>
+            </div>
+            <div class="reports-chart-legend">
+              <div>
+                <span><i class="reman"></i>Remanufacturados</span>
+                <strong>{{ porcentajeTipoProducto(true) }}%</strong>
+              </div>
+              <small>{{ formatearMoneda(reporte.productosRemanufacturados.ingresosNetos) }} · {{ formatearNumero(reporte.productosRemanufacturados.unidadesVendidas) }} unidades</small>
+              <div>
+                <span><i class="conventional"></i>Convencionales</span>
+                <strong>{{ porcentajeTipoProducto(false) }}%</strong>
+              </div>
+              <small>{{ formatearMoneda(reporte.productosConvencionales.ingresosNetos) }} · {{ formatearNumero(reporte.productosConvencionales.unidadesVendidas) }} unidades</small>
+            </div>
+          </div>
+        </article>
+
+        <article class="reports-chart-card">
+          <div class="reports-chart-heading">
+            <div>
+              <h3>Ingresos por sucursal</h3>
+              <p>Qué sucursales aportan más al resultado.</p>
+            </div>
+            <i class="bi bi-buildings reports-chart-heading-icon blue"></i>
+          </div>
+
+          <div class="reports-branch-bars">
+            <div *ngFor="let sucursal of reporte.sucursales" class="reports-branch-bar-row">
+              <div class="reports-branch-bar-label">
+                <strong>{{ sucursal.sucursalNombre }}</strong>
+                <span>{{ formatearMoneda(sucursal.ingresosNetos) }}</span>
+              </div>
+              <div class="reports-metric-track reports-branch-track"><i [style.width.%]="anchoBarraGrafico(sucursal.ingresosNetos, valoresDeSucursales('ingresosNetos'))"></i></div>
+              <small>{{ formatearNumero(sucursal.unidadesVendidas) }} unidades · <span [ngClass]="claseResultado(sucursal.utilidadNeta)">{{ formatearMoneda(sucursal.utilidadNeta) }} utilidad</span></small>
+            </div>
+            <div *ngIf="!reporte.sucursales.length" class="reports-chart-empty">No hay sucursales con actividad en este periodo.</div>
+          </div>
+        </article>
+
+        <article class="reports-chart-card">
+          <div class="reports-chart-heading">
+            <div>
+              <h3>Márgenes y actividad</h3>
+              <p>Indicadores rápidos para evaluar el desempeño.</p>
+            </div>
+            <i class="bi bi-speedometer2 reports-chart-heading-icon green"></i>
+          </div>
+
+          <div class="reports-visual-stats">
+            <div class="reports-visual-stat">
+              <div><span>Margen bruto</span><strong>{{ reporte.margenBruto | number:'1.2-2' }}%</strong></div>
+              <span class="reports-visual-track"><i class="gross" [style.width.%]="porcentajeVisual(reporte.margenBruto)"></i></span>
+            </div>
+            <div class="reports-visual-stat">
+              <div><span>Margen neto</span><strong [ngClass]="claseResultado(reporte.margenNeto)">{{ reporte.margenNeto | number:'1.2-2' }}%</strong></div>
+              <span class="reports-visual-track"><i class="net" [class.negative]="reporte.margenNeto < 0" [style.width.%]="porcentajeVisual(reporte.margenNeto)"></i></span>
+            </div>
+            <div class="reports-activity-highlight">
+              <span><i class="bi bi-receipt"></i> Facturas efectivas</span>
+              <strong>{{ formatearNumero(reporte.facturasEfectivas) }}</strong>
+            </div>
+            <div class="reports-activity-highlight">
+              <span><i class="bi bi-box-seam"></i> Unidades vendidas</span>
+              <strong>{{ formatearNumero(reporte.unidadesVendidas) }}</strong>
+            </div>
+          </div>
+        </article>
+      </div>
+
+      <div class="reports-graphic-note">
+        <i class="bi bi-shield-check"></i>
+        <span>Esta vista utiliza el mismo cálculo financiero del informe. “Compras varias” permanece excluido.</span>
+      </div>
+    </section>
+
+    <section class="reports-two-column">
+      <article class="reports-statement-card">
+        <div class="reports-card-title">
+          <span><i class="bi bi-receipt-cutoff"></i></span>
+          <div>
+            <h2>Estado de resultados</h2>
+            <p>Cómo se construye la utilidad del periodo.</p>
+          </div>
+        </div>
+
+        <div class="reports-statement">
+          <div><span>Ventas brutas</span><strong>{{ formatearMoneda(reporte.ventasBrutas) }}</strong></div>
+          <div class="deduction"><span>(–) Descuentos aplicados</span><strong>{{ formatearMoneda(reporte.descuentos) }}</strong></div>
+          <div class="subtotal"><span>Ingresos netos</span><strong>{{ formatearMoneda(reporte.ingresosNetos) }}</strong></div>
+          <div class="deduction"><span>(–) Costo de productos vendidos</span><strong>{{ formatearMoneda(reporte.costoProductosVendidos) }}</strong></div>
+          <div class="subtotal"><span>Utilidad bruta</span><strong>{{ formatearMoneda(reporte.utilidadBruta) }}</strong></div>
+          <div class="deduction"><span>(–) Costos indirectos</span><strong>{{ formatearMoneda(reporte.costosIndirectos) }}</strong></div>
+          <div class="deduction"><span>(–) Gastos</span><strong>{{ formatearMoneda(reporte.gastos) }}</strong></div>
+          <div class="deduction"><span>(–) Pérdidas por ajustes de inventario</span><strong>{{ formatearMoneda(reporte.perdidasAjustesInventario) }}</strong></div>
+          <div class="total" [ngClass]="claseResultado(reporte.utilidadNeta)">
+            <span>Utilidad neta</span>
+            <strong>{{ formatearMoneda(reporte.utilidadNeta) }}</strong>
+          </div>
+        </div>
+      </article>
+
+      <article class="reports-activity-card">
+        <div class="reports-card-title">
+          <span class="activity"><i class="bi bi-lightning-charge"></i></span>
+          <div>
+            <h2>Actividad del periodo</h2>
+            <p>Facturación y unidades efectivas.</p>
+          </div>
+        </div>
+
+        <div class="reports-activity-grid">
+          <div><small>Facturas emitidas</small><strong>{{ formatearNumero(reporte.facturasEmitidas) }}</strong></div>
+          <div><small>Facturas efectivas</small><strong>{{ formatearNumero(reporte.facturasEfectivas) }}</strong></div>
+          <div><small>Canceladas</small><strong>{{ formatearNumero(reporte.facturasCanceladas) }}</strong></div>
+          <div><small>Unidades vendidas</small><strong>{{ formatearNumero(reporte.unidadesVendidas) }}</strong></div>
+          <div><small>Unidades devueltas</small><strong>{{ formatearNumero(reporte.unidadesDevueltas) }}</strong></div>
+          <div><small>Egresos operativos</small><strong>{{ formatearMoneda(reporte.egresosOperativos) }}</strong></div>
+        </div>
+
+        <div class="reports-formula-note">
+          <i class="bi bi-info-circle"></i>
+          <span>Utilidad neta = ingresos netos − costo vendido − costos indirectos − gastos − ajustes.</span>
+        </div>
+      </article>
+    </section>
+
+    <section class="reports-products-card">
+      <div class="reports-card-title wide">
+        <span class="reman"><i class="bi bi-recycle"></i></span>
+        <div>
+          <h2>Composición por tipo de producto</h2>
+          <p>Compara el aporte de prendas remanufacturadas y convencionales.</p>
+        </div>
+      </div>
+
+      <div class="reports-product-grid">
+        <article class="remanufactured">
+          <div class="reports-product-name">
+            <span><i class="bi bi-recycle"></i></span>
+            <div><small>Producto</small><strong>Remanufacturado</strong></div>
+          </div>
+          <div class="reports-product-metrics">
+            <div><small>Unidades</small><strong>{{ formatearNumero(reporte.productosRemanufacturados.unidadesVendidas) }}</strong></div>
+            <div><small>Ingresos</small><strong>{{ formatearMoneda(reporte.productosRemanufacturados.ingresosNetos) }}</strong></div>
+            <div><small>Utilidad bruta</small><strong>{{ formatearMoneda(reporte.productosRemanufacturados.utilidadBruta) }}</strong></div>
+          </div>
+        </article>
+
+        <article class="conventional">
+          <div class="reports-product-name">
+            <span><i class="bi bi-stars"></i></span>
+            <div><small>Producto</small><strong>Convencional</strong></div>
+          </div>
+          <div class="reports-product-metrics">
+            <div><small>Unidades</small><strong>{{ formatearNumero(reporte.productosConvencionales.unidadesVendidas) }}</strong></div>
+            <div><small>Ingresos</small><strong>{{ formatearMoneda(reporte.productosConvencionales.ingresosNetos) }}</strong></div>
+            <div><small>Utilidad bruta</small><strong>{{ formatearMoneda(reporte.productosConvencionales.utilidadBruta) }}</strong></div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="reports-table-card">
+      <div class="reports-card-title wide">
+        <span class="trend"><i class="bi bi-bar-chart-steps"></i></span>
+        <div>
+          <h2>Evolución mensual</h2>
+          <p>Comportamiento financiero dentro del intervalo seleccionado.</p>
+        </div>
+      </div>
+
+      <div class="reports-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Periodo</th>
+              <th>Ingresos netos</th>
+              <th>Costo vendido</th>
+              <th>Costos indirectos</th>
+              <th>Gastos</th>
+              <th>Ajustes</th>
+              <th>Utilidad neta</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let periodo of reporte.periodos">
+              <td>
+                <strong>{{ formatearPeriodo(periodo.periodo) }}</strong>
+                <span class="reports-mini-track"><span [style.width.%]="anchoBarra(periodo)"></span></span>
+              </td>
+              <td>{{ formatearMoneda(periodo.ingresosNetos) }}</td>
+              <td>{{ formatearMoneda(periodo.costoProductosVendidos) }}</td>
+              <td>{{ formatearMoneda(periodo.costosIndirectos) }}</td>
+              <td>{{ formatearMoneda(periodo.gastos) }}</td>
+              <td>{{ formatearMoneda(periodo.perdidasAjustesInventario) }}</td>
+              <td><strong [ngClass]="claseResultado(periodo.utilidadNeta)">{{ formatearMoneda(periodo.utilidadNeta) }}</strong></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="reports-bottom-grid">
+      <article class="reports-table-card">
+        <div class="reports-card-title wide">
+          <span class="branches"><i class="bi bi-buildings"></i></span>
+          <div>
+            <h2>Resultado por sucursal</h2>
+            <p>Participación de cada punto de venta.</p>
+          </div>
+        </div>
+
+        <div class="reports-table-wrap">
+          <table>
+            <thead><tr><th>Sucursal</th><th>Ingresos</th><th>Egresos</th><th>Utilidad neta</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let sucursal of reporte.sucursales">
+                <td><strong>{{ sucursal.sucursalNombre }}</strong><small>{{ sucursal.facturasEfectivas }} facturas · {{ sucursal.unidadesVendidas }} unidades</small></td>
+                <td>{{ formatearMoneda(sucursal.ingresosNetos) }}</td>
+                <td>{{ formatearMoneda(sucursal.costoProductosVendidos + sucursal.costosIndirectos + sucursal.gastos + sucursal.perdidasAjustesInventario) }}</td>
+                <td><strong [ngClass]="claseResultado(sucursal.utilidadNeta)">{{ formatearMoneda(sucursal.utilidadNeta) }}</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </article>
+
+      <article class="reports-table-card">
+        <div class="reports-card-title wide">
+          <span class="expenses"><i class="bi bi-pie-chart"></i></span>
+          <div>
+            <h2>Egresos por clasificación</h2>
+            <p>Destino de costos indirectos, gastos y ajustes.</p>
+          </div>
+        </div>
+
+        <div *ngIf="reporte.egresosPorClasificacion.length; else sinEgresos" class="reports-expense-list">
+          <div *ngFor="let egreso of reporte.egresosPorClasificacion" class="reports-expense-item">
+            <span class="reports-expense-type">{{ egreso.tipo }}</span>
+            <div>
+              <strong>{{ egreso.clasificacion }}</strong>
+              <span class="reports-expense-track"><span [style.width.%]="egreso.porcentajeEgresos"></span></span>
+            </div>
+            <p><strong>{{ formatearMoneda(egreso.valor) }}</strong><small>{{ egreso.porcentajeEgresos | number:'1.1-1' }}%</small></p>
+          </div>
+        </div>
+
+        <ng-template #sinEgresos>
+          <div class="reports-empty">
+            <i class="bi bi-check2-circle"></i>
+            <strong>No hay egresos registrados</strong>
+            <p>No se encontraron costos indirectos, gastos ni ajustes en este periodo.</p>
+          </div>
+        </ng-template>
+      </article>
+    </section>
+  </ng-container>
 </main>

@@ -41,6 +41,7 @@ export interface InventarioAdminDTO {
 
   costoUnitario: number;
   precioVenta: number;
+  esRemanufacturado: boolean;
 
   valorCostoTotal: number;
   valorVentaTotal: number;

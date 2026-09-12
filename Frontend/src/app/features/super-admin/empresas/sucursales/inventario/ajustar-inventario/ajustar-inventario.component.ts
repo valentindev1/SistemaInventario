@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, ElementRef, HostListener, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
@@ -30,6 +30,10 @@ export class AjustarInventarioComponent implements OnInit {
   inventario: InventarioAdminDTO[] = [];
 
   productoSeleccionadoId = '';
+  busquedaProducto = '';
+  productoSelectorAbierto = false;
+  busquedaInventario = '';
+  filtroStock: 'TODOS' | 'CON_STOCK' | 'SIN_STOCK' = 'TODOS';
   cantidadAjuste = 0;
   motivo = '';
 
@@ -48,7 +52,8 @@ export class AjustarInventarioComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private inventarioService: InventarioService,
-    private authService: AuthService
+    private authService: AuthService,
+    private elementRef: ElementRef<HTMLElement>
   ) {}
 
   ngOnInit(): void {
@@ -179,6 +184,41 @@ export class AjustarInventarioComponent implements OnInit {
       });
   }
 
+  get productosFiltrados(): InventarioAdminDTO[] {
+    const termino = this.normalizarTexto(this.busquedaInventario);
+
+    return this.inventario.filter(item => {
+      const coincideTexto = !termino || this.normalizarTexto([
+        item.codigo,
+        item.nombre,
+        item.categoria,
+        item.color,
+        item.talla,
+        item.genero
+      ].join(' ')).includes(termino);
+      const coincideStock = this.filtroStock === 'TODOS'
+        || (this.filtroStock === 'CON_STOCK' && item.stockActual > 0)
+        || (this.filtroStock === 'SIN_STOCK' && item.stockActual === 0);
+
+      return coincideTexto && coincideStock;
+    });
+  }
+
+  get productosSelectorFiltrados(): InventarioAdminDTO[] {
+    const termino = this.normalizarTexto(this.busquedaProducto);
+    if (!termino) {
+      return this.inventario.slice(0, 80);
+    }
+
+    return this.inventario.filter(item => this.normalizarTexto([
+      item.codigo,
+      item.nombre,
+      item.categoria,
+      item.color,
+      item.talla
+    ].join(' ')).includes(termino)).slice(0, 80);
+  }
+
   get inventarioPaginado(): InventarioAdminDTO[] {
     const inicio =
       (this.paginaActual - 1) * this.registrosPorPagina;
@@ -186,12 +226,12 @@ export class AjustarInventarioComponent implements OnInit {
     const fin =
       inicio + this.registrosPorPagina;
 
-    return this.inventario.slice(inicio, fin);
+    return this.productosFiltrados.slice(inicio, fin);
   }
 
   get totalPaginas(): number {
     const total = Math.ceil(
-      this.inventario.length / this.registrosPorPagina
+      this.productosFiltrados.length / this.registrosPorPagina
     );
 
     return total > 0 ? total : 1;
@@ -206,6 +246,53 @@ export class AjustarInventarioComponent implements OnInit {
     }
 
     this.paginaActual = pagina;
+  }
+
+  cambiarBusquedaInventario(): void {
+    this.paginaActual = 1;
+  }
+
+  cambiarFiltroStock(filtro: 'TODOS' | 'CON_STOCK' | 'SIN_STOCK'): void {
+    this.filtroStock = filtro;
+    this.paginaActual = 1;
+  }
+
+  get totalUnidades(): number {
+    return this.inventario.reduce((total, item) => total + Number(item.stockActual || 0), 0);
+  }
+
+  get referenciasConStock(): number {
+    return this.inventario.filter(item => item.stockActual > 0).length;
+  }
+
+  get referenciasSinStock(): number {
+    return this.inventario.filter(item => item.stockActual === 0).length;
+  }
+
+  toggleProductoSelector(): void {
+    this.productoSelectorAbierto = !this.productoSelectorAbierto;
+    if (!this.productoSelectorAbierto) {
+      this.busquedaProducto = '';
+    }
+  }
+
+  seleccionarProducto(item: InventarioAdminDTO): void {
+    this.productoSeleccionadoId = String(item.productoId);
+    this.productoSelectorAbierto = false;
+    this.busquedaProducto = '';
+    this.mensajeError = '';
+    this.mensajeExito = '';
+  }
+
+  @HostListener('document:click', ['$event'])
+  cerrarSelectorAlHacerClickFuera(evento: MouseEvent): void {
+    if (
+      this.productoSelectorAbierto
+      && !this.elementRef.nativeElement.contains(evento.target as Node)
+    ) {
+      this.productoSelectorAbierto = false;
+      this.busquedaProducto = '';
+    }
   }
 
   obtenerProductoSeleccionado(): InventarioAdminDTO | undefined {
@@ -322,8 +409,18 @@ export class AjustarInventarioComponent implements OnInit {
 
   limpiarFormulario(): void {
     this.productoSeleccionadoId = '';
+    this.busquedaProducto = '';
+    this.productoSelectorAbierto = false;
     this.cantidadAjuste = 0;
     this.motivo = '';
+  }
+
+  private normalizarTexto(valor: string | null | undefined): string {
+    return (valor ?? '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .trim();
   }
 
   volverAlPanel(): void {

@@ -239,24 +239,94 @@
                 Producto
               </label>
 
-              <select
-                class="form-select"
-                [(ngModel)]="productoSeleccionadoId"
-                [disabled]="!ventaHabilitada">
+              <div class="sale-product-picker">
+                <button
+                  type="button"
+                  class="sale-product-trigger"
+                  [class.is-empty]="!obtenerProductoSeleccionado()"
+                  [attr.aria-expanded]="productoSelectorAbierto"
+                  aria-haspopup="listbox"
+                  [disabled]="!ventaHabilitada"
+                  (click)="toggleProductoSelector()">
 
-                <option value="">
-                  Seleccione un producto
-                </option>
+                  <span class="sale-product-icon" aria-hidden="true">
+                    <i class="bi bi-box-seam"></i>
+                  </span>
 
-                @for (item of inventario; track item.productoId) {
-                  <option [value]="item.productoId">
-                    {{ item.codigo }} - {{ item.nombre }} |
-                    Stock: {{ item.stockActual }} |
-                    Precio: {{ item.precioVenta | currency:'COP':'symbol-narrow':'1.0-0' }}
-                  </option>
+                  <span class="sale-product-copy">
+                    @if (obtenerProductoSeleccionado(); as producto) {
+                      <strong>{{ producto.codigo }} · {{ producto.nombre }}</strong>
+                      <small>
+                        Stock: {{ producto.stockActual }} ·
+                        {{ producto.precioVenta | currency:'COP':'symbol-narrow':'1.0-0' }}
+                      </small>
+                    } @else {
+                      <span>Seleccione una referencia</span>
+                      <small>Busque por código o nombre del producto</small>
+                    }
+                  </span>
+
+                  <i
+                    class="bi sale-product-chevron"
+                    [class.bi-chevron-down]="!productoSelectorAbierto"
+                    [class.bi-chevron-up]="productoSelectorAbierto"
+                    aria-hidden="true"></i>
+                </button>
+
+                @if (productoSelectorAbierto) {
+                  <div
+                    class="sale-product-menu"
+                    role="listbox"
+                    aria-label="Productos disponibles">
+
+                    <div class="sale-product-search">
+                      <i class="bi bi-search" aria-hidden="true"></i>
+                      <input
+                        type="search"
+                        [(ngModel)]="busquedaProducto"
+                        placeholder="Buscar por código, nombre o característica"
+                        aria-label="Buscar producto">
+                    </div>
+
+                    <div class="sale-product-results">
+                      @for (item of productosSelectorFiltrados; track item.productoId) {
+                        <button
+                          type="button"
+                          class="sale-product-option"
+                          [class.active]="esProductoSeleccionado(item)"
+                          role="option"
+                          [attr.aria-selected]="esProductoSeleccionado(item)"
+                          (click)="seleccionarProducto(item)">
+
+                          <span class="sale-product-option-copy">
+                            <strong>{{ item.codigo }}</strong>
+                            <span>{{ item.nombre }}</span>
+                            <small>
+                              {{ item.categoria }} · {{ item.color }} · Talla {{ item.talla }}
+                            </small>
+                          </span>
+
+                          <span class="sale-product-option-meta">
+                            <span class="sale-stock-pill">{{ item.stockActual }} un.</span>
+                            <strong>{{ item.precioVenta | currency:'COP':'symbol-narrow':'1.0-0' }}</strong>
+                          </span>
+                        </button>
+                      } @empty {
+                        <div class="sale-product-empty">
+                          <i class="bi bi-search" aria-hidden="true"></i>
+                          <span>No encontramos productos con esa búsqueda.</span>
+                        </div>
+                      }
+                    </div>
+
+                    @if (!busquedaProducto && inventario.length > productosSelectorFiltrados.length) {
+                      <small class="sale-product-limit">
+                        Mostrando las primeras {{ productosSelectorFiltrados.length }} referencias. Busca para encontrar otra.
+                      </small>
+                    }
+                  </div>
                 }
-
-              </select>
+              </div>
 
             </div>
 

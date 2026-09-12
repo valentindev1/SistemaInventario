@@ -1,0 +1,215 @@
+<main class="graphic-report-page">
+  <header class="graphic-report-hero">
+    <div class="graphic-report-hero-copy">
+      <a class="graphic-report-back" [routerLink]="volverInformes()" [queryParams]="parametrosInforme()">
+        <i class="bi bi-arrow-left"></i>
+        Volver al informe financiero
+      </a>
+
+      <span class="graphic-report-eyebrow">
+        <i class="bi bi-bar-chart-line-fill"></i>
+        Vista ejecutiva
+      </span>
+
+      <h1>Informe gráfico</h1>
+      <p>Visualiza las métricas financieras más importantes de forma clara e ilustrativa.</p>
+
+      <div class="graphic-report-context">
+        <span><i class="bi bi-calendar3"></i>{{ formatearFecha(fechaInicio) }} — {{ formatearFecha(fechaFin) }}</span>
+        <span><i class="bi bi-shield-check"></i>Compras varias excluidas</span>
+      </div>
+    </div>
+
+    <div class="graphic-report-hero-icon">
+      <i class="bi bi-bar-chart-fill"></i>
+    </div>
+  </header>
+
+  <div *ngIf="mensajeError" class="graphic-report-alert">
+    <i class="bi bi-exclamation-triangle"></i>
+    {{ mensajeError }}
+  </div>
+
+  <section *ngIf="cargando" class="graphic-report-loading">
+    <span class="graphic-report-loader"></span>
+    <strong>Construyendo el informe gráfico</strong>
+    <p>Consolidando las métricas del periodo seleccionado.</p>
+  </section>
+
+  <ng-container *ngIf="informe as reporte">
+    <section class="graphic-report-summary">
+      <div>
+        <span class="graphic-report-kicker">Resultado consolidado</span>
+        <h2>{{ reporte.empresaNombre }}</h2>
+        <p>{{ reporte.sucursalNombre }} · {{ reporte.cantidadSucursalesIncluidas }} sucursal(es)</p>
+      </div>
+      <div class="graphic-report-summary-result" [ngClass]="claseResultado(reporte.utilidadNeta)">
+        <small>Utilidad neta</small>
+        <strong>{{ formatearMoneda(reporte.utilidadNeta) }}</strong>
+      </div>
+    </section>
+
+    <section class="graphic-report-kpis">
+      <article class="graphic-report-kpi income">
+        <span><i class="bi bi-arrow-up-right"></i></span>
+        <div><small>Ingresos netos</small><strong>{{ formatearMoneda(reporte.ingresosNetos) }}</strong></div>
+      </article>
+      <article class="graphic-report-kpi cost">
+        <span><i class="bi bi-box-seam"></i></span>
+        <div><small>Costo vendido</small><strong>{{ formatearMoneda(reporte.costoProductosVendidos) }}</strong></div>
+      </article>
+      <article class="graphic-report-kpi gross">
+        <span><i class="bi bi-piggy-bank"></i></span>
+        <div><small>Margen bruto</small><strong>{{ reporte.margenBruto | number:'1.2-2' }}%</strong></div>
+      </article>
+      <article class="graphic-report-kpi net" [class.loss]="reporte.utilidadNeta < 0">
+        <span><i class="bi bi-activity"></i></span>
+        <div><small>Margen neto</small><strong>{{ reporte.margenNeto | number:'1.2-2' }}%</strong></div>
+      </article>
+    </section>
+
+    <section class="graphic-report-grid">
+      <article class="graphic-chart-card graphic-chart-wide">
+        <div class="graphic-chart-heading">
+          <div>
+            <h3>Ingresos, costos y utilidad por mes</h3>
+            <p>Comparación relativa dentro del intervalo seleccionado.</p>
+          </div>
+          <div class="graphic-chart-legend-inline">
+            <span><i class="income"></i>Ingresos</span>
+            <span><i class="cost"></i>Costos</span>
+            <span><i class="profit"></i>Utilidad</span>
+          </div>
+        </div>
+
+        <div class="graphic-monthly-insights">
+          <div class="graphic-period-bars">
+          <div *ngFor="let periodo of reporte.periodos" class="graphic-period-bar-group">
+            <div class="graphic-period-bar-title">
+              <strong>{{ formatearPeriodo(periodo.periodo) }}</strong>
+              <small>{{ formatearNumero(periodo.unidadesVendidas) }} unidades</small>
+            </div>
+            <div class="graphic-metric-line">
+              <span>Ingresos</span>
+              <span class="graphic-metric-track"><i class="income" [style.width.%]="anchoBarraGrafico(periodo.ingresosNetos, valoresDePeriodos('ingresosNetos'))"></i></span>
+              <strong>{{ formatearMoneda(periodo.ingresosNetos) }}</strong>
+            </div>
+            <div class="graphic-metric-line">
+              <span>Costos</span>
+              <span class="graphic-metric-track"><i class="cost" [style.width.%]="anchoBarraGrafico(periodo.costoProductosVendidos, valoresDePeriodos('costoProductosVendidos'))"></i></span>
+              <strong>{{ formatearMoneda(periodo.costoProductosVendidos) }}</strong>
+            </div>
+            <div class="graphic-metric-line">
+              <span>Utilidad</span>
+              <span class="graphic-metric-track"><i class="profit" [class.negative]="periodo.utilidadNeta < 0" [style.width.%]="anchoBarraGrafico(periodo.utilidadNeta, valoresDePeriodos('utilidadNeta'))"></i></span>
+              <strong [ngClass]="claseResultado(periodo.utilidadNeta)">{{ formatearMoneda(periodo.utilidadNeta) }}</strong>
+            </div>
+          </div>
+          <div *ngIf="!reporte.periodos.length" class="graphic-chart-empty">No hay datos mensuales para graficar.</div>
+          </div>
+
+          <div class="graphic-monthly-pie-panel">
+            <div class="graphic-monthly-pie-heading">
+              <div>
+                <h4>Distribución del periodo</h4>
+                <p>Costo vendido frente a utilidad bruta.</p>
+              </div>
+              <i class="bi bi-pie-chart-fill graphic-chart-icon green"></i>
+            </div>
+
+            <div class="graphic-period-pie-layout">
+              <div class="graphic-period-pie" [style.background]="estiloDistribucionIngresos()">
+                <div>
+                  <strong>{{ formatearMoneda(reporte.ingresosNetos) }}</strong>
+                  <small>ingresos netos</small>
+                </div>
+              </div>
+              <div class="graphic-period-pie-legend">
+                <div><span><i class="cost"></i>Costo vendido</span><strong>{{ porcentajeCostoSobreIngresos() }}%</strong></div>
+                <small>{{ formatearMoneda(reporte.costoProductosVendidos) }}</small>
+                <div><span><i class="profit"></i>Utilidad bruta</span><strong>{{ porcentajeUtilidadBrutaSobreIngresos() }}%</strong></div>
+                <small [ngClass]="claseResultado(reporte.utilidadBruta)">{{ formatearMoneda(reporte.utilidadBruta) }}</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="graphic-chart-card">
+        <div class="graphic-chart-heading">
+          <div>
+            <h3>Composición de ingresos</h3>
+            <p>Participación por tipo de producto.</p>
+          </div>
+          <i class="bi bi-pie-chart-fill graphic-chart-icon orange"></i>
+        </div>
+
+        <div class="graphic-donut-layout">
+          <div class="graphic-donut" [style.background]="estiloComposicionProductos()">
+            <div>
+              <strong>{{ formatearMoneda(reporte.ingresosNetos) }}</strong>
+              <small>ingresos netos</small>
+            </div>
+          </div>
+          <div class="graphic-chart-legend">
+            <div><span><i class="reman"></i>Remanufacturados</span><strong>{{ porcentajeTipoProducto(true) }}%</strong></div>
+            <small>{{ formatearMoneda(reporte.productosRemanufacturados.ingresosNetos) }} · {{ formatearNumero(reporte.productosRemanufacturados.unidadesVendidas) }} unidades</small>
+            <div><span><i class="conventional"></i>Convencionales</span><strong>{{ porcentajeTipoProducto(false) }}%</strong></div>
+            <small>{{ formatearMoneda(reporte.productosConvencionales.ingresosNetos) }} · {{ formatearNumero(reporte.productosConvencionales.unidadesVendidas) }} unidades</small>
+          </div>
+        </div>
+      </article>
+
+      <article class="graphic-chart-card">
+        <div class="graphic-chart-heading">
+          <div>
+            <h3>Ingresos por sucursal</h3>
+            <p>Participación de cada punto de venta.</p>
+          </div>
+          <i class="bi bi-buildings graphic-chart-icon blue"></i>
+        </div>
+
+        <div class="graphic-branch-bars">
+          <div *ngFor="let sucursal of reporte.sucursales" class="graphic-branch-bar-row">
+            <div class="graphic-branch-label">
+              <strong>{{ sucursal.sucursalNombre }}</strong>
+              <span>{{ formatearMoneda(sucursal.ingresosNetos) }}</span>
+            </div>
+            <span class="graphic-branch-track"><i [style.width.%]="anchoBarraGrafico(sucursal.ingresosNetos, valoresDeSucursales())"></i></span>
+            <small>{{ formatearNumero(sucursal.unidadesVendidas) }} unidades · <span [ngClass]="claseResultado(sucursal.utilidadNeta)">{{ formatearMoneda(sucursal.utilidadNeta) }} utilidad</span></small>
+          </div>
+          <div *ngIf="!reporte.sucursales.length" class="graphic-chart-empty">No hay sucursales con actividad en este periodo.</div>
+        </div>
+      </article>
+
+      <article class="graphic-chart-card">
+        <div class="graphic-chart-heading">
+          <div>
+            <h3>Márgenes y actividad</h3>
+            <p>Indicadores rápidos de desempeño.</p>
+          </div>
+          <i class="bi bi-speedometer2 graphic-chart-icon green"></i>
+        </div>
+
+        <div class="graphic-visual-stats">
+          <div class="graphic-visual-stat">
+            <div><span>Margen bruto</span><strong>{{ reporte.margenBruto | number:'1.2-2' }}%</strong></div>
+            <span class="graphic-visual-track"><i class="gross" [style.width.%]="porcentajeVisual(reporte.margenBruto)"></i></span>
+          </div>
+          <div class="graphic-visual-stat">
+            <div><span>Margen neto</span><strong [ngClass]="claseResultado(reporte.margenNeto)">{{ reporte.margenNeto | number:'1.2-2' }}%</strong></div>
+            <span class="graphic-visual-track"><i class="net" [class.negative]="reporte.margenNeto < 0" [style.width.%]="porcentajeVisual(reporte.margenNeto)"></i></span>
+          </div>
+          <div class="graphic-activity-highlight"><span><i class="bi bi-receipt"></i> Facturas efectivas</span><strong>{{ formatearNumero(reporte.facturasEfectivas) }}</strong></div>
+          <div class="graphic-activity-highlight"><span><i class="bi bi-box-seam"></i> Unidades vendidas</span><strong>{{ formatearNumero(reporte.unidadesVendidas) }}</strong></div>
+        </div>
+      </article>
+    </section>
+
+    <div class="graphic-report-footer-note">
+      <i class="bi bi-shield-check"></i>
+      <span>Los datos corresponden al mismo informe financiero y “Compras varias” permanece excluido.</span>
+      <a [routerLink]="volverInformes()" [queryParams]="parametrosInforme()">Modificar filtros</a>
+    </div>
+  </ng-container>
+</main>

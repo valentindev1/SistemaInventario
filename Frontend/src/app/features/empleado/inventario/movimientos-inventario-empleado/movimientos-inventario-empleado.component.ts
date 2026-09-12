@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, HostListener, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -31,6 +31,23 @@ export class MovimientosInventarioEmpleadoComponent implements OnInit {
   filtro = '';
   tipoFiltro = '';
   tipoFiltroFecha: 'TODOS' | 'DIA' | 'MES' = 'TODOS';
+  menuFiltroAbierto: 'TIPO' | 'FECHA' | null = null;
+
+  readonly opcionesTipoFiltro = [
+    { valor: '', etiqueta: 'Todos los movimientos', icono: 'bi-list-ul', clase: 'filtro-todos' },
+    { valor: 'INGRESO_MERCANCIA', etiqueta: 'Ingresos', icono: 'bi-box-arrow-in-down', clase: 'filtro-ingreso' },
+    { valor: 'VENTA', etiqueta: 'Ventas', icono: 'bi-cart-check', clase: 'filtro-venta' },
+    { valor: 'DEVOLUCION', etiqueta: 'Devoluciones', icono: 'bi-arrow-return-left', clase: 'filtro-devolucion' },
+    { valor: 'AJUSTE_POSITIVO', etiqueta: 'Ajustes positivos', icono: 'bi-plus-circle', clase: 'filtro-ajuste-positivo' },
+    { valor: 'AJUSTE_NEGATIVO', etiqueta: 'Ajustes negativos', icono: 'bi-dash-circle', clase: 'filtro-ajuste-negativo' },
+    { valor: 'CANCELACION_FACTURA', etiqueta: 'Cancelaciones', icono: 'bi-x-circle', clase: 'filtro-cancelacion' }
+  ];
+
+  readonly opcionesFechaFiltro = [
+    { valor: 'TODOS' as const, etiqueta: 'Todas las fechas', icono: 'bi-calendar3', clase: 'filtro-todos' },
+    { valor: 'DIA' as const, etiqueta: 'Por día', icono: 'bi-calendar-day', clase: 'filtro-dia' },
+    { valor: 'MES' as const, etiqueta: 'Por mes', icono: 'bi-calendar-month', clase: 'filtro-mes' }
+  ];
 
   fechaDia = '';
   mesSeleccionado = '';
@@ -50,6 +67,11 @@ export class MovimientosInventarioEmpleadoComponent implements OnInit {
     private authService: AuthService,
     private empleadoInventarioService: EmpleadoInventarioService
   ) {}
+
+  @HostListener('document:click')
+  cerrarMenusFiltroAlHacerClickFuera(): void {
+    this.menuFiltroAbierto = null;
+  }
 
   ngOnInit(): void {
 
@@ -270,8 +292,55 @@ export class MovimientosInventarioEmpleadoComponent implements OnInit {
     this.tipoFiltroFecha = 'TODOS';
     this.fechaDia = '';
     this.mesSeleccionado = '';
+    this.menuFiltroAbierto = null;
 
     this.filtrarMovimientos();
+  }
+
+  alternarMenuFiltro(menu: 'TIPO' | 'FECHA'): void {
+    this.menuFiltroAbierto = this.menuFiltroAbierto === menu ? null : menu;
+  }
+
+  seleccionarTipoFiltro(valor: string): void {
+    this.tipoFiltro = valor;
+    this.menuFiltroAbierto = null;
+    this.filtrarMovimientos();
+  }
+
+  seleccionarTipoFiltroFecha(valor: 'TODOS' | 'DIA' | 'MES'): void {
+    this.tipoFiltroFecha = valor;
+    this.menuFiltroAbierto = null;
+    this.cambiarTipoFiltroFecha();
+  }
+
+  get etiquetaTipoFiltro(): string {
+    return this.opcionesTipoFiltro.find(opcion => opcion.valor === this.tipoFiltro)?.etiqueta
+      ?? 'Todos los movimientos';
+  }
+
+  get iconoTipoFiltro(): string {
+    return this.opcionesTipoFiltro.find(opcion => opcion.valor === this.tipoFiltro)?.icono
+      ?? 'bi-list-ul';
+  }
+
+  get claseTipoFiltro(): string {
+    return this.opcionesTipoFiltro.find(opcion => opcion.valor === this.tipoFiltro)?.clase
+      ?? 'filtro-todos';
+  }
+
+  get etiquetaTipoFiltroFecha(): string {
+    return this.opcionesFechaFiltro.find(opcion => opcion.valor === this.tipoFiltroFecha)?.etiqueta
+      ?? 'Todas las fechas';
+  }
+
+  get iconoTipoFiltroFecha(): string {
+    return this.opcionesFechaFiltro.find(opcion => opcion.valor === this.tipoFiltroFecha)?.icono
+      ?? 'bi-calendar3';
+  }
+
+  get claseTipoFiltroFecha(): string {
+    return this.opcionesFechaFiltro.find(opcion => opcion.valor === this.tipoFiltroFecha)?.clase
+      ?? 'filtro-todos';
   }
 
   get movimientosPaginados(): MovimientoInventarioEmpleadoDTO[] {
@@ -424,6 +493,25 @@ export class MovimientosInventarioEmpleadoComponent implements OnInit {
 
       default:
         return tipo;
+    }
+  }
+
+  getIconoTipo(tipo: string): string {
+    switch (tipo) {
+      case 'INGRESO_MERCANCIA':
+        return 'bi-box-arrow-in-down';
+      case 'VENTA':
+        return 'bi-cart-check';
+      case 'DEVOLUCION':
+        return 'bi-arrow-return-left';
+      case 'AJUSTE_POSITIVO':
+        return 'bi-plus-circle';
+      case 'AJUSTE_NEGATIVO':
+        return 'bi-dash-circle';
+      case 'CANCELACION_FACTURA':
+        return 'bi-x-circle';
+      default:
+        return 'bi-arrow-left-right';
     }
   }
 

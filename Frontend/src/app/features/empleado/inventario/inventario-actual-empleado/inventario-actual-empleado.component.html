@@ -84,57 +84,90 @@
 
   </div>
 
-  <div class="card border-0 shadow-sm mb-4">
+  <section class="filters-card mb-4">
     <div class="card-body p-4">
 
       <div class="row g-3 align-items-end">
 
         <div class="col-12 col-lg-8">
-          <label class="form-label">
+          <label class="form-label filter-label">
+            <i class="bi bi-search"></i>
             Buscar producto
           </label>
 
-          <input
-            type="text"
-            class="form-control"
-            placeholder="Buscar por código, nombre, categoría, color, talla o género"
-            [(ngModel)]="filtro"
-            (input)="filtrarInventario()">
+          <div class="search-control">
+            <i class="bi bi-search"></i>
+            <input
+              type="text"
+              class="form-control"
+              placeholder="Código, nombre, categoría, color, talla o género"
+              [(ngModel)]="filtro"
+              (input)="filtrarInventario()">
+            @if (filtro) {
+              <button type="button" class="search-clear" (click)="filtro = ''; filtrarInventario()" aria-label="Limpiar búsqueda">
+                <i class="bi bi-x-circle-fill"></i>
+              </button>
+            }
+          </div>
         </div>
 
         <div class="col-12 col-md-6 col-lg-2">
-          <label class="form-label">
+          <label class="form-label filter-label">
+            <i class="bi bi-funnel"></i>
             Estado stock
           </label>
 
-          <select
-            class="form-select"
-            [(ngModel)]="filtroStock"
-            (change)="filtrarInventario()">
+          <div class="stock-filter" (click)="$event.stopPropagation()">
+            <button
+              type="button"
+              class="stock-filter-trigger"
+              [class.is-open]="mostrarFiltroStock"
+              [attr.aria-expanded]="mostrarFiltroStock"
+              aria-haspopup="listbox"
+              (click)="alternarFiltroStock()">
+              <span class="filter-option-icon" [ngClass]="'filter-icon-' + filtroStock.toLowerCase()">
+                <i class="bi" [ngClass]="iconoFiltroStock"></i>
+              </span>
+              <span>{{ etiquetaFiltroStock }}</span>
+              <i class="bi bi-chevron-down filter-chevron"></i>
+            </button>
 
-            <option value="TODOS">Todos</option>
-            <option value="DISPONIBLE">Disponible</option>
-            <option value="BAJO">Bajo stock</option>
-            <option value="AGOTADO">Agotado</option>
-
-          </select>
+            @if (mostrarFiltroStock) {
+              <div class="stock-filter-menu" role="listbox" aria-label="Filtrar por estado de stock">
+                @for (opcion of opcionesFiltroStock; track opcion.valor) {
+                  <button
+                    type="button"
+                    class="stock-filter-option"
+                    [class.is-selected]="filtroStock === opcion.valor"
+                    (click)="seleccionarFiltroStock(opcion.valor)">
+                    <span class="filter-option-icon" [ngClass]="'filter-icon-' + opcion.valor.toLowerCase()">
+                      <i class="bi" [ngClass]="opcion.icono"></i>
+                    </span>
+                    <span>{{ opcion.etiqueta }}</span>
+                    @if (filtroStock === opcion.valor) {
+                      <i class="bi bi-check2 option-check"></i>
+                    }
+                  </button>
+                }
+              </div>
+            }
+          </div>
         </div>
 
         <div class="col-12 col-md-6 col-lg-2">
           <button
             type="button"
-            class="btn btn-outline-secondary w-100"
+            class="btn btn-filter-clear w-100"
             (click)="limpiarFiltros()">
-
-            Limpiar
-
+            <i class="bi bi-arrow-counterclockwise me-1"></i>
+            Restablecer
           </button>
         </div>
 
       </div>
 
     </div>
-  </div>
+  </section>
 
   @if (cargando) {
     <div class="text-center p-4">
@@ -147,23 +180,25 @@
   }
 
   @if (!cargando) {
-    <div class="card border-0 shadow-sm">
-      <div class="card-body p-4">
+    <section class="inventory-list-card">
+      <div class="inventory-list-body">
 
-        <div class="d-flex flex-column flex-md-row justify-content-md-between gap-2 mb-3">
+        <div class="inventory-list-heading">
 
           <div>
+            <span class="section-kicker"><i class="bi bi-box-seam"></i> Existencias de la sucursal</span>
             <h5 class="fw-bold mb-1">
               Productos en inventario
             </h5>
 
             <p class="text-muted mb-0">
-              {{ inventarioFiltrado.length }} producto(s) encontrado(s).
+              {{ inventarioFiltrado.length }} referencia(s) coinciden con tu búsqueda.
             </p>
           </div>
 
-          <div class="text-muted small">
-            Máximo {{ registrosPorPagina }} registros por página
+          <div class="list-summary">
+            <span class="list-summary-dot"></span>
+            <span>Mostrando {{ inventarioPaginado.length }} de {{ inventarioFiltrado.length }}</span>
           </div>
 
         </div>
@@ -177,7 +212,7 @@
         @if (inventarioFiltrado.length > 0) {
           <div class="table-responsive">
 
-            <table class="table align-middle">
+            <table class="table inventory-table align-middle">
 
               <thead>
               <tr>
@@ -199,17 +234,17 @@
                   <tr>
 
                     <td>
-                      <div class="fw-semibold">
+                      <span class="product-code">
                         {{ item.codigo }}
-                      </div>
+                      </span>
                     </td>
 
                     <td>
-                      <div class="fw-semibold">
+                      <div class="product-name">
                         {{ item.nombre }}
                       </div>
 
-                      <div class="text-muted small">
+                      <div class="product-description">
                         {{ item.descripcion }}
                       </div>
                     </td>
@@ -222,8 +257,10 @@
 
                     <td>{{ item.genero }}</td>
 
-                    <td class="text-center fw-semibold">
-                      {{ item.stockActual }}
+                    <td class="text-center">
+                      <span class="stock-quantity" [ngClass]="getClaseStock(item)">
+                        {{ item.stockActual }}
+                      </span>
                     </td>
 
                     <td>
@@ -236,8 +273,10 @@
                       </span>
                     </td>
 
-                    <td class="text-end fw-semibold">
-                      {{ item.precioVenta | currency:'COP':'symbol-narrow':'1.0-0' }}
+                    <td class="text-end">
+                      <span class="sale-price">
+                        {{ item.precioVenta | currency:'COP':'symbol-narrow':'1.0-0' }}
+                      </span>
                     </td>
 
                   </tr>
@@ -301,7 +340,7 @@
         }
 
       </div>
-    </div>
+    </section>
   }
 
 </div>

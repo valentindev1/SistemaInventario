@@ -592,6 +592,7 @@ public class InventarioServicioImpl implements InventarioServicio {
         dto.setCodigo(producto.getCodigo());
         dto.setNombre(producto.getNombre());
         dto.setDescripcion(producto.getDescripcion());
+        dto.setEsRemanufacturado(Boolean.TRUE.equals(producto.getEsRemanufacturado()));
 
         dto.setCategoria(producto.getCategoria().getNombre());
         dto.setColor(producto.getColor().getNombre());

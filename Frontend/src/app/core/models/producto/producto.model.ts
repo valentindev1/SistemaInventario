@@ -23,6 +23,7 @@ export interface ProductoCrearDTO {
   generoId: number;
 
   tipoCosto?: TipoCostoProducto;
+  esRemanufacturado?: boolean;
   costoPersonalizado?: boolean;
   costoUnitario?: number;
   desgloseCosto?: ProductoCostoDetalleCrearDTO[];
@@ -30,6 +31,7 @@ export interface ProductoCrearDTO {
 
 export interface ProductoActualizarCostoDTO {
   tipoCosto: TipoCostoProducto;
+  esRemanufacturado: boolean;
   costoUnitario?: number;
   desgloseCosto?: ProductoCostoDetalleCrearDTO[];
 }
@@ -78,6 +80,7 @@ export interface ProductoAdminObtenerDTO {
   precioVenta: number;
 
   tipoCosto?: TipoCostoProducto | null;
+  esRemanufacturado?: boolean;
   costoPersonalizado?: boolean;
   desgloseCosto?: ProductoCostoDetalleDTO[];
 
@@ -119,6 +122,7 @@ export interface ProductoRankingVentasDTO {
   productoId: number;
   codigo: string;
   nombre: string;
+  esRemanufacturado: boolean;
   stockActual: number;
   cantidadVendida: number;
   cantidadDevuelta: number;

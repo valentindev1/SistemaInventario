@@ -71,13 +71,20 @@ export class PanelProductosEmpresaComponent implements OnInit {
 
   costoProductoEditando: ProductoAdminObtenerDTO | null = null;
   tipoCostoEdicion: 'MANUAL' | 'DESGLOSE' = 'MANUAL';
+  esRemanufacturadoEdicion = false;
   costoManualEditandoTexto = '';
   atributosCostoEdicion: AtributoCostoObtenerDTO[] = [];
   desgloseCostoEdicion: ComponenteCostoEdicion[] = [];
+  atributoCostoEdicionAbierto: number | null = null;
+  busquedaAtributoCostoEdicion = '';
   cargandoAtributosCostoEdicion = false;
   guardandoCostoProductoId: number | null = null;
 
+  productoBusqueda = '';
   codigoBusqueda = '';
+  filtroRemanufacturado: 'TODOS' | 'SI' | 'NO' = 'TODOS';
+  campoOrden: 'producto' | 'codigo' | null = null;
+  direccionOrden: 'asc' | 'desc' = 'asc';
 
   paginaActual = 1;
   elementosPorPagina = 10;
@@ -164,26 +171,6 @@ export class PanelProductosEmpresaComponent implements OnInit {
     ];
   }
 
-  rutaDetalleProducto(tipo: string): any[] {
-    if (this.esSuperAdmin()) {
-      return [
-        '/super-admin/empresas',
-        this.empresaId,
-        'productos',
-        'detalles',
-        tipo
-      ];
-    }
-
-    return [
-      '/admin/empresa',
-      this.empresaId,
-      'productos',
-      'detalles',
-      tipo
-    ];
-  }
-
   rutaAtributosCosto(): any[] {
     if (this.esSuperAdmin()) {
       return [
@@ -203,15 +190,40 @@ export class PanelProductosEmpresaComponent implements OnInit {
   }
 
   get productosFiltrados(): ProductoAdminObtenerDTO[] {
-    const codigo = this.codigoBusqueda.trim().toLowerCase();
+    const producto = this.productoBusqueda.trim().toLocaleLowerCase();
+    const codigo = this.codigoBusqueda.trim().toLocaleLowerCase();
+    const filtroRemanufacturado = this.filtroRemanufacturado;
 
-    if (!codigo) {
-      return this.productos;
+    const productosFiltrados = this.productos.filter(productoItem =>
+      (!producto || productoItem.nombre?.toLocaleLowerCase().includes(producto)) &&
+      (!codigo || productoItem.codigo?.toLocaleLowerCase().includes(codigo)) &&
+      (
+        filtroRemanufacturado === 'TODOS'
+        || (filtroRemanufacturado === 'SI' && productoItem.esRemanufacturado === true)
+        || (filtroRemanufacturado === 'NO' && productoItem.esRemanufacturado !== true)
+      )
+    );
+
+    if (!this.campoOrden) {
+      return productosFiltrados;
     }
 
-    return this.productos.filter(producto =>
-      producto.codigo?.toLowerCase().includes(codigo)
-    );
+    return [...productosFiltrados].sort((productoA, productoB) => {
+      const valorA = this.campoOrden === 'producto'
+        ? productoA.nombre
+        : productoA.codigo;
+      const valorB = this.campoOrden === 'producto'
+        ? productoB.nombre
+        : productoB.codigo;
+
+      const comparacion = String(valorA ?? '').localeCompare(
+        String(valorB ?? ''),
+        'es',
+        { numeric: true, sensitivity: 'base' }
+      );
+
+      return this.direccionOrden === 'asc' ? comparacion : -comparacion;
+    });
   }
 
   get productosPaginados(): ProductoAdminObtenerDTO[] {
@@ -234,13 +246,59 @@ export class PanelProductosEmpresaComponent implements OnInit {
     );
   }
 
+  onBuscarProducto(): void {
+    this.paginaActual = 1;
+  }
+
   onBuscarCodigo(): void {
     this.paginaActual = 1;
   }
 
+  onCambiarFiltroRemanufacturado(): void {
+    this.paginaActual = 1;
+  }
+
+  seleccionarFiltroRemanufacturado(filtro: 'TODOS' | 'SI' | 'NO'): void {
+    this.filtroRemanufacturado = filtro;
+    this.onCambiarFiltroRemanufacturado();
+  }
+
   limpiarBusqueda(): void {
+    this.productoBusqueda = '';
+    this.codigoBusqueda = '';
+    this.filtroRemanufacturado = 'TODOS';
+    this.paginaActual = 1;
+  }
+
+  limpiarBusquedaProducto(): void {
+    this.productoBusqueda = '';
+    this.paginaActual = 1;
+  }
+
+  limpiarBusquedaCodigo(): void {
     this.codigoBusqueda = '';
     this.paginaActual = 1;
+  }
+
+  ordenarPor(campo: 'producto' | 'codigo'): void {
+    if (this.campoOrden === campo) {
+      this.direccionOrden = this.direccionOrden === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.campoOrden = campo;
+      this.direccionOrden = 'asc';
+    }
+
+    this.paginaActual = 1;
+  }
+
+  iconoOrden(campo: 'producto' | 'codigo'): string {
+    if (this.campoOrden !== campo) {
+      return 'bi-arrow-down-up';
+    }
+
+    return this.direccionOrden === 'asc'
+      ? 'bi-arrow-up'
+      : 'bi-arrow-down';
   }
 
   onCambiarElementosPorPagina(): void {
@@ -380,6 +438,8 @@ export class PanelProductosEmpresaComponent implements OnInit {
     this.cancelarEdicion();
     this.costoProductoEditando = producto;
     this.tipoCostoEdicion = producto.tipoCosto === 'DESGLOSE' ? 'DESGLOSE' : 'MANUAL';
+    this.esRemanufacturadoEdicion = producto.esRemanufacturado
+      ?? this.tipoCostoEdicion === 'MANUAL';
     this.costoManualEditandoTexto = this.formatearNumero(producto.costoUnitario ?? 0);
     this.desgloseCostoEdicion = (producto.desgloseCosto || [])
       .slice()
@@ -397,9 +457,27 @@ export class PanelProductosEmpresaComponent implements OnInit {
     this.cargandoAtributosCostoEdicion = true;
     this.atributoCostoService.listarActivosPorCategoria(producto.categoriaId).subscribe({
       next: (atributos) => {
-        this.atributosCostoEdicion = atributos
-          .slice()
-          .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' }));
+        this.atributosCostoEdicion = (atributos || []).slice().sort((a, b) =>
+          a.nombre.trim().localeCompare(b.nombre.trim(), 'es', { sensitivity: 'base' })
+          || a.nombre.trim().localeCompare(b.nombre.trim())
+        );
+        this.desgloseCostoEdicion = this.desgloseCostoEdicion.map(componente => {
+          if (componente.atributoCostoId !== null) {
+            return componente;
+          }
+
+          const atributoPorNombre = this.atributosCostoEdicion.find(atributo =>
+            atributo.nombre.trim().toLocaleLowerCase() === componente.concepto.trim().toLocaleLowerCase()
+          );
+
+          return atributoPorNombre
+            ? {
+                ...componente,
+                atributoCostoId: atributoPorNombre.id,
+                concepto: atributoPorNombre.nombre
+              }
+            : componente;
+        });
         this.cargandoAtributosCostoEdicion = false;
       },
       error: (error) => {
@@ -411,9 +489,12 @@ export class PanelProductosEmpresaComponent implements OnInit {
 
   cancelarEdicionCosto(): void {
     this.costoProductoEditando = null;
+    this.esRemanufacturadoEdicion = false;
     this.costoManualEditandoTexto = '';
     this.atributosCostoEdicion = [];
     this.desgloseCostoEdicion = [];
+    this.atributoCostoEdicionAbierto = null;
+    this.busquedaAtributoCostoEdicion = '';
     this.cargandoAtributosCostoEdicion = false;
   }
 
@@ -426,18 +507,55 @@ export class PanelProductosEmpresaComponent implements OnInit {
   cambiarTipoCostoEdicion(tipo: 'MANUAL' | 'DESGLOSE'): void {
     this.tipoCostoEdicion = tipo;
 
+    if (tipo === 'MANUAL') {
+      this.esRemanufacturadoEdicion = true;
+    } else {
+      this.esRemanufacturadoEdicion = false;
+    }
+
     if (tipo === 'DESGLOSE' && this.desgloseCostoEdicion.length === 0) {
       this.desgloseCostoEdicion.push(this.nuevoComponenteCostoEdicion());
     }
   }
 
-  cambiarAtributoCostoEdicion(indice: number, evento: Event): void {
-    const atributoCostoId = Number((evento.target as HTMLSelectElement).value);
-    const atributo = this.atributosCostoEdicion.find(item => item.id === atributoCostoId);
+  cambiarRemanufacturadoEdicion(evento: Event): void {
+    this.esRemanufacturadoEdicion = (evento.target as HTMLInputElement).checked;
+  }
+
+  seleccionarAtributoCostoEdicion(indice: number, atributo: AtributoCostoObtenerDTO): void {
     const componente = this.desgloseCostoEdicion[indice];
 
     componente.atributoCostoId = atributo?.id ?? null;
     componente.concepto = atributo?.nombre ?? '';
+    this.atributoCostoEdicionAbierto = null;
+    this.busquedaAtributoCostoEdicion = '';
+  }
+
+  obtenerAtributosCostoEdicionFiltrados(): AtributoCostoObtenerDTO[] {
+    const busqueda = this.busquedaAtributoCostoEdicion.trim().toLocaleLowerCase();
+
+    if (!busqueda) {
+      return this.atributosCostoEdicion;
+    }
+
+    return this.atributosCostoEdicion.filter(atributo =>
+      `${atributo.nombre} ${atributo.id}`.toLocaleLowerCase().includes(busqueda)
+    );
+  }
+
+  toggleAtributoCostoEdicion(indice: number): void {
+    if (this.atributoCostoEdicionAbierto === indice) {
+      this.atributoCostoEdicionAbierto = null;
+      this.busquedaAtributoCostoEdicion = '';
+      return;
+    }
+
+    this.atributoCostoEdicionAbierto = indice;
+    this.busquedaAtributoCostoEdicion = '';
+  }
+
+  actualizarBusquedaAtributoCostoEdicion(evento: Event): void {
+    this.busquedaAtributoCostoEdicion = (evento.target as HTMLInputElement).value;
   }
 
   agregarComponenteCostoEdicion(): void {
@@ -487,6 +605,7 @@ export class PanelProductosEmpresaComponent implements OnInit {
 
       dto = {
         tipoCosto: 'MANUAL',
+        esRemanufacturado: this.esRemanufacturadoEdicion,
         costoUnitario: this.obtenerMontoDesdeTexto(this.costoManualEditandoTexto),
         desgloseCosto: []
       };
@@ -504,6 +623,7 @@ export class PanelProductosEmpresaComponent implements OnInit {
 
       dto = {
         tipoCosto: 'DESGLOSE',
+        esRemanufacturado: false,
         desgloseCosto: this.obtenerDesgloseEdicionParaGuardar()
       };
     }
@@ -571,6 +691,12 @@ export class PanelProductosEmpresaComponent implements OnInit {
     if (this.costoProductoEditando && this.guardandoCostoProductoId === null) {
       this.cancelarEdicionCosto();
     }
+  }
+
+  @HostListener('document:click')
+  cerrarSelectorAtributoCostoEdicion(): void {
+    this.atributoCostoEdicionAbierto = null;
+    this.busquedaAtributoCostoEdicion = '';
   }
 
   guardarEdicion(producto: ProductoAdminObtenerDTO): void {

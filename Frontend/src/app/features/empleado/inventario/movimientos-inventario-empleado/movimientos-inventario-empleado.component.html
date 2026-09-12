@@ -5,10 +5,12 @@
     <div>
       <button
         type="button"
-        class="btn btn-link px-0 mb-2"
+        class="btn back-button mb-2"
         (click)="volverPanelInventario()">
 
-        <i class="bi bi-arrow-left me-1"></i>
+        <span class="back-button-icon">
+          <i class="bi bi-arrow-left"></i>
+        </span>
         Volver al panel de inventario
 
       </button>
@@ -84,60 +86,117 @@
 
   </div>
 
-  <div class="card border-0 shadow-sm mb-4">
+  <section class="filters-card mb-4">
     <div class="card-body p-4">
 
       <div class="row g-3 align-items-end">
 
         <div class="col-12 col-xl-4">
-          <label class="form-label">
+          <label class="form-label filter-label">
+            <i class="bi bi-search"></i>
             Buscar movimiento
           </label>
 
-          <input
-            type="text"
-            class="form-control"
-            placeholder="Producto, código, usuario, motivo o tipo"
-            [(ngModel)]="filtro"
-            (input)="filtrarMovimientos()">
+          <div class="search-control">
+            <i class="bi bi-search"></i>
+            <input
+              type="text"
+              class="form-control"
+              placeholder="Producto, código, usuario, motivo o tipo"
+              [(ngModel)]="filtro"
+              (input)="filtrarMovimientos()">
+            @if (filtro) {
+              <button type="button" class="search-clear" (click)="filtro = ''; filtrarMovimientos()" aria-label="Limpiar búsqueda">
+                <i class="bi bi-x-circle-fill"></i>
+              </button>
+            }
+          </div>
         </div>
 
         <div class="col-12 col-md-6 col-xl-2">
-          <label class="form-label">
+          <label class="form-label filter-label">
+            <i class="bi bi-arrow-left-right"></i>
             Tipo
           </label>
 
-          <select
-            class="form-select"
-            [(ngModel)]="tipoFiltro"
-            (change)="filtrarMovimientos()">
+          <div class="filter-dropdown" (click)="$event.stopPropagation()">
+            <button
+              type="button"
+              class="filter-trigger"
+              [class.is-open]="menuFiltroAbierto === 'TIPO'"
+              [attr.aria-expanded]="menuFiltroAbierto === 'TIPO'"
+              aria-haspopup="listbox"
+              (click)="alternarMenuFiltro('TIPO')">
+              <span class="filter-option-icon" [ngClass]="claseTipoFiltro">
+                <i class="bi" [ngClass]="iconoTipoFiltro"></i>
+              </span>
+              <span>{{ etiquetaTipoFiltro }}</span>
+              <i class="bi bi-chevron-down filter-chevron"></i>
+            </button>
 
-            <option value="">Todos</option>
-            <option value="INGRESO_MERCANCIA">Ingreso</option>
-            <option value="VENTA">Venta</option>
-            <option value="DEVOLUCION">Devolución</option>
-            <option value="AJUSTE_POSITIVO">Ajuste +</option>
-            <option value="AJUSTE_NEGATIVO">Ajuste -</option>
-            <option value="CANCELACION_FACTURA">Cancelación</option>
-
-          </select>
+            @if (menuFiltroAbierto === 'TIPO') {
+              <div class="filter-menu" role="listbox" aria-label="Filtrar por tipo de movimiento">
+                @for (opcion of opcionesTipoFiltro; track opcion.valor) {
+                  <button
+                    type="button"
+                    class="filter-option"
+                    [class.is-selected]="tipoFiltro === opcion.valor"
+                    (click)="seleccionarTipoFiltro(opcion.valor)">
+                    <span class="filter-option-icon" [ngClass]="opcion.clase">
+                      <i class="bi" [ngClass]="opcion.icono"></i>
+                    </span>
+                    <span>{{ opcion.etiqueta }}</span>
+                    @if (tipoFiltro === opcion.valor) {
+                      <i class="bi bi-check2 option-check"></i>
+                    }
+                  </button>
+                }
+              </div>
+            }
+          </div>
         </div>
 
         <div class="col-12 col-md-6 col-xl-2">
-          <label class="form-label">
+          <label class="form-label filter-label">
+            <i class="bi bi-calendar3"></i>
             Fecha
           </label>
 
-          <select
-            class="form-select"
-            [(ngModel)]="tipoFiltroFecha"
-            (change)="cambiarTipoFiltroFecha()">
+          <div class="filter-dropdown" (click)="$event.stopPropagation()">
+            <button
+              type="button"
+              class="filter-trigger"
+              [class.is-open]="menuFiltroAbierto === 'FECHA'"
+              [attr.aria-expanded]="menuFiltroAbierto === 'FECHA'"
+              aria-haspopup="listbox"
+              (click)="alternarMenuFiltro('FECHA')">
+              <span class="filter-option-icon" [ngClass]="claseTipoFiltroFecha">
+                <i class="bi" [ngClass]="iconoTipoFiltroFecha"></i>
+              </span>
+              <span>{{ etiquetaTipoFiltroFecha }}</span>
+              <i class="bi bi-chevron-down filter-chevron"></i>
+            </button>
 
-            <option value="TODOS">Todas</option>
-            <option value="DIA">Por día</option>
-            <option value="MES">Por mes</option>
-
-          </select>
+            @if (menuFiltroAbierto === 'FECHA') {
+              <div class="filter-menu" role="listbox" aria-label="Filtrar por fecha">
+                @for (opcion of opcionesFechaFiltro; track opcion.valor) {
+                  <button
+                    type="button"
+                    class="filter-option"
+                    [class.is-selected]="tipoFiltroFecha === opcion.valor"
+                    (click)="seleccionarTipoFiltroFecha(opcion.valor)">
+                    <span class="filter-option-icon" [ngClass]="opcion.clase">
+                      <i class="bi" [ngClass]="opcion.icono"></i>
+                    </span>
+                    <span>{{ opcion.etiqueta }}</span>
+                    @if (tipoFiltroFecha === opcion.valor) {
+                      <i class="bi bi-check2 option-check"></i>
+                    }
+                  </button>
+                }
+              </div>
+            }
+          </div>
         </div>
 
         @if (tipoFiltroFecha === 'DIA') {
@@ -148,6 +207,7 @@
 
             <input
               type="date"
+              aria-label="Filtrar por día"
               class="form-control"
               [(ngModel)]="fechaDia"
               (change)="filtrarMovimientos()">
@@ -162,6 +222,7 @@
 
             <input
               type="month"
+              aria-label="Filtrar por mes"
               class="form-control"
               [(ngModel)]="mesSeleccionado"
               (change)="filtrarMovimientos()">
@@ -171,18 +232,17 @@
         <div class="col-12 col-md-6 col-xl-2">
           <button
             type="button"
-            class="btn btn-outline-secondary w-100"
+            class="btn btn-filter-clear w-100"
             (click)="limpiarFiltros()">
-
-            Limpiar
-
+            <i class="bi bi-arrow-counterclockwise me-1"></i>
+            Restablecer
           </button>
         </div>
 
       </div>
 
     </div>
-  </div>
+  </section>
 
   @if (cargando) {
     <div class="text-center p-4">
@@ -195,23 +255,25 @@
   }
 
   @if (!cargando) {
-    <div class="card border-0 shadow-sm">
-      <div class="card-body p-4">
+    <section class="movement-list-card">
+      <div class="movement-list-body">
 
-        <div class="d-flex flex-column flex-md-row justify-content-md-between gap-2 mb-3">
+        <div class="movement-list-heading">
 
           <div>
+            <span class="section-kicker"><i class="bi bi-activity"></i> Trazabilidad de la sucursal</span>
             <h5 class="fw-bold mb-1">
               Movimientos encontrados
             </h5>
 
             <p class="text-muted mb-0">
-              {{ movimientosFiltrados.length }} movimiento(s) encontrado(s).
+              {{ movimientosFiltrados.length }} movimiento(s) coinciden con tus filtros.
             </p>
           </div>
 
-          <div class="text-muted small">
-            Máximo {{ registrosPorPagina }} registros por página
+          <div class="list-summary">
+            <span class="list-summary-dot"></span>
+            <span>Mostrando {{ movimientosPaginados.length }} de {{ movimientosFiltrados.length }}</span>
           </div>
 
         </div>
@@ -225,7 +287,7 @@
         @if (movimientosFiltrados.length > 0) {
           <div class="table-responsive">
 
-            <table class="table align-middle">
+            <table class="table movement-table align-middle">
 
               <thead>
               <tr>
@@ -247,7 +309,10 @@
                   <tr>
 
                     <td>
-                      {{ movimiento.fecha | date:'short' }}
+                      <span class="movement-date">
+                        <i class="bi bi-calendar3"></i>
+                        {{ movimiento.fecha | date:'short' }}
+                      </span>
                     </td>
 
                     <td>
@@ -255,48 +320,55 @@
                         class="tipo-badge"
                         [ngClass]="getClaseTipo(movimiento.tipo)">
 
+                        <i class="bi" [ngClass]="getIconoTipo(movimiento.tipo)"></i>
                         {{ formatearTipo(movimiento.tipo) }}
 
                       </span>
                     </td>
 
                     <td>
-                      <div class="fw-semibold">
+                      <div class="movement-product-name">
                         {{ movimiento.productoNombre }}
                       </div>
 
-                      <div class="text-muted small">
+                      <div class="movement-product-code">
+                        <i class="bi bi-upc-scan"></i>
                         {{ movimiento.productoCodigo }}
                       </div>
                     </td>
 
                     <td
-                      class="text-center fw-semibold"
+                      class="text-center"
                       [class.text-success]="movimiento.cantidad > 0"
                       [class.text-danger]="movimiento.cantidad < 0">
 
-                      {{ movimiento.cantidad }}
+                      <span class="movement-quantity" [class.positive]="movimiento.cantidad > 0" [class.negative]="movimiento.cantidad < 0">
+                        {{ movimiento.cantidad > 0 ? '+' : '' }}{{ movimiento.cantidad }}
+                      </span>
 
                     </td>
 
                     <td class="text-center">
-                      {{ movimiento.stockAntes }}
+                      <span class="stock-value">{{ movimiento.stockAntes }}</span>
                     </td>
 
                     <td class="text-center">
-                      {{ movimiento.stockDespues }}
+                      <span class="stock-value stock-after">{{ movimiento.stockDespues }}</span>
                     </td>
 
-                    <td class="text-end fw-semibold">
-                      {{ movimiento.precioVentaMomento | currency:'COP':'symbol-narrow':'1.0-0' }}
+                    <td class="text-end">
+                      <span class="movement-price">
+                        {{ movimiento.precioVentaMomento | currency:'COP':'symbol-narrow':'1.0-0' }}
+                      </span>
                     </td>
 
                     <td>
-                      {{ movimiento.usuarioNombre }}
+                      <span class="movement-user"><i class="bi bi-person-circle"></i>{{ movimiento.usuarioNombre }}</span>
                     </td>
 
                     <td>
                       <div class="motivo-text">
+                        <i class="bi bi-chat-left-text"></i>
                         {{ movimiento.motivo || 'Sin motivo' }}
                       </div>
                     </td>
@@ -362,7 +434,7 @@
         }
 
       </div>
-    </div>
+    </section>
   }
 
 </div>

@@ -14,6 +14,7 @@ import com.vhela.inventario.dto.contabilidad.ClasificacionContableDTO;
 import com.vhela.inventario.dto.contabilidad.ClasificacionContableEditarDTO;
 import com.vhela.inventario.dto.contabilidad.RegistroContableCrearDTO;
 import com.vhela.inventario.dto.contabilidad.RegistroContableDTO;
+import com.vhela.inventario.dto.contabilidad.RegistroGastoEmpleadoDTO;
 import com.vhela.inventario.modelo.contabilidad.ClasificacionGasto;
 import com.vhela.inventario.modelo.contabilidad.ClasificacionContable;
 import com.vhela.inventario.modelo.contabilidad.ConceptoGasto;
@@ -37,6 +38,8 @@ import lombok.RequiredArgsConstructor;
 @Transactional
 public class ContabilidadServicioImpl implements ContabilidadServicio {
 
+    private static final String CONCEPTO_REGISTRO_EMPLEADO = "Registro del empleado";
+
     private final RegistroContableSucursalRepositorio registroRepositorio;
     private final ConceptoGastoRepositorio conceptoGastoRepositorio;
     private final ClasificacionContableRepositorio clasificacionContableRepositorio;
@@ -54,6 +57,134 @@ public class ContabilidadServicioImpl implements ContabilidadServicio {
         Sucursal sucursal = obtenerSucursal(sucursalId);
 
         validarPermisoYAcceso(usuario, sucursal);
+
+        return registrarInterno(usuario, sucursal, dto);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<RegistroContableDTO> listarGastosEmpleado(
+            Long usuarioId,
+            Long sucursalId
+    ) {
+        Usuario usuario = obtenerUsuario(usuarioId);
+        Sucursal sucursal = obtenerSucursal(sucursalId);
+        validarAccesoEmpleado(usuario, sucursal);
+
+        return registroRepositorio
+                .findBySucursalIdAndUsuarioIdAndTipoOrderByFechaDescFechaCreacionDesc(
+                        sucursalId,
+                        usuarioId,
+                        TipoRegistroContable.GASTO
+                )
+                .stream()
+                .map(this::mapear)
+                .toList();
+    }
+
+    @Override
+    public RegistroContableDTO registrarGastoEmpleado(
+            Long usuarioId,
+            Long sucursalId,
+            RegistroGastoEmpleadoDTO dto
+    ) {
+        Usuario usuario = obtenerUsuario(usuarioId);
+        Sucursal sucursal = obtenerSucursal(sucursalId);
+        validarAccesoEmpleado(usuario, sucursal);
+
+        RegistroContableSucursal registro = new RegistroContableSucursal();
+        registro.setTipo(TipoRegistroContable.GASTO);
+        registro.setConcepto(CONCEPTO_REGISTRO_EMPLEADO);
+        registro.setDescripcion(normalizarRequerido(
+                dto.getDescripcion(),
+                "La descripción del gasto es obligatoria"
+        ));
+        registro.setValor(dto.getValor());
+        registro.setFecha(dto.getFecha());
+        registro.setSucursal(sucursal);
+        registro.setUsuario(usuario);
+
+        return mapear(registroRepositorio.save(registro));
+    }
+
+    @Override
+    public RegistroContableDTO editarGastoEmpleado(
+            Long usuarioId,
+            Long sucursalId,
+            Long registroId,
+            RegistroGastoEmpleadoDTO dto
+    ) {
+        Usuario usuario = obtenerUsuario(usuarioId);
+        Sucursal sucursal = obtenerSucursal(sucursalId);
+        validarAccesoEmpleado(usuario, sucursal);
+
+        RegistroContableSucursal registro = registroRepositorio.findById(registroId)
+                .orElseThrow(() -> new RuntimeException("El registro de gasto no existe"));
+
+        if (registro.getSucursal() == null
+                || !registro.getSucursal().getId().equals(sucursalId)) {
+            throw new RuntimeException("El registro no pertenece a esta sucursal");
+        }
+
+        if (registro.getUsuario() == null
+                || !registro.getUsuario().getId().equals(usuarioId)) {
+            throw new RuntimeException("Solo puedes editar tus propios registros");
+        }
+
+        if (registro.getTipo() != TipoRegistroContable.GASTO) {
+            throw new RuntimeException("Solo puedes editar registros de gasto");
+        }
+
+        registro.setConcepto(CONCEPTO_REGISTRO_EMPLEADO);
+        registro.setConceptoGasto(null);
+        registro.setClasificacion(null);
+        registro.setClasificacionContable(null);
+        registro.setClasificacionNombre(null);
+        registro.setDescripcion(normalizarRequerido(
+                dto.getDescripcion(),
+                "La descripción del gasto es obligatoria"
+        ));
+        registro.setValor(dto.getValor());
+        registro.setFecha(dto.getFecha());
+
+        return mapear(registroRepositorio.save(registro));
+    }
+
+    @Override
+    public void eliminarGastoEmpleado(
+            Long usuarioId,
+            Long sucursalId,
+            Long registroId
+    ) {
+        Usuario usuario = obtenerUsuario(usuarioId);
+        Sucursal sucursal = obtenerSucursal(sucursalId);
+        validarAccesoEmpleado(usuario, sucursal);
+
+        RegistroContableSucursal registro = registroRepositorio.findById(registroId)
+                .orElseThrow(() -> new RuntimeException("El registro de gasto no existe"));
+
+        if (registro.getSucursal() == null
+                || !registro.getSucursal().getId().equals(sucursalId)) {
+            throw new RuntimeException("El registro no pertenece a esta sucursal");
+        }
+
+        if (registro.getUsuario() == null
+                || !registro.getUsuario().getId().equals(usuarioId)) {
+            throw new RuntimeException("Solo puedes eliminar tus propios registros");
+        }
+
+        if (registro.getTipo() != TipoRegistroContable.GASTO) {
+            throw new RuntimeException("Solo puedes eliminar registros de gasto");
+        }
+
+        registroRepositorio.delete(registro);
+    }
+
+    private RegistroContableDTO registrarInterno(
+            Usuario usuario,
+            Sucursal sucursal,
+            RegistroContableCrearDTO dto
+    ) {
 
         TipoRegistroContable tipo;
         try {
@@ -426,6 +557,17 @@ public class ContabilidadServicioImpl implements ContabilidadServicio {
         }
     }
 
+    private void validarAccesoEmpleado(Usuario usuario, Sucursal sucursal) {
+        if (usuario.getRol() != RolEnum.EMPLEADO) {
+            throw new RuntimeException("Este acceso es exclusivo para empleados");
+        }
+
+        if (usuario.getSucursal() == null
+                || !usuario.getSucursal().getId().equals(sucursal.getId())) {
+            throw new RuntimeException("El empleado solo puede operar en su sucursal asignada");
+        }
+    }
+
     private void validarPermisoGestionConceptos(Usuario usuario) {
         if (usuario.getRol() != RolEnum.SUPER_ADMIN && usuario.getRol() != RolEnum.ADMIN) {
             throw new RuntimeException("No tiene permisos para gestionar conceptos de gasto");
@@ -452,6 +594,12 @@ public class ContabilidadServicioImpl implements ContabilidadServicio {
                 || !sucursal.getEmpresa().getId().equals(concepto.getEmpresa().getId())) {
             throw new RuntimeException("El concepto no pertenece a la empresa de la sucursal");
         }
+    }
+
+    private boolean esConceptoDeGasto(ConceptoGasto concepto) {
+        return concepto.getTipo() == TipoRegistroContable.GASTO
+                || (concepto.getTipo() == null
+                && concepto.getClasificacion() != ClasificacionGasto.PRODUCCION_INDIRECTA);
     }
 
     private ClasificacionGasto parsearClasificacion(String valor) {

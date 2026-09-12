@@ -68,6 +68,12 @@ export interface RegistroContableCrearDTO {
   fecha: string;
 }
 
+export interface RegistroGastoEmpleadoDTO {
+  descripcion: string;
+  valor: number;
+  fecha: string;
+}
+
 export interface RegistroContableDTO {
   id: number;
   tipo: TipoRegistroContable;

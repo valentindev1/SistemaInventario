@@ -219,6 +219,20 @@ export class DashboardComponent implements OnInit {
           'panel'
         ],
         disponible: true
+      },
+      {
+        titulo: 'Registrar gastos',
+        descripcion: 'Registra gastos operativos de la sucursal con su concepto y valor.',
+        icono: 'bi bi-wallet2',
+        color: 'modulo-gastos',
+        ruta: [
+          '/empleado',
+          'sucursal',
+          String(this.sucursalId),
+          'gastos',
+          'registrar'
+        ],
+        disponible: true
       }
     ];
   }
@@ -332,6 +346,16 @@ export class DashboardComponent implements OnInit {
       this.sucursalId,
       'inventario',
       'actual'
+    ]);
+  }
+
+  irRegistrarGasto(): void {
+    this.router.navigate([
+      '/empleado',
+      'sucursal',
+      this.sucursalId,
+      'gastos',
+      'registrar'
     ]);
   }
 }

@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, ElementRef, HostListener, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
@@ -46,6 +46,8 @@ export class GenerarVentaComponent implements OnInit {
   inventario: InventarioAdminDTO[] = [];
 
   productoSeleccionadoId = '';
+  busquedaProducto = '';
+  productoSelectorAbierto = false;
   cantidadSeleccionada = 1;
   observacion = '';
 
@@ -80,7 +82,8 @@ export class GenerarVentaComponent implements OnInit {
     private router: Router,
     private inventarioService: InventarioService,
     private ventaService: VentaService,
-    private clienteService: ClienteService
+    private clienteService: ClienteService,
+    private elementRef: ElementRef<HTMLElement>
   ) {}
 
   ngOnInit(): void {
@@ -346,6 +349,74 @@ export class GenerarVentaComponent implements OnInit {
     return this.inventario.find(
       item => item.productoId === Number(this.productoSeleccionadoId)
     );
+  }
+
+  get productosSelectorFiltrados(): InventarioAdminDTO[] {
+    const termino = this.normalizarTexto(this.busquedaProducto);
+
+    if (!termino) {
+      return this.inventario.slice(0, 80);
+    }
+
+    return this.inventario
+      .filter(item => this.normalizarTexto([
+        item.codigo,
+        item.nombre,
+        item.categoria,
+        item.color,
+        item.talla
+      ].join(' ')).includes(termino))
+      .slice(0, 80);
+  }
+
+  toggleProductoSelector(): void {
+    if (!this.ventaHabilitada) {
+      return;
+    }
+
+    this.productoSelectorAbierto = !this.productoSelectorAbierto;
+
+    if (!this.productoSelectorAbierto) {
+      this.busquedaProducto = '';
+    }
+  }
+
+  seleccionarProducto(item: InventarioAdminDTO): void {
+    if (!this.ventaHabilitada) {
+      return;
+    }
+
+    this.productoSeleccionadoId = String(item.productoId);
+    this.productoSelectorAbierto = false;
+    this.busquedaProducto = '';
+    this.mensajeError = '';
+    this.mensajeExito = '';
+  }
+
+  esProductoSeleccionado(item: InventarioAdminDTO): boolean {
+    return item.productoId === Number(this.productoSeleccionadoId);
+  }
+
+  @HostListener('document:click', ['$event'])
+  cerrarSelectorProductoAlHacerClickFuera(evento: MouseEvent): void {
+    const selector = this.elementRef.nativeElement.querySelector('.sale-product-picker');
+
+    if (
+      this.productoSelectorAbierto &&
+      selector &&
+      !selector.contains(evento.target as Node)
+    ) {
+      this.productoSelectorAbierto = false;
+      this.busquedaProducto = '';
+    }
+  }
+
+  private normalizarTexto(valor: string | null | undefined): string {
+    return (valor ?? '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .trim();
   }
 
   agregarProducto(): void {
@@ -629,6 +700,8 @@ export class GenerarVentaComponent implements OnInit {
   private limpiarSeleccionProducto(): void {
 
     this.productoSeleccionadoId = '';
+    this.busquedaProducto = '';
+    this.productoSelectorAbierto = false;
     this.cantidadSeleccionada = 1;
   }
 }

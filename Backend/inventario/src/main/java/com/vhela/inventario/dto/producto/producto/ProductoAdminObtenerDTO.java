@@ -32,6 +32,7 @@ import lombok.Data;
         "generoId",
         "generoNombre",
         "tipoCosto",
+        "esRemanufacturado",
         "costoPersonalizado",
         "desgloseCosto",
         "costoUnitario",
@@ -72,6 +73,8 @@ public class ProductoAdminObtenerDTO {
     private String generoNombre;
 
     private String tipoCosto;
+
+    private Boolean esRemanufacturado;
 
     private Boolean costoPersonalizado;
 

@@ -2,6 +2,57 @@
   padding: 1.5rem;
 }
 
+.back-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.48rem 0.85rem 0.48rem 0.48rem;
+  border: 1px solid #bfdbfe;
+  border-radius: 0.85rem;
+  background: linear-gradient(135deg, #ffffff, #eff6ff);
+  color: #1d4ed8;
+  font-size: 0.86rem;
+  font-weight: 800;
+  line-height: 1.2;
+  text-decoration: none;
+  box-shadow: 0 0.35rem 0.9rem rgba(37, 99, 235, 0.1);
+  transition: transform 0.18s ease, border-color 0.18s ease,
+    background 0.18s ease, box-shadow 0.18s ease;
+}
+
+.back-button:hover,
+.back-button:focus-visible {
+  border-color: #60a5fa;
+  background: linear-gradient(135deg, #eff6ff, #dbeafe);
+  color: #1e40af;
+  box-shadow: 0 0.5rem 1.15rem rgba(37, 99, 235, 0.16);
+  transform: translateY(-1px);
+}
+
+.back-button:focus-visible {
+  outline: 3px solid rgba(96, 165, 250, 0.28);
+  outline-offset: 2px;
+}
+
+.back-button-icon {
+  display: inline-flex;
+  width: 1.75rem;
+  height: 1.75rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.62rem;
+  background: #dbeafe;
+  color: #2563eb;
+  font-size: 0.95rem;
+  transition: background 0.18s ease, color 0.18s ease;
+}
+
+.back-button:hover .back-button-icon,
+.back-button:focus-visible .back-button-icon {
+  background: #2563eb;
+  color: #ffffff;
+}
+
 .card {
   border-radius: 1rem;
 }
@@ -186,6 +237,10 @@
 @media (max-width: 768px) {
   .facturas-empleado {
     padding: 1rem;
+  }
+
+  .back-button {
+    max-width: 100%;
   }
 
   .detalle-info {

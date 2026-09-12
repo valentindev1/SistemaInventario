@@ -339,6 +339,28 @@
             </button>
           </div>
 
+          <label
+            *ngIf="tipoCosto === 'MANUAL'"
+            class="remanufactured-toggle"
+            [class.auto-selected]="tipoCosto === 'MANUAL' && esRemanufacturado">
+            <input
+              type="checkbox"
+              [checked]="esRemanufacturado"
+              (change)="cambiarRemanufacturado($event)">
+            <span class="remanufactured-toggle-icon">
+              <i class="bi bi-recycle"></i>
+            </span>
+            <span class="remanufactured-toggle-copy">
+              <strong>Producto remanufacturado</strong>
+              <small>
+                Se marca automáticamente al seleccionar costo manual. Desmárcalo si el producto no es remanufacturado.
+              </small>
+            </span>
+            <span class="remanufactured-toggle-status">
+              {{ esRemanufacturado ? 'Sí' : 'No' }}
+            </span>
+          </label>
+
           <div *ngIf="tipoCosto === 'MANUAL'" class="manual-cost-panel">
             <div class="form-field">
               <label for="costoManual">Costo unitario manual</label>
@@ -425,15 +447,80 @@
 
                 <div class="breakdown-field component-name-field">
                   <label [for]="'componente-' + indice">Atributo de costo</label>
-                  <select
-                    [id]="'componente-' + indice"
-                    [value]="componente.atributoCostoId ?? ''"
-                    (change)="cambiarAtributoCosto(indice, $event)">
-                    <option value="">Selecciona un atributo</option>
-                    <option *ngFor="let atributo of atributosCosto" [value]="atributo.id">
-                      {{ atributo.nombre }}
-                    </option>
-                  </select>
+                  <div
+                    class="cost-attribute-picker"
+                    (click)="$event.stopPropagation()">
+                    <button
+                      [id]="'componente-' + indice"
+                      type="button"
+                      class="cost-attribute-picker-trigger"
+                      [class.has-value]="componente.atributoCostoId !== null"
+                      [class.is-open]="selectorCostoAbierto === indice"
+                      [attr.aria-expanded]="selectorCostoAbierto === indice"
+                      aria-haspopup="listbox"
+                      (click)="toggleSelectorCosto(indice)">
+                      <span class="cost-attribute-picker-icon">
+                        <i class="bi bi-diagram-3"></i>
+                      </span>
+                      <span class="cost-attribute-picker-value">
+                        <strong *ngIf="componente.atributoCostoId !== null">
+                          {{ componente.concepto }}
+                        </strong>
+                        <span *ngIf="componente.atributoCostoId === null">
+                          Selecciona un atributo
+                        </span>
+                      </span>
+                      <i
+                        class="bi bi-chevron-down cost-attribute-picker-chevron"
+                        [class.rotated]="selectorCostoAbierto === indice"></i>
+                    </button>
+
+                    <div
+                      *ngIf="selectorCostoAbierto === indice"
+                      class="cost-attribute-picker-menu"
+                      role="listbox">
+                      <div class="cost-attribute-picker-search">
+                        <i class="bi bi-search"></i>
+                        <input
+                          type="search"
+                          autocomplete="off"
+                          placeholder="Buscar atributo..."
+                          [value]="busquedaAtributoCosto"
+                          (input)="actualizarBusquedaAtributoCosto($event)">
+                      </div>
+
+                      <div class="cost-attribute-picker-options">
+                        <button
+                          *ngFor="let atributo of obtenerAtributosCostoFiltrados()"
+                          type="button"
+                          class="cost-attribute-picker-option"
+                          [class.is-selected]="atributo.id === componente.atributoCostoId"
+                          (click)="seleccionarAtributoCosto(indice, atributo)">
+                          <span class="cost-attribute-option-icon">
+                            <i class="bi bi-diagram-3"></i>
+                          </span>
+                          <span class="cost-attribute-option-main">
+                            <strong>{{ atributo.nombre }}</strong>
+                            <small>Atributo disponible</small>
+                          </span>
+                          <i
+                            *ngIf="atributo.id === componente.atributoCostoId"
+                            class="bi bi-check2 cost-attribute-option-check"></i>
+                        </button>
+
+                        <div
+                          *ngIf="obtenerAtributosCostoFiltrados().length === 0"
+                          class="cost-attribute-picker-empty">
+                          <i class="bi bi-search"></i>
+                          No encontramos atributos.
+                        </div>
+                      </div>
+
+                      <div class="cost-attribute-picker-footer">
+                        {{ obtenerAtributosCostoFiltrados().length }} atributo(s) disponible(s)
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 <div class="breakdown-field component-value-field">

@@ -128,7 +128,13 @@ public class ProductoServicioImpl implements ProductoServicio {
         producto.setTalla(talla);
         producto.setGenero(genero);
 
-        producto.setTipoCosto(resolverTipoCosto(dto));
+        String tipoCosto = resolverTipoCosto(dto);
+        producto.setTipoCosto(tipoCosto);
+        producto.setEsRemanufacturado(
+                "MANUAL".equals(tipoCosto)
+                        && (dto.getEsRemanufacturado() == null
+                        || Boolean.TRUE.equals(dto.getEsRemanufacturado()))
+        );
         producto.setCostoPersonalizado(Boolean.TRUE.equals(dto.getCostoPersonalizado()));
 
         if (Boolean.TRUE.equals(producto.getCostoPersonalizado())
@@ -557,6 +563,10 @@ public class ProductoServicioImpl implements ProductoServicio {
         BigDecimal costoNuevo = normalizarMonto(dto.getCostoUnitario());
 
         producto.setTipoCosto("MANUAL");
+        producto.setEsRemanufacturado(
+                dto.getEsRemanufacturado() == null
+                        || Boolean.TRUE.equals(dto.getEsRemanufacturado())
+        );
         producto.setCostoPersonalizado(false);
         producto.setCostoUnitario(costoNuevo);
 
@@ -610,6 +620,11 @@ public class ProductoServicioImpl implements ProductoServicio {
         }
 
         producto.setTipoCosto(tipoCosto);
+        producto.setEsRemanufacturado(
+                "MANUAL".equals(tipoCosto)
+                        && (dto.getEsRemanufacturado() == null
+                        || Boolean.TRUE.equals(dto.getEsRemanufacturado()))
+        );
         producto.setCostoUnitario(costoNuevo);
 
         Producto actualizado = productoRepositorio.save(producto);
@@ -890,6 +905,12 @@ public class ProductoServicioImpl implements ProductoServicio {
                 producto.getTipoCosto() == null || producto.getTipoCosto().isBlank()
                         ? "MANUAL"
                         : producto.getTipoCosto()
+        );
+        boolean costoManual = "MANUAL".equalsIgnoreCase(dto.getTipoCosto());
+        dto.setEsRemanufacturado(
+                costoManual
+                        && (producto.getEsRemanufacturado() == null
+                        || Boolean.TRUE.equals(producto.getEsRemanufacturado()))
         );
         dto.setCostoPersonalizado(Boolean.TRUE.equals(producto.getCostoPersonalizado()));
         dto.setDesgloseCosto(producto.getDesgloseCosto() == null

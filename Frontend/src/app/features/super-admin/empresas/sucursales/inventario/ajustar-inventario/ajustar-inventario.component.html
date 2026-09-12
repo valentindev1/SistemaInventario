@@ -88,29 +88,83 @@
           <div class="mb-3">
 
             <label class="form-label">
-              Producto
+              Referencia a ajustar
             </label>
 
-            <select
-              class="form-select"
-              [(ngModel)]="productoSeleccionadoId">
+            <div class="product-picker">
+              <button
+                type="button"
+                class="product-picker-trigger"
+                [class.is-empty]="!obtenerProductoSeleccionado()"
+                [attr.aria-expanded]="productoSelectorAbierto"
+                (click)="toggleProductoSelector()">
 
-              <option value="">
-                Seleccione un producto
-              </option>
+                <span class="product-picker-icon">
+                  <i class="bi bi-box-seam"></i>
+                </span>
 
-              <option
-                *ngFor="let item of inventario"
-                [value]="item.productoId">
+                <span class="product-picker-copy">
+                  <strong *ngIf="obtenerProductoSeleccionado()">
+                    {{ obtenerProductoSeleccionado()?.codigo }} · {{ obtenerProductoSeleccionado()?.nombre }}
+                  </strong>
+                  <small *ngIf="obtenerProductoSeleccionado()">
+                    Stock actual: {{ obtenerProductoSeleccionado()?.stockActual }} unidades
+                  </small>
+                  <span *ngIf="!obtenerProductoSeleccionado()">
+                    Selecciona una referencia
+                  </span>
+                </span>
 
-                {{ item.codigo }} -
-                {{ item.nombre }}
-                | Stock:
-                {{ item.stockActual }}
+                <i class="bi bi-chevron-down product-picker-chevron"></i>
 
-              </option>
+              </button>
 
-            </select>
+              <div
+                *ngIf="productoSelectorAbierto"
+                class="product-picker-menu"
+                (click)="$event.stopPropagation()">
+
+                <div class="product-picker-search">
+                  <i class="bi bi-search"></i>
+                  <input
+                    type="search"
+                    [(ngModel)]="busquedaProducto"
+                    placeholder="Buscar por código o nombre"
+                    aria-label="Buscar referencia">
+                </div>
+
+                <div class="product-picker-results">
+                  <button
+                    type="button"
+                    class="product-picker-option"
+                    *ngFor="let item of productosSelectorFiltrados"
+                    (click)="seleccionarProducto(item)">
+
+                    <span>
+                      <strong>{{ item.codigo }}</strong>
+                      <small>{{ item.nombre }}</small>
+                    </span>
+                    <span
+                      class="stock-pill"
+                      [class.is-empty]="item.stockActual === 0">
+                      {{ item.stockActual }} un.
+                    </span>
+
+                  </button>
+
+                  <div
+                    *ngIf="productosSelectorFiltrados.length === 0"
+                    class="product-picker-empty">
+                    No encontramos referencias con esa búsqueda.
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            <div class="form-text">
+              Busca la referencia por código o nombre para seleccionarla rápidamente.
+            </div>
 
           </div>
 
@@ -234,6 +288,70 @@
 
           </div>
 
+          <div class="inventory-overview">
+            <div class="overview-item">
+              <span class="overview-icon blue"><i class="bi bi-boxes"></i></span>
+              <span><small>Referencias</small><strong>{{ inventario.length }}</strong></span>
+            </div>
+            <div class="overview-item">
+              <span class="overview-icon green"><i class="bi bi-check2-circle"></i></span>
+              <span><small>Con stock</small><strong>{{ referenciasConStock }}</strong></span>
+            </div>
+            <div class="overview-item">
+              <span class="overview-icon amber"><i class="bi bi-stack"></i></span>
+              <span><small>Unidades</small><strong>{{ totalUnidades }}</strong></span>
+            </div>
+          </div>
+
+          <div class="inventory-toolbar">
+            <div class="inventory-search">
+              <i class="bi bi-search"></i>
+              <input
+                type="search"
+                [(ngModel)]="busquedaInventario"
+                (ngModelChange)="cambiarBusquedaInventario()"
+                placeholder="Buscar en el inventario"
+                aria-label="Buscar en el inventario">
+              <button
+                *ngIf="busquedaInventario"
+                type="button"
+                class="clear-search"
+                aria-label="Limpiar búsqueda"
+                (click)="busquedaInventario = ''; cambiarBusquedaInventario()">
+                <i class="bi bi-x-circle"></i>
+              </button>
+            </div>
+
+            <div class="stock-filters" role="group" aria-label="Filtrar por stock">
+              <button
+                type="button"
+                [class.active]="filtroStock === 'TODOS'"
+                (click)="cambiarFiltroStock('TODOS')">
+                Todos
+              </button>
+              <button
+                type="button"
+                [class.active]="filtroStock === 'CON_STOCK'"
+                (click)="cambiarFiltroStock('CON_STOCK')">
+                Con stock
+              </button>
+              <button
+                type="button"
+                [class.active]="filtroStock === 'SIN_STOCK'"
+                (click)="cambiarFiltroStock('SIN_STOCK')">
+                Sin stock
+              </button>
+            </div>
+          </div>
+
+          <div
+            *ngIf="inventario.length > 0 && productosFiltrados.length === 0"
+            class="empty-state filtered-empty">
+            <i class="bi bi-search"></i>
+            <strong>No hay coincidencias</strong>
+            <span>Prueba con otro código, nombre o filtro de stock.</span>
+          </div>
+
           <div
             *ngIf="inventario.length === 0"
             class="empty-state">
@@ -243,7 +361,7 @@
           </div>
 
           <div
-            *ngIf="inventario.length > 0"
+            *ngIf="productosFiltrados.length > 0"
             class="table-responsive">
 
             <table class="table align-middle">
@@ -263,7 +381,13 @@
 
               <tbody>
 
-              <tr *ngFor="let item of inventarioPaginado">
+              <tr
+                *ngFor="let item of inventarioPaginado"
+                class="inventory-row"
+                [class.table-row-selected]="obtenerProductoSeleccionado()?.productoId === item.productoId"
+                tabindex="0"
+                (click)="seleccionarProducto(item)"
+                (keydown.enter)="seleccionarProducto(item)">
 
                 <td>
 
@@ -355,7 +479,7 @@
                 )
               }}
               de
-              {{ inventario.length }}
+              {{ productosFiltrados.length }}
               productos
 
             </div>

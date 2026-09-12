@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, ElementRef, HostListener, OnInit } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 
@@ -9,6 +9,22 @@ import { AuthService } from '../../../../../../core/services/auth/auth.service';
 import { MovimientoInventarioDTO } from '../../../../../../core/models/inventario/inventario.model';
 
 type TipoFiltroFecha = 'TODOS' | 'DIA' | 'MES' | 'RANGO';
+
+interface TipoMovimientoOpcion {
+  valor: string;
+  nombre: string;
+  icono: string;
+  clase: string;
+  descripcion?: string;
+}
+
+interface FiltroFechaOpcion {
+  valor: TipoFiltroFecha;
+  nombre: string;
+  icono: string;
+  clase: string;
+  descripcion: string;
+}
 
 @Component({
   selector: 'app-movimientos-inventario',
@@ -36,8 +52,27 @@ export class MovimientosInventarioComponent implements OnInit {
   mensajeError = '';
 
   filtroTipo = '';
+  tipoFiltroAbierto = false;
+  filtroFechaAbierto = false;
   filtroCodigoProducto = '';
   filtroUsuarioNombre = '';
+
+  readonly tiposMovimiento: TipoMovimientoOpcion[] = [
+    { valor: '', nombre: 'Todos los movimientos', icono: 'bi-grid-3x3-gap', clase: 'todos', descripcion: 'Mostrar todo el historial' },
+    { valor: 'INGRESO_MERCANCIA', nombre: 'Ingreso de mercancía', icono: 'bi-box-arrow-in-down', clase: 'ingreso', descripcion: 'Entradas de productos' },
+    { valor: 'AJUSTE_POSITIVO', nombre: 'Ajuste positivo', icono: 'bi-plus-circle', clase: 'positivo', descripcion: 'Aumentos manuales de stock' },
+    { valor: 'AJUSTE_NEGATIVO', nombre: 'Ajuste negativo', icono: 'bi-dash-circle', clase: 'negativo', descripcion: 'Disminuciones manuales de stock' },
+    { valor: 'VENTA', nombre: 'Venta', icono: 'bi-cart-check', clase: 'venta', descripcion: 'Salidas por venta' },
+    { valor: 'DEVOLUCION', nombre: 'Devolución', icono: 'bi-arrow-return-left', clase: 'devolucion', descripcion: 'Productos devueltos' },
+    { valor: 'CANCELACION_FACTURA', nombre: 'Cancelación de factura', icono: 'bi-receipt-cutoff', clase: 'cancelacion', descripcion: 'Facturas canceladas' }
+  ];
+
+  readonly filtrosFecha: FiltroFechaOpcion[] = [
+    { valor: 'TODOS', nombre: 'Todas las fechas', icono: 'bi-calendar3', clase: 'todos', descripcion: 'Mostrar todo el historial' },
+    { valor: 'DIA', nombre: 'Por día', icono: 'bi-calendar-day', clase: 'dia', descripcion: 'Consultar una fecha específica' },
+    { valor: 'MES', nombre: 'Por mes', icono: 'bi-calendar-month', clase: 'mes', descripcion: 'Consultar un mes completo' },
+    { valor: 'RANGO', nombre: 'Rango personalizado', icono: 'bi-calendar-range', clase: 'rango', descripcion: 'Elegir fecha inicial y final' }
+  ];
 
   filtroFecha: TipoFiltroFecha = 'TODOS';
   fechaDia = '';
@@ -53,7 +88,8 @@ export class MovimientosInventarioComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private inventarioService: InventarioService,
-    private authService: AuthService
+    private authService: AuthService,
+    private elementRef: ElementRef<HTMLElement>
   ) {}
 
   ngOnInit(): void {
@@ -274,6 +310,8 @@ export class MovimientosInventarioComponent implements OnInit {
 
   limpiarFiltros(): void {
     this.filtroTipo = '';
+    this.tipoFiltroAbierto = false;
+    this.filtroFechaAbierto = false;
     this.filtroCodigoProducto = '';
     this.filtroUsuarioNombre = '';
     this.filtroFecha = 'TODOS';
@@ -294,6 +332,47 @@ export class MovimientosInventarioComponent implements OnInit {
     this.fechaFin = '';
 
     this.aplicarFiltros();
+  }
+
+  toggleTipoFiltro(): void {
+    this.tipoFiltroAbierto = !this.tipoFiltroAbierto;
+  }
+
+  seleccionarTipoFiltro(valor: string): void {
+    this.filtroTipo = valor;
+    this.tipoFiltroAbierto = false;
+    this.aplicarFiltros();
+  }
+
+  obtenerTipoFiltroSeleccionado(): TipoMovimientoOpcion {
+    return this.tiposMovimiento.find(tipo => tipo.valor === this.filtroTipo)
+      ?? this.tiposMovimiento[0];
+  }
+
+  toggleFechaFiltro(): void {
+    this.filtroFechaAbierto = !this.filtroFechaAbierto;
+  }
+
+  seleccionarFechaFiltro(valor: TipoFiltroFecha): void {
+    this.filtroFecha = valor;
+    this.filtroFechaAbierto = false;
+    this.cambiarFiltroFecha();
+  }
+
+  obtenerFechaFiltroSeleccionado(): FiltroFechaOpcion {
+    return this.filtrosFecha.find(tipo => tipo.valor === this.filtroFecha)
+      ?? this.filtrosFecha[0];
+  }
+
+  @HostListener('document:click', ['$event'])
+  cerrarTipoFiltroAlHacerClickFuera(evento: MouseEvent): void {
+    if (
+      (this.tipoFiltroAbierto || this.filtroFechaAbierto)
+      && !this.elementRef.nativeElement.contains(evento.target as Node)
+    ) {
+      this.tipoFiltroAbierto = false;
+      this.filtroFechaAbierto = false;
+    }
   }
 
   validarRangoFechas(): boolean {
@@ -429,6 +508,25 @@ export class MovimientosInventarioComponent implements OnInit {
     return this.movimientosFiltrados.filter(
       movimiento => movimiento.tipo === 'VENTA'
     ).length;
+  }
+
+  contarDevoluciones(): number {
+    return this.movimientosFiltrados.filter(
+      movimiento => movimiento.tipo === 'DEVOLUCION'
+    ).length;
+  }
+
+  get hayFiltrosActivos(): boolean {
+    return Boolean(
+      this.filtroTipo
+      || this.filtroCodigoProducto.trim()
+      || this.filtroUsuarioNombre.trim()
+      || this.filtroFecha !== 'TODOS'
+    );
+  }
+
+  formatearCantidad(cantidad: number): string {
+    return cantidad > 0 ? `+${cantidad}` : `${cantidad}`;
   }
 
   private obtenerUsuariosUnicos(movimientos: MovimientoInventarioDTO[]): string[] {

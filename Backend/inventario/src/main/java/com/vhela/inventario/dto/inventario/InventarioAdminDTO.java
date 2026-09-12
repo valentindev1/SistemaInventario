@@ -26,6 +26,7 @@ public class InventarioAdminDTO {
 
     private BigDecimal costoUnitario;
     private BigDecimal precioVenta;
+    private Boolean esRemanufacturado;
 
     private BigDecimal valorCostoTotal;
     private BigDecimal valorVentaTotal;

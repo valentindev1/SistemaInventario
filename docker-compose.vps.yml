@@ -1,0 +1,84 @@
+name: inventariovhela
+
+services:
+  inventario-mysql:
+    image: mysql:8.0
+    container_name: inventario-mysql
+    restart: always
+    env_file:
+      - .env
+    environment:
+      TZ: America/Bogota
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$${MYSQL_ROOT_PASSWORD} --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 45s
+    volumes:
+      - inventario_mysql_data:/var/lib/mysql
+    networks:
+      - inventario-network
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  inventario-api:
+    build:
+      context: ./Backend/inventario
+      dockerfile: Dockerfile
+    container_name: inventario-api
+    restart: always
+    env_file:
+      - .env
+    environment:
+      TZ: America/Bogota
+      SPRING_PROFILES_ACTIVE: prod
+      JPA_DDL_AUTO: validate
+      ROOT_USER_FORCE_RESET_PASSWORD: "false"
+    depends_on:
+      inventario-mysql:
+        condition: service_healthy
+    networks:
+      - inventario-network
+      - shared-edge
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  inventario-frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: inventario-frontend
+    restart: always
+    depends_on:
+      - inventario-api
+    networks:
+      - inventario-network
+      - shared-edge
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+volumes:
+  inventario_mysql_data:
+    external: true
+    name: inventariovhela_inventario_mysql_data
+
+networks:
+  inventario-network:
+    driver: bridge
+  shared-edge:
+    external: true
+    name: shared-edge

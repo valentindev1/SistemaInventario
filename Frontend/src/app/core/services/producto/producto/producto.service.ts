@@ -76,7 +76,7 @@ export class ProductoService {
 
   actualizarCostoManual(
     productoId: number,
-    datos: { costoUnitario: number }
+    datos: { costoUnitario: number; esRemanufacturado?: boolean }
   ): Observable<ProductoAdminObtenerDTO> {
     const params = this.obtenerUsuarioIdComoParam();
 

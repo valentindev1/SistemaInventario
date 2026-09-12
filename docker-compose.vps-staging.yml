@@ -1,0 +1,80 @@
+name: inventario-vhela-staging
+
+services:
+  inventario-mysql:
+    image: mysql:8.0
+    container_name: inventario-staging-mysql
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      TZ: America/Bogota
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$${MYSQL_ROOT_PASSWORD} --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 45s
+    volumes:
+      - inventario_mysql_staging_data:/var/lib/mysql
+    networks:
+      - inventario-staging-network
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  inventario-api:
+    build:
+      context: ./Backend/inventario
+      dockerfile: Dockerfile
+    container_name: inventario-staging-api
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      TZ: America/Bogota
+      SPRING_PROFILES_ACTIVE: prod
+      DB_URL: jdbc:mysql://inventario-staging-mysql:3306/${MYSQL_DATABASE}?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=America/Bogota&connectTimeout=30000&socketTimeout=60000
+      JPA_DDL_AUTO: update
+      ROOT_USER_FORCE_RESET_PASSWORD: "false"
+    depends_on:
+      inventario-mysql:
+        condition: service_healthy
+    networks:
+      - inventario-staging-network
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  inventario-frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: inventario-staging-frontend
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:18080:80"
+    depends_on:
+      - inventario-api
+    networks:
+      - inventario-staging-network
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  inventario_mysql_staging_data:
+
+networks:
+  inventario-staging-network:
+    driver: bridge

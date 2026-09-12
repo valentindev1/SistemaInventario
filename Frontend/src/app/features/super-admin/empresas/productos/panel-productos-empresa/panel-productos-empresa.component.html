@@ -31,8 +31,8 @@
           </h1>
 
           <p>
-            Administra el catálogo de productos de la empresa, sus atributos reutilizables,
-            códigos, categorías, costos unitarios y sus desgloses.
+            Administra el catálogo de productos de la empresa, sus códigos, categorías,
+            costos unitarios y sus desgloses.
           </p>
         </div>
 
@@ -65,152 +65,19 @@
     <p>Cargando empresa...</p>
   </div>
 
-  <!-- EMPRESA -->
-  <section
-    *ngIf="empresa && !cargandoEmpresa"
-    class="empresa-card mb-4">
-
-    <div class="empresa-card-header">
-
-      <div class="empresa-icon">
-        <i class="bi bi-building"></i>
-      </div>
-
-      <div>
-        <h2>{{ empresa.nombre }}</h2>
-        <p>Información principal de la empresa asociada al catálogo.</p>
-      </div>
-
-    </div>
-
-    <div class="empresa-grid">
-
-      <div class="empresa-info-item">
-        <span>NIT</span>
-        <strong>{{ empresa.nit }}</strong>
-      </div>
-
-      <div class="empresa-info-item">
-        <span>Correo</span>
-        <strong>{{ empresa.correo }}</strong>
-      </div>
-
-      <div class="empresa-info-item">
-        <span>Teléfono</span>
-        <strong>{{ empresa.telefono }}</strong>
-      </div>
-
-      <div class="empresa-info-item">
-        <span>Fecha creación</span>
-        <strong>{{ empresa.fechaCreacion | date:'yyyy-MM-dd HH:mm' }}</strong>
-      </div>
-
-    </div>
-
-  </section>
-
-  <!-- CATÁLOGOS AUXILIARES -->
+  <!-- Atributos de costo -->
   <section class="catalog-section mb-4">
 
     <div class="section-heading mb-3">
       <div>
-        <h3>Atributos reutilizables</h3>
+        <h3>Atributos de costo</h3>
         <p>
-          Gestiona los datos base que se asignan a los productos del catálogo.
+          Administra los componentes reutilizables que forman el costo de una prenda.
         </p>
       </div>
     </div>
 
     <div class="row g-4">
-
-      <div class="col-12 col-md-6 col-xl-3">
-        <div class="catalog-card catalog-card-blue h-100">
-
-          <div class="catalog-icon">
-            <i class="bi bi-palette"></i>
-          </div>
-
-          <div class="catalog-content">
-            <h4>Colores</h4>
-            <p>Gestiona los colores reutilizables del catálogo.</p>
-          </div>
-
-          <a
-            [routerLink]="rutaDetalleProducto('colores')"
-            class="btn btn-catalog">
-            <span>Ingresar</span>
-            <i class="bi bi-arrow-right"></i>
-          </a>
-
-        </div>
-      </div>
-
-      <div class="col-12 col-md-6 col-xl-3">
-        <div class="catalog-card catalog-card-green h-100">
-
-          <div class="catalog-icon">
-            <i class="bi bi-grid"></i>
-          </div>
-
-          <div class="catalog-content">
-            <h4>Categorías</h4>
-            <p>Gestiona categorías reutilizables del catálogo.</p>
-          </div>
-
-          <a
-            [routerLink]="rutaDetalleProducto('categorias')"
-            class="btn btn-catalog">
-            <span>Ingresar</span>
-            <i class="bi bi-arrow-right"></i>
-          </a>
-
-        </div>
-      </div>
-
-      <div class="col-12 col-md-6 col-xl-3">
-        <div class="catalog-card catalog-card-cyan h-100">
-
-          <div class="catalog-icon">
-            <i class="bi bi-person-badge"></i>
-          </div>
-
-          <div class="catalog-content">
-            <h4>Géneros</h4>
-            <p>Gestiona géneros reutilizables del catálogo.</p>
-          </div>
-
-          <a
-            [routerLink]="rutaDetalleProducto('generos')"
-            class="btn btn-catalog">
-            <span>Ingresar</span>
-            <i class="bi bi-arrow-right"></i>
-          </a>
-
-        </div>
-      </div>
-
-      <div class="col-12 col-md-6 col-xl-3">
-        <div class="catalog-card catalog-card-yellow h-100">
-
-          <div class="catalog-icon">
-            <i class="bi bi-rulers"></i>
-          </div>
-
-          <div class="catalog-content">
-            <h4>Tallas</h4>
-            <p>Gestiona tallas reutilizables del catálogo.</p>
-          </div>
-
-          <a
-            [routerLink]="rutaDetalleProducto('tallas')"
-            class="btn btn-catalog">
-            <span>Ingresar</span>
-            <i class="bi bi-arrow-right"></i>
-          </a>
-
-        </div>
-      </div>
-
       <div class="col-12 col-md-6 col-xl-3">
         <div class="catalog-card catalog-card-purple h-100">
 
@@ -232,7 +99,6 @@
 
         </div>
       </div>
-
     </div>
 
   </section>
@@ -260,30 +126,127 @@
 
     <div class="productos-toolbar">
 
-      <div class="search-wrapper">
-        <i class="bi bi-search"></i>
+      <div class="productos-filters">
 
-        <input
-          type="text"
-          placeholder="Buscar producto por código..."
-          [(ngModel)]="codigoBusqueda"
-          (ngModelChange)="onBuscarCodigo()"
-        >
+        <div class="producto-filter">
+          <label for="filtroProducto">
+            <i class="bi bi-tag me-1"></i>
+            Producto
+          </label>
 
-        <button
-          *ngIf="codigoBusqueda"
-          type="button"
-          class="btn-clear-search"
-          (click)="limpiarBusqueda()"
-          title="Limpiar búsqueda">
-          <i class="bi bi-x-lg"></i>
-        </button>
+          <div class="search-wrapper">
+            <i class="bi bi-search"></i>
+
+            <input
+              id="filtroProducto"
+              type="text"
+              placeholder="Buscar por nombre..."
+              [(ngModel)]="productoBusqueda"
+              (ngModelChange)="onBuscarProducto()"
+            >
+
+            <button
+              *ngIf="productoBusqueda"
+              type="button"
+              class="btn-clear-search"
+              (click)="limpiarBusquedaProducto()"
+              title="Limpiar filtro de producto">
+              <i class="bi bi-x-lg"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="producto-filter">
+          <label for="filtroCodigo">
+            <i class="bi bi-upc-scan me-1"></i>
+            Código
+          </label>
+
+          <div class="search-wrapper">
+            <i class="bi bi-search"></i>
+
+            <input
+              id="filtroCodigo"
+              type="text"
+              placeholder="Buscar por código..."
+              [(ngModel)]="codigoBusqueda"
+              (ngModelChange)="onBuscarCodigo()"
+            >
+
+            <button
+              *ngIf="codigoBusqueda"
+              type="button"
+              class="btn-clear-search"
+              (click)="limpiarBusquedaCodigo()"
+              title="Limpiar filtro de código">
+              <i class="bi bi-x-lg"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="producto-filter producto-status-filter">
+          <label for="filtroRemanufacturado">
+            <i class="bi bi-recycle me-1"></i>
+            Estado del producto
+          </label>
+
+          <div
+            class="status-filter-options"
+            role="group"
+            aria-label="Filtrar por estado del producto">
+            <button
+              type="button"
+              class="status-filter-option status-filter-option-all"
+              [class.active]="filtroRemanufacturado === 'TODOS'"
+              [attr.aria-pressed]="filtroRemanufacturado === 'TODOS'"
+              (click)="seleccionarFiltroRemanufacturado('TODOS')">
+              <i class="bi bi-grid-3x3-gap-fill"></i>
+              <span>Todos</span>
+            </button>
+            <button
+              type="button"
+              class="status-filter-option status-filter-option-remanufactured"
+              [class.active]="filtroRemanufacturado === 'SI'"
+              [attr.aria-pressed]="filtroRemanufacturado === 'SI'"
+              (click)="seleccionarFiltroRemanufacturado('SI')">
+              <i class="bi bi-recycle"></i>
+              <span>Remanufacturados</span>
+            </button>
+            <button
+              type="button"
+              class="status-filter-option status-filter-option-not-remanufactured"
+              [class.active]="filtroRemanufacturado === 'NO'"
+              [attr.aria-pressed]="filtroRemanufacturado === 'NO'"
+              (click)="seleccionarFiltroRemanufacturado('NO')">
+              <i class="bi bi-slash-circle"></i>
+              <span>No remanufacturados</span>
+            </button>
+          </div>
+        </div>
+
       </div>
 
       <div class="toolbar-info">
         <span>
           {{ productosFiltrados.length }} producto(s)
         </span>
+
+        <small *ngIf="campoOrden" class="sort-summary">
+          Orden: {{ campoOrden === 'producto' ? 'Producto' : 'Código' }}
+          ({{ direccionOrden === 'asc' ? 'A-Z' : 'Z-A' }})
+        </small>
+
+        <small *ngIf="filtroRemanufacturado !== 'TODOS'" class="status-filter-summary">
+          Estado: {{ filtroRemanufacturado === 'SI' ? 'Remanufacturado' : 'No remanufacturado' }}
+        </small>
+
+        <button
+          *ngIf="productoBusqueda || codigoBusqueda || filtroRemanufacturado !== 'TODOS'"
+          type="button"
+          class="btn-clear-all-filters"
+          (click)="limpiarBusqueda()">
+          Limpiar filtros
+        </button>
       </div>
 
     </div>
@@ -332,7 +295,7 @@
         <h4>No se encontraron productos</h4>
 
         <p>
-          No hay productos que coincidan con el código buscado.
+          No hay productos que coincidan con los filtros aplicados.
         </p>
 
         <button
@@ -383,16 +346,45 @@
 
           <thead>
           <tr>
-            <th>Producto</th>
-            <th>Código</th>
+            <th
+              [attr.aria-sort]="campoOrden === 'producto'
+                ? (direccionOrden === 'asc' ? 'ascending' : 'descending')
+                : 'none'">
+              <button
+                type="button"
+                class="sortable-heading sortable-heading-producto"
+                [class.sortable-heading-active]="campoOrden === 'producto'"
+                (click)="ordenarPor('producto')"
+                aria-label="Ordenar por producto">
+                <span class="sortable-heading-icon">
+                  <i class="bi bi-tag-fill"></i>
+                </span>
+                <span>Producto</span>
+                <i class="bi sort-indicator" [ngClass]="iconoOrden('producto')"></i>
+              </button>
+            </th>
+            <th
+              [attr.aria-sort]="campoOrden === 'codigo'
+                ? (direccionOrden === 'asc' ? 'ascending' : 'descending')
+                : 'none'">
+              <button
+                type="button"
+                class="sortable-heading sortable-heading-codigo"
+                [class.sortable-heading-active]="campoOrden === 'codigo'"
+                (click)="ordenarPor('codigo')"
+                aria-label="Ordenar por código">
+                <span class="sortable-heading-icon">
+                  <i class="bi bi-upc-scan"></i>
+                </span>
+                <span>Código</span>
+                <i class="bi sort-indicator" [ngClass]="iconoOrden('codigo')"></i>
+              </button>
+            </th>
             <th>Descripción</th>
             <th>Color</th>
             <th>Categoría</th>
             <th>Costo unitario</th>
-            <th>Talla</th>
             <th>Género</th>
-            <th>Fecha creación</th>
-            <th class="text-end">Acciones</th>
           </tr>
           </thead>
 
@@ -495,11 +487,21 @@
                   <span
                     [class.cost-breakdown-label]="producto.tipoCosto === 'DESGLOSE'"
                     [class.cost-custom-label]="producto.costoPersonalizado">
+                    <i
+                      *ngIf="producto.tipoCosto === 'DESGLOSE' && !producto.costoPersonalizado"
+                      class="bi bi-diagram-3-fill"
+                      aria-hidden="true"></i>
                     {{ producto.costoPersonalizado
                       ? 'Referencia personalizada'
                       : producto.tipoCosto === 'DESGLOSE'
                       ? (producto.desgloseCosto?.length || 0) + ' componentes'
                       : 'Costo manual' }}
+                  </span>
+                  <span
+                    *ngIf="producto.esRemanufacturado"
+                    class="remanufactured-badge">
+                    <i class="bi bi-recycle"></i>
+                    Remanufacturado
                   </span>
                 </div>
 
@@ -513,27 +515,6 @@
                   Editar costo
                 </button>
               </div>
-            </td>
-
-            <!-- Talla -->
-            <td>
-              <ng-container *ngIf="!estaEditando(producto); else editarTalla">
-                <span class="table-text">
-                  {{ producto.tallaNombre }}
-                </span>
-              </ng-container>
-
-              <ng-template #editarTalla>
-                <select
-                  class="form-select form-select-sm"
-                  [(ngModel)]="productoEditando!.tallaId">
-                  <option
-                    *ngFor="let talla of tallas"
-                    [ngValue]="talla.id">
-                    {{ talla.nombre }}
-                  </option>
-                </select>
-              </ng-template>
             </td>
 
             <!-- Género -->
@@ -555,70 +536,6 @@
                   </option>
                 </select>
               </ng-template>
-            </td>
-
-            <!-- Fecha creación -->
-            <td>
-              <span class="date-text">
-                {{ producto.fechaCreacion | date:'yyyy-MM-dd HH:mm' }}
-              </span>
-            </td>
-
-            <!-- Acciones -->
-            <td class="text-end">
-
-              <ng-container *ngIf="!estaEditando(producto); else accionesEdicion">
-
-                <button
-                  type="button"
-                  class="btn btn-action-edit me-2"
-                  [class.btn-action-locked]="producto.puedeModificar === false"
-                  (click)="iniciarEdicion(producto)"
-                  [title]="producto.puedeModificar === false ? producto.motivoBloqueo : 'Editar producto'">
-
-                  <i
-                    class="bi"
-                    [class.bi-pencil]="producto.puedeModificar !== false"
-                    [class.bi-lock]="producto.puedeModificar === false">
-                  </i>
-
-                </button>
-
-                <button
-                  type="button"
-                  class="btn btn-action-delete"
-                  [class.btn-action-locked]="producto.puedeModificar === false"
-                  (click)="eliminarProducto(producto)"
-                  [title]="producto.puedeModificar === false ? producto.motivoBloqueo : 'Eliminar producto'">
-
-                  <i
-                    class="bi"
-                    [class.bi-trash]="producto.puedeModificar !== false"
-                    [class.bi-lock]="producto.puedeModificar === false">
-                  </i>
-
-                </button>
-
-              </ng-container>
-
-              <ng-template #accionesEdicion>
-
-                <button
-                  type="button"
-                  class="btn btn-action-save me-2"
-                  (click)="guardarEdicion(producto)">
-                  <i class="bi bi-check-lg"></i>
-                </button>
-
-                <button
-                  type="button"
-                  class="btn btn-action-cancel"
-                  (click)="cancelarEdicion()">
-                  <i class="bi bi-x-lg"></i>
-                </button>
-
-              </ng-template>
-
             </td>
 
           </tr>
@@ -742,6 +659,28 @@
           </button>
         </div>
 
+        <label
+          *ngIf="tipoCostoEdicion === 'MANUAL'"
+          class="remanufactured-toggle"
+          [class.auto-selected]="tipoCostoEdicion === 'MANUAL' && esRemanufacturadoEdicion">
+          <input
+            type="checkbox"
+            [checked]="esRemanufacturadoEdicion"
+            (change)="cambiarRemanufacturadoEdicion($event)">
+          <span class="remanufactured-toggle-icon">
+            <i class="bi bi-recycle"></i>
+          </span>
+          <span class="remanufactured-toggle-copy">
+            <strong>Producto remanufacturado</strong>
+            <small>
+              Al elegir costo manual se activa automáticamente. Desmárcalo si no aplica.
+            </small>
+          </span>
+          <span class="remanufactured-toggle-status">
+            {{ esRemanufacturadoEdicion ? 'Sí' : 'No' }}
+          </span>
+        </label>
+
         <div *ngIf="tipoCostoEdicion === 'MANUAL'" class="cost-editor-manual-panel">
           <label [for]="'costo-manual-editor-' + costoProductoEditando.id">Costo unitario manual</label>
           <div class="cost-editor-money-input">
@@ -792,15 +731,80 @@
 
               <div class="cost-editor-field cost-editor-attribute-field">
                 <label [for]="'atributo-editor-' + indice">Atributo de costo</label>
-                <select
-                  [id]="'atributo-editor-' + indice"
-                  [value]="componente.atributoCostoId ?? ''"
-                  (change)="cambiarAtributoCostoEdicion(indice, $event)">
-                  <option value="">Selecciona un atributo</option>
-                  <option *ngFor="let atributo of atributosCostoEdicion" [value]="atributo.id">
-                    {{ atributo.nombre }}
-                  </option>
-                </select>
+                <div
+                  class="cost-editor-attribute-picker"
+                  (click)="$event.stopPropagation()">
+                  <button
+                    [id]="'atributo-editor-' + indice"
+                    type="button"
+                    class="cost-editor-attribute-picker-trigger"
+                    [class.has-value]="componente.atributoCostoId !== null"
+                    [class.is-open]="atributoCostoEdicionAbierto === indice"
+                    [attr.aria-expanded]="atributoCostoEdicionAbierto === indice"
+                    aria-haspopup="listbox"
+                    (click)="toggleAtributoCostoEdicion(indice)">
+                    <span class="cost-editor-attribute-picker-icon">
+                      <i class="bi bi-diagram-3"></i>
+                    </span>
+                    <span class="cost-editor-attribute-picker-value">
+                      <strong *ngIf="componente.atributoCostoId !== null">
+                        {{ componente.concepto }}
+                      </strong>
+                      <span *ngIf="componente.atributoCostoId === null">
+                        Selecciona un atributo
+                      </span>
+                    </span>
+                    <i
+                      class="bi bi-chevron-down cost-editor-attribute-picker-chevron"
+                      [class.rotated]="atributoCostoEdicionAbierto === indice"></i>
+                  </button>
+
+                  <div
+                    *ngIf="atributoCostoEdicionAbierto === indice"
+                    class="cost-editor-attribute-picker-menu"
+                    role="listbox">
+                    <div class="cost-editor-attribute-picker-search">
+                      <i class="bi bi-search"></i>
+                      <input
+                        type="search"
+                        autocomplete="off"
+                        placeholder="Buscar atributo..."
+                        [value]="busquedaAtributoCostoEdicion"
+                        (input)="actualizarBusquedaAtributoCostoEdicion($event)">
+                    </div>
+
+                    <div class="cost-editor-attribute-picker-options">
+                      <button
+                        *ngFor="let atributo of obtenerAtributosCostoEdicionFiltrados()"
+                        type="button"
+                        class="cost-editor-attribute-picker-option"
+                        [class.is-selected]="atributo.id === componente.atributoCostoId"
+                        (click)="seleccionarAtributoCostoEdicion(indice, atributo)">
+                        <span class="cost-editor-attribute-option-icon">
+                          <i class="bi bi-diagram-3"></i>
+                        </span>
+                        <span class="cost-editor-attribute-option-main">
+                          <strong>{{ atributo.nombre }}</strong>
+                          <small>Atributo disponible</small>
+                        </span>
+                        <i
+                          *ngIf="atributo.id === componente.atributoCostoId"
+                          class="bi bi-check2 cost-editor-attribute-option-check"></i>
+                      </button>
+
+                      <div
+                        *ngIf="obtenerAtributosCostoEdicionFiltrados().length === 0"
+                        class="cost-editor-attribute-picker-empty">
+                        <i class="bi bi-search"></i>
+                        No encontramos atributos.
+                      </div>
+                    </div>
+
+                    <div class="cost-editor-attribute-picker-footer">
+                      {{ obtenerAtributosCostoEdicionFiltrados().length }} atributo(s) disponible(s)
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div class="cost-editor-field cost-editor-value-field">

@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, HostListener, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -28,6 +28,14 @@ export class InventarioActualEmpleadoComponent implements OnInit {
 
   filtro = '';
   filtroStock = 'TODOS';
+  mostrarFiltroStock = false;
+
+  readonly opcionesFiltroStock = [
+    { valor: 'TODOS', etiqueta: 'Todos los productos', icono: 'bi-grid-3x3-gap' },
+    { valor: 'DISPONIBLE', etiqueta: 'Disponibles', icono: 'bi-check-circle' },
+    { valor: 'BAJO', etiqueta: 'Bajo stock', icono: 'bi-exclamation-triangle' },
+    { valor: 'AGOTADO', etiqueta: 'Agotados', icono: 'bi-x-circle' }
+  ];
 
   cargando = false;
 
@@ -44,6 +52,11 @@ export class InventarioActualEmpleadoComponent implements OnInit {
     private authService: AuthService,
     private empleadoInventarioService: EmpleadoInventarioService
   ) {}
+
+  @HostListener('document:click')
+  cerrarFiltroStockAlHacerClickFuera(): void {
+    this.mostrarFiltroStock = false;
+  }
 
   ngOnInit(): void {
 
@@ -223,7 +236,28 @@ export class InventarioActualEmpleadoComponent implements OnInit {
   limpiarFiltros(): void {
     this.filtro = '';
     this.filtroStock = 'TODOS';
+    this.mostrarFiltroStock = false;
     this.filtrarInventario();
+  }
+
+  alternarFiltroStock(): void {
+    this.mostrarFiltroStock = !this.mostrarFiltroStock;
+  }
+
+  seleccionarFiltroStock(valor: string): void {
+    this.filtroStock = valor;
+    this.mostrarFiltroStock = false;
+    this.filtrarInventario();
+  }
+
+  get etiquetaFiltroStock(): string {
+    return this.opcionesFiltroStock.find(opcion => opcion.valor === this.filtroStock)?.etiqueta
+      ?? 'Todos los productos';
+  }
+
+  get iconoFiltroStock(): string {
+    return this.opcionesFiltroStock.find(opcion => opcion.valor === this.filtroStock)?.icono
+      ?? 'bi-grid-3x3-gap';
   }
 
   get inventarioPaginado(): InventarioEmpleadoDTO[] {

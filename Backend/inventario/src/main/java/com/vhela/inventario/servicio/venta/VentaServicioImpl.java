@@ -157,6 +157,9 @@ public class VentaServicioImpl implements VentaServicio {
             detalle.setProducto(producto);
             detalle.setCantidad(cantidadVendida);
             detalle.setCostoUnitarioMomento(costoUnitario);
+            detalle.setRemanufacturadoMomento(
+                    Boolean.TRUE.equals(producto.getEsRemanufacturado())
+            );
             detalle.setPrecioUnitarioMomento(precioUnitario);
             detalle.setSubtotal(subtotalDetalle);
 
@@ -1430,6 +1433,7 @@ public class VentaServicioImpl implements VentaServicio {
             dto.setProductoId(producto.getId());
             dto.setCodigo(producto.getCodigo());
             dto.setNombre(producto.getNombre());
+            dto.setEsRemanufacturado(Boolean.TRUE.equals(producto.getEsRemanufacturado()));
             dto.setStockActual(
                     inventario.getStockActual() == null
                             ? 0
@@ -1465,6 +1469,7 @@ public class VentaServicioImpl implements VentaServicio {
                     dto.setProductoId(producto.getId());
                     dto.setCodigo(producto.getCodigo());
                     dto.setNombre(producto.getNombre());
+                    dto.setEsRemanufacturado(Boolean.TRUE.equals(producto.getEsRemanufacturado()));
                     dto.setStockActual(0);
                     dto.setCantidadVendida(0);
                     dto.setCantidadDevuelta(0);

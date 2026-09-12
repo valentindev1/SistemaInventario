@@ -1,0 +1,329 @@
+<div class="container-fluid registrar-gasto-empleado">
+
+  <div class="page-heading">
+    <div>
+      <button type="button" class="btn btn-link px-0 mb-2" (click)="volverDashboard()">
+        <i class="bi bi-arrow-left me-1"></i>
+        Volver al dashboard
+      </button>
+
+      <span class="page-kicker">
+        <i class="bi bi-receipt-cutoff"></i>
+        Registro operativo
+      </span>
+
+      <h2>{{ editandoRegistroId === null ? 'Registrar gasto' : 'Editar gasto' }}</h2>
+      <p>Registra tus gastos y corrige tus registros cuando sea necesario.</p>
+    </div>
+
+    <div class="branch-badge">
+      <i class="bi bi-shop-window"></i>
+      <span>Sucursal #{{ sucursalId }}</span>
+    </div>
+  </div>
+
+  @if (mensajeError) {
+    <div class="alert alert-danger page-alert">
+      <i class="bi bi-exclamation-triangle me-1"></i>
+      {{ mensajeError }}
+    </div>
+  }
+
+  <div class="row g-4 align-items-stretch">
+    <div class="col-12">
+      <section class="expense-card">
+        <div class="section-heading">
+          <div class="section-icon">
+            <i class="bi bi-wallet2"></i>
+          </div>
+          <div>
+            <h3>{{ editandoRegistroId === null ? 'Nuevo gasto' : 'Corregir registro' }}</h3>
+            <p>{{ editandoRegistroId === null ? 'Completa la información del movimiento.' : 'Actualiza los datos que necesiten corrección.' }}</p>
+          </div>
+        </div>
+
+        <form (ngSubmit)="guardarGasto()" #gastoForm="ngForm">
+          <div class="form-grid">
+            <label class="form-field form-field-wide">
+              <span>Concepto de gasto</span>
+              <div class="fixed-concept">
+                <i class="bi bi-person-badge"></i>
+                <strong>Registro del empleado</strong>
+              </div>
+              <small class="field-hint">Los gastos registrados desde este módulo quedan identificados con este concepto.</small>
+            </label>
+
+            <label class="form-field">
+              <span>Valor <em>*</em></span>
+              <div class="money-input">
+                <span>$</span>
+                <input
+                  type="text"
+                  name="valor"
+                  inputmode="decimal"
+                  autocomplete="off"
+                  placeholder="0"
+                  [value]="valorTexto"
+                  (input)="actualizarValorDesdeTexto($event)"
+                  (blur)="formatearValorIngresado()"
+                  required>
+              </div>
+              <small class="field-hint">Usa puntos para separar los miles.</small>
+            </label>
+
+            <div class="form-field">
+              <span>Fecha del gasto <em>*</em></span>
+              <div class="calendar-picker" (click)="$event.stopPropagation()">
+                <button
+                  type="button"
+                  class="calendar-trigger"
+                  [class.is-open]="mostrarCalendario"
+                  [class.is-empty]="!fecha"
+                  [attr.aria-expanded]="mostrarCalendario"
+                  aria-haspopup="dialog"
+                  (click)="alternarCalendario()">
+                  <span>
+                    <small>Fecha del gasto</small>
+                    <strong>{{ fechaRegistroVisible }}</strong>
+                  </span>
+                  <i class="bi bi-calendar3"></i>
+                </button>
+
+                @if (mostrarCalendario) {
+                  <div class="calendar-menu" role="dialog" aria-label="Seleccionar fecha">
+                    <div class="calendar-header">
+                      <button type="button" (click)="cambiarMesCalendario(-1)" aria-label="Mes anterior">
+                        <i class="bi bi-chevron-left"></i>
+                      </button>
+                      <strong>{{ etiquetaMesCalendario }}</strong>
+                      <button type="button" (click)="cambiarMesCalendario(1)" aria-label="Mes siguiente">
+                        <i class="bi bi-chevron-right"></i>
+                      </button>
+                    </div>
+                    <div class="calendar-weekdays">
+                      @for (nombreDia of nombresDias; track nombreDia) {
+                        <span>{{ nombreDia }}</span>
+                      }
+                    </div>
+                    <div class="calendar-days">
+                      @for (dia of diasCalendario; track dia.fecha) {
+                        <button
+                          type="button"
+                          [class.other-month]="dia.otroMes"
+                          [class.today]="dia.hoy"
+                          [class.selected-day]="dia.seleccionada"
+                          (click)="seleccionarFechaCalendario(dia.fecha)">
+                          {{ dia.dia }}
+                        </button>
+                      }
+                    </div>
+                    <div class="calendar-footer">
+                      <button type="button" (click)="limpiarFecha()">Limpiar</button>
+                      <button type="button" (click)="seleccionarHoy()">Hoy</button>
+                    </div>
+                  </div>
+                }
+              </div>
+              <small class="field-hint">La fecha se incluirá en el informe del período correspondiente.</small>
+            </div>
+
+            <label class="form-field form-field-wide">
+              <span>Descripción <em>*</em></span>
+              <textarea
+                [(ngModel)]="descripcion"
+                name="descripcion"
+                rows="4"
+                maxlength="400"
+                required
+                placeholder="Describe el gasto o la razón del movimiento"></textarea>
+            </label>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn btn-light" (click)="limpiarFormulario()" [disabled]="guardando">
+              {{ editandoRegistroId === null ? 'Limpiar' : 'Cancelar edición' }}
+            </button>
+            <button type="submit" class="btn btn-primary save-button" [disabled]="guardando || gastoForm.invalid">
+              @if (guardando) {
+                <span class="spinner-border spinner-border-sm me-2"></span>
+                Guardando...
+              } @else {
+                <i class="bi bi-check2-circle me-1"></i>
+                {{ editandoRegistroId === null ? 'Guardar gasto' : 'Guardar cambios' }}
+              }
+            </button>
+          </div>
+        </form>
+      </section>
+    </div>
+
+  </div>
+
+  <section class="records-card">
+    <div class="records-heading">
+      <div>
+        <span class="records-kicker"><i class="bi bi-journal-check"></i> Historial personal</span>
+        <h3>Mis registros de gasto</h3>
+        <p>Consulta y corrige los gastos que has registrado en esta sucursal.</p>
+      </div>
+      <span class="records-count">{{ registrosFiltrados.length }} de {{ registros.length }} registro(s)</span>
+    </div>
+
+    <section class="records-filter-card" aria-labelledby="filtro-registros-titulo">
+      <div class="records-filter-heading">
+        <div>
+          <span class="records-filter-kicker"><i class="bi bi-sliders2"></i> Consulta rápida</span>
+          <h4 id="filtro-registros-titulo">Filtrar historial por fecha</h4>
+          <p>Consulta un día específico o un intervalo personalizado.</p>
+        </div>
+        @if (filtroFechaActivo) {
+          <button type="button" class="btn btn-filter-reset" (click)="limpiarFiltroFecha()">
+            <i class="bi bi-arrow-counterclockwise"></i>
+            Restablecer
+          </button>
+        }
+      </div>
+
+      <div class="records-filter-grid">
+        <div class="filter-dropdown" (click)="$event.stopPropagation()">
+          <span class="filter-label"><i class="bi bi-calendar3"></i> Tipo de período</span>
+          <button
+            type="button"
+            class="filter-trigger"
+            [class.is-open]="menuFiltroFechaAbierto"
+            [attr.aria-expanded]="menuFiltroFechaAbierto"
+            aria-haspopup="listbox"
+            (click)="alternarMenuFiltroFecha()">
+            <span class="filter-trigger-content">
+              <i class="filter-selected-icon bi" [ngClass]="[claseFiltroFecha, iconoFiltroFecha]"></i>
+              <span>
+                <strong>{{ etiquetaFiltroFecha }}</strong>
+                <small>Selecciona cómo consultar tus gastos</small>
+              </span>
+            </span>
+            <i class="bi bi-chevron-down filter-chevron"></i>
+          </button>
+
+          @if (menuFiltroFechaAbierto) {
+            <div class="filter-menu" role="listbox" aria-label="Tipo de período">
+              @for (opcion of opcionesFiltroFecha; track opcion.valor) {
+                <button
+                  type="button"
+                  class="filter-option"
+                  [class.selected]="tipoFiltroFecha === opcion.valor"
+                  (click)="seleccionarFiltroFecha(opcion.valor)">
+                  <i class="filter-option-icon bi" [ngClass]="[opcion.clase, opcion.icono]"></i>
+                  <span>
+                    <strong>{{ opcion.etiqueta }}</strong>
+                    <small>{{ opcion.descripcion }}</small>
+                  </span>
+                  @if (tipoFiltroFecha === opcion.valor) {
+                    <i class="bi bi-check2 option-check"></i>
+                  }
+                </button>
+              }
+            </div>
+          }
+        </div>
+
+        @if (tipoFiltroFecha === 'DIA') {
+          <label class="filter-date-field">
+            <span class="filter-label"><i class="bi bi-calendar-day"></i> Fecha exacta</span>
+            <span class="filter-date-control">
+              <i class="bi bi-calendar-event"></i>
+              <input
+                type="date"
+                [(ngModel)]="fechaConsultaFiltro"
+                aria-label="Filtrar por fecha exacta">
+            </span>
+          </label>
+        }
+
+        @if (tipoFiltroFecha === 'INTERVALO') {
+          <label class="filter-date-field">
+            <span class="filter-label"><i class="bi bi-calendar-plus"></i> Fecha inicial</span>
+            <span class="filter-date-control">
+              <i class="bi bi-calendar-event"></i>
+              <input
+                type="date"
+                [(ngModel)]="fechaInicioFiltro"
+                aria-label="Fecha inicial del intervalo">
+            </span>
+          </label>
+
+          <label class="filter-date-field">
+            <span class="filter-label"><i class="bi bi-calendar-minus"></i> Fecha final</span>
+            <span class="filter-date-control">
+              <i class="bi bi-calendar-event"></i>
+              <input
+                type="date"
+                [(ngModel)]="fechaFinFiltro"
+                aria-label="Fecha final del intervalo">
+            </span>
+          </label>
+        }
+      </div>
+
+      @if (intervaloFiltroInvalido) {
+        <div class="filter-warning">
+          <i class="bi bi-exclamation-triangle"></i>
+          La fecha inicial no puede ser posterior a la fecha final.
+        </div>
+      }
+
+      <div class="filter-result-summary">
+        <i class="bi bi-funnel-fill"></i>
+        <span>
+          <strong>{{ registrosFiltrados.length }} registro(s) visible(s)</strong>
+          <small>{{ tipoFiltroFecha === 'TODOS' ? 'Mostrando todo tu historial.' : 'El resultado se actualiza al elegir las fechas.' }}</small>
+        </span>
+      </div>
+    </section>
+
+    @if (cargandoRegistros) {
+      <div class="records-empty">
+        <i class="bi bi-arrow-repeat"></i>
+        Cargando tus registros...
+      </div>
+    } @else if (registros.length === 0) {
+      <div class="records-empty">
+        <i class="bi bi-inbox"></i>
+        <strong>Aún no tienes gastos registrados</strong>
+        <span>Cuando guardes uno, aparecerá aquí para que puedas revisarlo o corregirlo.</span>
+      </div>
+    } @else if (registrosFiltrados.length === 0) {
+      <div class="records-empty">
+        <i class="bi bi-calendar-x"></i>
+        <strong>No hay gastos para este período</strong>
+        <span>Prueba con otra fecha o amplía el intervalo de consulta.</span>
+      </div>
+    } @else {
+      <div class="records-list">
+        @for (registro of registrosFiltrados; track registro.id) {
+          <article class="record-item">
+            <div class="record-main">
+              <span class="record-concept"><i class="bi bi-person-badge"></i> Registro del empleado</span>
+              <p>{{ registro.descripcion }}</p>
+              <div class="record-meta">
+                <span><i class="bi bi-calendar3"></i> {{ registro.fecha | date:'dd/MM/yyyy':'':'es-CO' }}</span>
+                <span><i class="bi bi-person-check"></i> Registrado por ti</span>
+              </div>
+            </div>
+            <div class="record-side">
+              <strong>{{ formatearValorRegistro(registro.valor) }}</strong>
+              <div class="record-actions">
+                <button type="button" class="btn btn-outline-primary" (click)="editarRegistro(registro)" [disabled]="guardando">
+                <i class="bi bi-pencil-square me-1"></i> Editar
+                </button>
+                <button type="button" class="btn btn-outline-danger" (click)="eliminarRegistro(registro)" [disabled]="guardando" aria-label="Eliminar gasto">
+                  <i class="bi bi-trash3 me-1"></i> Eliminar
+                </button>
+              </div>
+            </div>
+          </article>
+        }
+      </div>
+    }
+  </section>
+
+</div>

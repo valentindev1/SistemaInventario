@@ -14,4 +14,6 @@ public class ActualizarCostoManualDTO {
     @DecimalMin(value = "0.00", message = "El costo unitario no puede ser negativo")
     @Digits(integer = 10, fraction = 2, message = "El costo unitario no tiene un formato válido")
     private BigDecimal costoUnitario;
+
+    private Boolean esRemanufacturado;
 }

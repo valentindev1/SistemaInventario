@@ -11,9 +11,11 @@ import {
   ConceptoGastoDTO,
   ConceptoGastoEditarDTO,
   RegistroContableCrearDTO,
-  RegistroContableDTO
+  RegistroContableDTO,
+  RegistroGastoEmpleadoDTO
 } from '../../models/contabilidad/contabilidad.model';
 import { AuthTemporalService } from '../auth/auth-temporal.service';
+import { AuthService } from '../auth/auth.service';
 
 @Injectable({
   providedIn: 'root'
@@ -24,7 +26,8 @@ export class ContabilidadService {
 
   constructor(
     private http: HttpClient,
-    private authTemporalService: AuthTemporalService
+    private authTemporalService: AuthTemporalService,
+    private authService: AuthService
   ) {}
 
   private obtenerParametros(): HttpParams {
@@ -50,6 +53,56 @@ export class ContabilidadService {
       dto,
       { params: this.obtenerParametros() }
     );
+  }
+
+  listarGastosEmpleado(sucursalId: number): Observable<RegistroContableDTO[]> {
+    return this.http.get<RegistroContableDTO[]>(
+      `${environment.apiUrl}/empleado/contabilidad/sucursal/${sucursalId}/gastos`,
+      { params: this.obtenerParametrosAutenticados() }
+    );
+  }
+
+  registrarGastoEmpleado(
+    sucursalId: number,
+    dto: RegistroGastoEmpleadoDTO
+  ): Observable<RegistroContableDTO> {
+    return this.http.post<RegistroContableDTO>(
+      `${environment.apiUrl}/empleado/contabilidad/sucursal/${sucursalId}/gastos`,
+      dto,
+      { params: this.obtenerParametrosAutenticados() }
+    );
+  }
+
+  editarGastoEmpleado(
+    sucursalId: number,
+    registroId: number,
+    dto: RegistroGastoEmpleadoDTO
+  ): Observable<RegistroContableDTO> {
+    return this.http.put<RegistroContableDTO>(
+      `${environment.apiUrl}/empleado/contabilidad/sucursal/${sucursalId}/gastos/${registroId}`,
+      dto,
+      { params: this.obtenerParametrosAutenticados() }
+    );
+  }
+
+  eliminarGastoEmpleado(
+    sucursalId: number,
+    registroId: number
+  ): Observable<void> {
+    return this.http.delete<void>(
+      `${environment.apiUrl}/empleado/contabilidad/sucursal/${sucursalId}/gastos/${registroId}`,
+      { params: this.obtenerParametrosAutenticados() }
+    );
+  }
+
+  private obtenerParametrosAutenticados(): HttpParams {
+    const usuarioId = this.authService.obtenerUsuarioId();
+
+    if (!usuarioId) {
+      throw new Error('No se pudo identificar el usuario autenticado.');
+    }
+
+    return new HttpParams().set('usuarioId', usuarioId.toString());
   }
 
   listarConceptos(empresaId: number): Observable<ConceptoGastoDTO[]> {

@@ -219,6 +219,22 @@ export class PanelInventarioSucursalComponent implements OnInit {
     ];
   }
 
+  rutaDefinirCosto(): any[] {
+    if (this.esSuperAdmin()) {
+      return [
+        '/super-admin/empresas',
+        this.empresaId,
+        'productos'
+      ];
+    }
+
+    return [
+      '/admin/empresa',
+      this.empresaId,
+      'productos'
+    ];
+  }
+
   rutaResumenInventario(): any[] {
     if (this.esSuperAdmin()) {
       return [

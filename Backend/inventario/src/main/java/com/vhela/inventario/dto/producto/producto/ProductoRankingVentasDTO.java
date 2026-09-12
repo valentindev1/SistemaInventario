@@ -13,6 +13,7 @@ public class ProductoRankingVentasDTO {
     private String codigo;
 
     private String nombre;
+    private Boolean esRemanufacturado;
 
     private Integer stockActual;
 

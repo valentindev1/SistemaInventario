@@ -47,6 +47,8 @@ public class ProductoCrearDTO {
      */
     private String tipoCosto;
 
+    private Boolean esRemanufacturado;
+
     private Boolean costoPersonalizado;
 
     @DecimalMin(value = "0.00", message = "El costo unitario no puede ser negativo")
