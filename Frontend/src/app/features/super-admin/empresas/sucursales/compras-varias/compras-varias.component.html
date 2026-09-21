@@ -69,14 +69,30 @@
         </div>
         <div class="field field-value">
           <label for="compraValor">Valor</label>
+          <div class="value-type-toggle" role="group" aria-label="Tipo de valor">
+            <button type="button" class="value-type-button value-type-positive"
+              [class.is-selected]="tipoValor === 'POSITIVO'"
+              [attr.aria-pressed]="tipoValor === 'POSITIVO'"
+              (click)="seleccionarTipoValor('POSITIVO')">
+              <i class="bi bi-plus-circle"></i>
+              <span>Valor positivo</span>
+            </button>
+            <button type="button" class="value-type-button value-type-negative"
+              [class.is-selected]="tipoValor === 'NEGATIVO'"
+              [attr.aria-pressed]="tipoValor === 'NEGATIVO'"
+              (click)="seleccionarTipoValor('NEGATIVO')">
+              <i class="bi bi-dash-circle"></i>
+              <span>Valor negativo</span>
+            </button>
+          </div>
           <div class="input-prefix-wrap">
             <span>$</span>
             <input id="compraValor" name="valor" type="text" inputmode="decimal"
               [value]="valorTexto" (input)="actualizarValorDesdeTexto($event)"
-              (blur)="formatearValorIngresado()" placeholder="+30.000 o -30.000"
+              (blur)="formatearValorIngresado()" placeholder="30.000"
               autocomplete="off">
           </div>
-          <small class="field-hint"><i class="bi bi-info-circle"></i> Acepta entradas (+) y salidas (-).</small>
+          <small class="field-hint"><i class="bi bi-info-circle"></i> El botón seleccionado define si se registra como entrada (+) o salida (-).</small>
         </div>
       </div>
       <div class="form-grid form-grid-secondary">

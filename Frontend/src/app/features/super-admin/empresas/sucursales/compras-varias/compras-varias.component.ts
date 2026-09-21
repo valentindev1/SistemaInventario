@@ -10,6 +10,7 @@ import { EmpresaService } from '../../../../../core/services/empresa/empresa.ser
 import { SucursalService } from '../../../../../core/services/sucursal/sucursal.service';
 
 type ModoFiltroCompras = 'MES' | 'DIA' | 'RANGO';
+type TipoValorCompra = 'POSITIVO' | 'NEGATIVO';
 
 @Component({
   selector: 'app-compras-varias',
@@ -35,6 +36,7 @@ export class ComprasVariasComponent implements OnInit {
   descripcion = '';
   valor: number | null = null;
   valorTexto = '';
+  tipoValor: TipoValorCompra = 'POSITIVO';
   fecha = this.formatearFecha(new Date());
   mostrarCalendario = false;
   fechaCalendario = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
@@ -136,7 +138,7 @@ export class ComprasVariasComponent implements OnInit {
     const dto: CompraVariasCrearDTO = {
       concepto: this.concepto.trim(),
       descripcion: this.descripcion.trim() || undefined,
-      valor: Number(this.valor),
+      valor: this.aplicarSigno(Math.abs(Number(this.valor))),
       fecha: this.fecha
     };
 
@@ -167,6 +169,7 @@ export class ComprasVariasComponent implements OnInit {
     this.descripcion = '';
     this.valor = null;
     this.valorTexto = '';
+    this.tipoValor = 'POSITIVO';
     this.fecha = this.formatearFecha(new Date());
     this.mostrarCalendario = false;
     const hoy = new Date();
@@ -177,16 +180,19 @@ export class ComprasVariasComponent implements OnInit {
     const input = evento.target as HTMLInputElement;
     const entrada = input.value;
     const tieneComa = entrada.includes(',');
-    const partes = entrada.replace(/[^0-9,\-]/g, '').split(',');
-    const signo = partes[0].startsWith('-') ? '-' : '';
+    const partes = entrada.replace(/[^0-9,]/g, '').split(',');
     const entero = partes[0].replace(/[^0-9]/g, '').replace(/^0+(?=\d)/, '');
     const decimales = tieneComa
       ? (partes.slice(1).join('').replace(/[^0-9]/g, '').slice(0, 2))
       : '';
     const enteroVisible = entero.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-
-    this.valorTexto = signo + (enteroVisible || (tieneComa ? '0' : ''))
+    const magnitudTexto = (enteroVisible || (tieneComa ? '0' : ''))
       + (tieneComa ? ',' + decimales : '');
+    const tieneNumero = /\d/.test(magnitudTexto);
+
+    this.valorTexto = tieneNumero
+      ? (this.tipoValor === 'NEGATIVO' ? '-' : '+') + magnitudTexto
+      : '';
     this.valor = this.numeroDesdeTexto(this.valorTexto);
 
     input.value = this.valorTexto;
@@ -195,7 +201,17 @@ export class ComprasVariasComponent implements OnInit {
 
   formatearValorIngresado(): void {
     if (this.valor !== null && Number.isFinite(this.valor)) {
-      this.valorTexto = this.formatearNumeroMiles(this.valor);
+      this.valorTexto = (this.tipoValor === 'NEGATIVO' ? '-' : '+')
+        + this.formatearNumeroMiles(Math.abs(this.valor));
+    }
+  }
+
+  seleccionarTipoValor(tipo: TipoValorCompra): void {
+    this.tipoValor = tipo;
+
+    if (this.valor !== null && Number.isFinite(this.valor)) {
+      this.valor = this.aplicarSigno(Math.abs(this.valor));
+      this.formatearValorIngresado();
     }
   }
 
@@ -468,6 +484,11 @@ export class ComprasVariasComponent implements OnInit {
     }
     const numero = Number(normalizado);
     return Number.isFinite(numero) ? numero : null;
+  }
+
+  private aplicarSigno(valor: number): number {
+    const magnitud = Math.abs(Number(valor));
+    return this.tipoValor === 'NEGATIVO' ? -magnitud : magnitud;
   }
 
   private formatearFechaVisible(fecha: string): string {

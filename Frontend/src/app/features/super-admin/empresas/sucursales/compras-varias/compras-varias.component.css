@@ -63,6 +63,12 @@
 .input-prefix-wrap { position: relative; }
 .input-prefix-wrap > span { position: absolute; top: 50%; left: 14px; transform: translateY(-50%); color: #0f766e; font-weight: 800; pointer-events: none; }
 .input-prefix-wrap input { padding-left: 32px; }
+.value-type-toggle { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 10px; }
+.value-type-button { display: flex; align-items: center; justify-content: center; gap: 7px; min-height: 40px; padding: 8px 10px; border: 1px solid #cbd9e8; border-radius: 10px; background: #fff; color: #64748b; font: inherit; font-size: .76rem; font-weight: 800; transition: border-color .18s, background .18s, color .18s, box-shadow .18s; }
+.value-type-button:hover { border-color: #94a3b8; background: #f8fafc; }
+.value-type-button i { font-size: .95rem; }
+.value-type-positive.is-selected { border-color: #86efac; background: #f0fdf4; color: #15803d; box-shadow: 0 0 0 3px rgba(34,197,94,.1); }
+.value-type-negative.is-selected { border-color: #fca5a5; background: #fef2f2; color: #dc2626; box-shadow: 0 0 0 3px rgba(239,68,68,.1); }
 .field-hint { display: block; margin-top: 6px; color: #64748b; font-size: .74rem; }
 .field-hint i { color: #0f766e; }
 .form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 21px; }
