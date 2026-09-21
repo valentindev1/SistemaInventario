@@ -65,6 +65,73 @@
     <p>Cargando empresa...</p>
   </div>
 
+  <!-- CATÁLOGOS AUXILIARES -->
+  <section class="catalog-section mb-4">
+
+    <div class="section-heading mb-3">
+      <div>
+        <h3>Atributos reutilizables</h3>
+        <p>
+          Gestiona los datos base que se asignan a los productos del catálogo.
+        </p>
+      </div>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-12 col-md-6 col-xl-3">
+        <div class="catalog-card catalog-card-blue h-100">
+          <div class="catalog-icon"><i class="bi bi-palette"></i></div>
+          <div class="catalog-content">
+            <h4>Colores</h4>
+            <p>Gestiona los colores reutilizables del catálogo.</p>
+          </div>
+          <a [routerLink]="rutaDetalleProducto('colores')" class="btn btn-catalog">
+            <span>Ingresar</span><i class="bi bi-arrow-right"></i>
+          </a>
+        </div>
+      </div>
+
+      <div class="col-12 col-md-6 col-xl-3">
+        <div class="catalog-card catalog-card-green h-100">
+          <div class="catalog-icon"><i class="bi bi-grid"></i></div>
+          <div class="catalog-content">
+            <h4>Categorías</h4>
+            <p>Gestiona categorías reutilizables del catálogo.</p>
+          </div>
+          <a [routerLink]="rutaDetalleProducto('categorias')" class="btn btn-catalog">
+            <span>Ingresar</span><i class="bi bi-arrow-right"></i>
+          </a>
+        </div>
+      </div>
+
+      <div class="col-12 col-md-6 col-xl-3">
+        <div class="catalog-card catalog-card-cyan h-100">
+          <div class="catalog-icon"><i class="bi bi-person-badge"></i></div>
+          <div class="catalog-content">
+            <h4>Géneros</h4>
+            <p>Gestiona géneros reutilizables del catálogo.</p>
+          </div>
+          <a [routerLink]="rutaDetalleProducto('generos')" class="btn btn-catalog">
+            <span>Ingresar</span><i class="bi bi-arrow-right"></i>
+          </a>
+        </div>
+      </div>
+
+      <div class="col-12 col-md-6 col-xl-3">
+        <div class="catalog-card catalog-card-yellow h-100">
+          <div class="catalog-icon"><i class="bi bi-rulers"></i></div>
+          <div class="catalog-content">
+            <h4>Tallas</h4>
+            <p>Gestiona tallas reutilizables del catálogo.</p>
+          </div>
+          <a [routerLink]="rutaDetalleProducto('tallas')" class="btn btn-catalog">
+            <span>Ingresar</span><i class="bi bi-arrow-right"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- Atributos de costo -->
   <section class="catalog-section mb-4">
 

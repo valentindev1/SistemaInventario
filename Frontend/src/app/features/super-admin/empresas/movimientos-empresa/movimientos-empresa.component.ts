@@ -51,8 +51,8 @@ export class MovimientosEmpresaComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    const empresaIdParam = this.route.snapshot.paramMap.get('empresaId');
-    const sucursalIdParam = this.route.snapshot.paramMap.get('sucursalId');
+    const empresaIdParam = this.obtenerParametroRuta('empresaId');
+    const sucursalIdParam = this.obtenerParametroRuta('sucursalId');
 
     if (!empresaIdParam || Number.isNaN(Number(empresaIdParam))) {
       this.mensajeError = 'No se pudo identificar la empresa.';
@@ -74,6 +74,22 @@ export class MovimientosEmpresaComponent implements OnInit {
       next: empresa => this.empresaNombre = empresa.nombre
     });
     this.cargarMovimientos();
+  }
+
+  private obtenerParametroRuta(nombre: string): string | null {
+    let ruta: ActivatedRoute | null = this.route;
+
+    while (ruta) {
+      const valor = ruta.snapshot.paramMap.get(nombre);
+
+      if (valor !== null) {
+        return valor;
+      }
+
+      ruta = ruta.parent;
+    }
+
+    return null;
   }
 
   cargarMovimientos(): void {

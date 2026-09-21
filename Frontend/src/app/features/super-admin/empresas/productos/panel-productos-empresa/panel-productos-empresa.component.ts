@@ -189,6 +189,26 @@ export class PanelProductosEmpresaComponent implements OnInit {
     ];
   }
 
+  rutaDetalleProducto(tipo: 'colores' | 'categorias' | 'generos' | 'tallas'): any[] {
+    if (this.esSuperAdmin()) {
+      return [
+        '/super-admin/empresas',
+        this.empresaId,
+        'productos',
+        'detalles',
+        tipo
+      ];
+    }
+
+    return [
+      '/admin/empresa',
+      this.empresaId,
+      'productos',
+      'detalles',
+      tipo
+    ];
+  }
+
   get productosFiltrados(): ProductoAdminObtenerDTO[] {
     const producto = this.productoBusqueda.trim().toLocaleLowerCase();
     const codigo = this.codigoBusqueda.trim().toLocaleLowerCase();
